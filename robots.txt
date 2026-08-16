@@ -1,0 +1,5 @@
+# Preview site — content is not final.
+# Remove this file (or replace with an allow rule) at launch,
+# and delete the noindex meta tag in index.html at the same time.
+User-agent: *
+Disallow: /
