@@ -65,7 +65,11 @@ a{color:var(--purple)}
   border-top:1px solid var(--line);padding-top:16px}
 
 /* ---------- app shell ---------- */
-.app{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
+/* Hidden until signed in. Declared here (after .screen) because .app and
+   .screen have equal specificity and the later rule would otherwise win,
+   leaving the portal shell visible behind the sign-in box. */
+.app{display:none;grid-template-columns:250px 1fr;min-height:100vh}
+.app.on{display:grid}
 .side{background:var(--purple);color:var(--cream);padding:22px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
 .side .brand{display:flex;align-items:center;gap:10px;padding:0 22px 20px;border-bottom:1px solid rgba(198,183,226,.2)}
 .side .brand svg{width:30px;height:30px}
@@ -265,19 +269,58 @@ function authMsg(kind,text){ $('authMsg').innerHTML = text ? `<div class="msg ${
 function canRead(s){ return !!perms[s]?.read }
 function canWrite(s){ return !!perms[s]?.write }
 
-/* ---------- sign in ---------- */
+/* ---------- sign in ----------
+   Every call is wrapped and time-limited. Without this, a request that hangs
+   (for example, Supabase failing to hand the email to an SMTP server) leaves
+   the button disabled and "Sending…" on screen forever, telling the user
+   nothing about what went wrong. */
+
+const TIMEOUT_MS = 20000;
+
+function withTimeout(promise, label){
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(
+        label + ' timed out after 20 seconds. This usually means email sending is not ' +
+        'configured — check Authentication → Emails → SMTP Settings in Supabase.'
+      )), TIMEOUT_MS))
+  ]);
+}
+
+function friendly(msg){
+  if (/rate limit|too many/i.test(msg))
+    return 'Too many attempts. Supabase limits sign-in emails — wait a few minutes and try again.';
+  if (/deadline|timed out|timeout/i.test(msg))
+    return msg;
+  if (/failed to fetch|networkerror/i.test(msg))
+    return 'Could not reach the server. Check your connection and try again.';
+  if (/signups not allowed|not authorized/i.test(msg))
+    return 'This address is not permitted to sign in. Ask an administrator to invite it.';
+  if (/invalid|expired/i.test(msg))
+    return 'That code is wrong or has expired. Request a new one.';
+  return msg;
+}
+
 $('sendBtn').addEventListener('click', async () => {
   const email = $('emailInput').value.trim().toLowerCase();
   if (!email || !email.includes('@')) { authMsg('err','Please enter a valid email address.'); return; }
   $('sendBtn').disabled = true; authMsg('info','Sending…');
-  const { error } = await sb.auth.signInWithOtp({ email, options:{ shouldCreateUser:true } });
-  $('sendBtn').disabled = false;
-  if (error) { authMsg('err', error.message); return; }
-  authMsg('');
-  $('sentTo').textContent = email;
-  $('stepEmail').style.display='none';
-  $('stepCode').style.display='block';
-  $('codeInput').focus();
+  try {
+    const { error } = await withTimeout(
+      sb.auth.signInWithOtp({ email, options:{ shouldCreateUser:true } }), 'Sending the code');
+    if (error) throw error;
+    authMsg('');
+    $('sentTo').textContent = email;
+    $('stepEmail').style.display='none';
+    $('stepCode').style.display='block';
+    $('codeInput').focus();
+  } catch (e) {
+    authMsg('err', friendly(e.message || String(e)));
+    console.error('[admin] signInWithOtp failed:', e);
+  } finally {
+    $('sendBtn').disabled = false;
+  }
 });
 
 $('verifyBtn').addEventListener('click', async () => {
@@ -285,11 +328,18 @@ $('verifyBtn').addEventListener('click', async () => {
   const token = $('codeInput').value.trim();
   if (token.length < 6) { authMsg('err','Enter the six-digit code from the email.'); return; }
   $('verifyBtn').disabled = true; authMsg('info','Checking…');
-  const { error } = await sb.auth.verifyOtp({ email, token, type:'email' });
-  $('verifyBtn').disabled = false;
-  if (error) { authMsg('err', error.message); return; }
-  authMsg('');
-  await boot();
+  try {
+    const { error } = await withTimeout(
+      sb.auth.verifyOtp({ email, token, type:'email' }), 'Checking the code');
+    if (error) throw error;
+    authMsg('');
+    await boot();
+  } catch (e) {
+    authMsg('err', friendly(e.message || String(e)));
+    console.error('[admin] verifyOtp failed:', e);
+  } finally {
+    $('verifyBtn').disabled = false;
+  }
 });
 
 $('codeInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('verifyBtn').click() });
