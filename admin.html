@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Master Artist — Content Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --purple:#3B1C5A; --purple-deep:#2A1240; --gold:#E6B44C; --gold-deep:#C79733;
+  --lavender:#C6B7E2; --lav-pale:#EDE7F6; --cream:#F6F1E8; --ink:#2A1740;
+  --muted:#6E6180; --line:rgba(59,28,90,.16); --ok:#2E7D5B; --warn:#B4562B;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--cream);color:var(--ink);font-size:14.5px;line-height:1.6}
+h1,h2,h3{font-family:'Fraunces',Georgia,serif;font-weight:400;line-height:1.2}
+button,input,textarea,select{font-family:inherit;font-size:inherit;color:inherit}
+a{color:var(--purple)}
+
+/* ---------- screens ---------- */
+.screen{display:none}
+.screen.on{display:block}
+
+/* ---------- auth ---------- */
+#authScreen{
+  position:fixed;inset:0;background:var(--purple);
+  display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto;
+}
+.lbox{width:100%;max-width:420px;background:var(--cream);border:1px solid var(--gold);padding:40px 38px}
+.lb-brand{display:flex;align-items:center;gap:11px;margin-bottom:26px}
+.lb-brand svg{width:38px;height:38px}
+.lb-brand span{font-family:'Fraunces';font-size:20px;color:var(--purple)}
+.lbox h2{font-size:25px;color:var(--purple);margin-bottom:8px}
+.lbox p.sub{color:var(--muted);font-size:13.5px;margin-bottom:24px}
+.field{margin-bottom:16px}
+.field label{
+  display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--gold-deep);font-weight:500;margin-bottom:7px;
+}
+.field input{
+  width:100%;border:1px solid var(--line);background:#fff;padding:13px 14px;border-radius:2px;
+}
+.field input:focus{outline:0;border-color:var(--gold)}
+#codeInput{letter-spacing:.5em;font-size:20px;text-align:center;font-family:'Fraunces'}
+.btn{
+  display:inline-block;font-weight:500;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;
+  padding:14px 26px;border:1px solid transparent;border-radius:2px;cursor:pointer;transition:.22s;
+  background:var(--gold);color:var(--purple-deep);border-color:var(--gold);width:100%;
+}
+.btn:hover:not(:disabled){background:var(--gold-deep);border-color:var(--gold-deep)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sm{width:auto;padding:9px 16px;font-size:11px;background:#fff;color:var(--ink);border-color:var(--line)}
+.btn.sm:hover:not(:disabled){background:var(--lav-pale);border-color:var(--purple)}
+.btn.link{background:none;border:0;color:var(--muted);text-transform:none;letter-spacing:0;
+  font-size:13px;padding:10px 0;width:auto;text-decoration:underline}
+.btn.link:hover{color:var(--purple);background:none}
+.msg{padding:12px 14px;font-size:13px;margin-bottom:16px;border-left:2px solid}
+.msg.err{background:#fdf1ec;border-color:var(--warn);color:#7a3116}
+.msg.ok{background:#eef6f1;border-color:var(--ok);color:#1d5740}
+.msg.info{background:var(--lav-pale);border-color:var(--gold);color:var(--purple)}
+.note{margin-top:22px;font-size:11.5px;color:var(--muted);line-height:1.6;
+  border-top:1px solid var(--line);padding-top:16px}
+
+/* ---------- app shell ---------- */
+.app{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
+.side{background:var(--purple);color:var(--cream);padding:22px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.side .brand{display:flex;align-items:center;gap:10px;padding:0 22px 20px;border-bottom:1px solid rgba(198,183,226,.2)}
+.side .brand svg{width:30px;height:30px}
+.side .brand span{font-family:'Fraunces';font-size:16px}
+.me{display:flex;align-items:center;gap:10px;padding:18px 22px 16px}
+.av{width:34px;height:34px;border-radius:50%;background:var(--gold);color:var(--purple-deep);
+  display:flex;align-items:center;justify-content:center;font-family:'Fraunces';font-size:14px;flex-shrink:0}
+.me .nm b{display:block;font-size:13px;color:var(--cream);font-weight:500}
+.me .nm small{font-size:10.5px;color:var(--gold);display:block}
+.signout{background:none;border:0;color:rgba(198,183,226,.7);font-size:11px;cursor:pointer;
+  text-decoration:underline;padding:0;margin-top:2px}
+.signout:hover{color:var(--gold)}
+.snav{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
+  background:none;border:0;text-align:left;padding:11px 22px;cursor:pointer;
+  color:rgba(246,241,232,.72);font-size:13.5px;border-left:2px solid transparent;transition:.18s}
+.snav:hover{color:#fff;background:rgba(255,255,255,.05)}
+.snav.on{color:var(--gold);border-left-color:var(--gold);background:rgba(230,180,76,.08)}
+.snav .n{font-size:11px;background:rgba(198,183,226,.2);padding:1px 7px;border-radius:9px;color:var(--lavender)}
+.snav.soon{opacity:.4;cursor:default}
+.snav.soon:hover{background:none;color:rgba(246,241,232,.72)}
+.side .foot{padding:16px 22px;border-top:1px solid rgba(198,183,226,.2);margin-top:12px;
+  font-size:11px;color:rgba(198,183,226,.55);line-height:1.6}
+
+.main{display:flex;flex-direction:column;min-width:0}
+.top{background:#fff;border-bottom:1px solid var(--line);padding:16px 30px;
+  display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:20;flex-wrap:wrap}
+.top h1{font-size:22px;flex:1;min-width:160px}
+.status{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:7px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+.dot.busy{background:var(--gold-deep)}
+.bodyw{padding:30px;max-width:900px;width:100%}
+.hint{background:var(--lav-pale);border-left:2px solid var(--gold);padding:13px 16px;
+  font-size:13px;color:var(--muted);margin-bottom:22px}
+.hint b{color:var(--purple)}
+
+.card{background:#fff;border:1px solid var(--line);margin-bottom:16px}
+.card-h{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--line);
+  background:rgba(237,231,246,.45);flex-wrap:wrap}
+.card-h .grip{color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase;flex:1}
+.card-b{padding:18px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:14px}
+.row:last-child{margin-bottom:0}
+.f{display:flex;flex-direction:column;gap:6px}
+.f label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-deep);font-weight:500}
+.f .help{font-size:11.5px;color:var(--muted)}
+.f input,.f textarea{border:1px solid var(--line);background:var(--cream);padding:10px 12px;
+  border-radius:2px;width:100%}
+.f input:focus,.f textarea:focus{outline:0;border-color:var(--gold);background:#fff}
+.f textarea{resize:vertical;min-height:70px}
+.f.check{flex-direction:row;align-items:center;gap:9px}
+.f.check label{text-transform:none;letter-spacing:0;font-size:13.5px;color:var(--ink);font-weight:400}
+.pill{font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;
+  border:1px solid var(--line);color:var(--muted)}
+.pill.live{border-color:var(--ok);color:var(--ok)}
+.pill.off{border-color:var(--muted)}
+.pill.exp{border-color:var(--warn);color:var(--warn)}
+.empty{padding:30px;text-align:center;color:var(--muted);border:1px dashed var(--line);background:#fff}
+.locked{padding:36px;text-align:center;color:var(--muted);border:1px dashed var(--line);background:#fff}
+
+#toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,90px);
+  background:var(--purple-deep);color:var(--cream);padding:13px 24px;border:1px solid var(--gold);
+  font-size:13px;transition:transform .3s;z-index:300;max-width:90vw}
+#toast.on{transform:translate(-50%,0)}
+
+@media(max-width:820px){
+  .app{grid-template-columns:1fr}
+  .side{position:static;height:auto}
+  .side nav{display:flex;flex-wrap:wrap;padding:8px}
+  .snav{width:auto;border-left:0;border-bottom:2px solid transparent;padding:9px 14px}
+  .snav.on{border-left:0;border-bottom-color:var(--gold)}
+  .bodyw{padding:20px}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ SIGN IN ============ -->
+<div id="authScreen">
+  <div class="lbox">
+    <div class="lb-brand">
+      <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="#E6B44C"/>
+        <path d="M8 56 C14 56 18 50 24 50 C30 50 30 26 34 26 C38 26 38 60 42 60 C46 60 47 20 51 20 C55 20 55 62 59 62 C63 62 63 28 67 28 C71 28 72 52 78 52 C84 52 88 46 92 44"
+        fill="none" stroke="#3B1C5A" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Master Artist</span>
+    </div>
+
+    <div id="authMsg"></div>
+
+    <!-- step 1: email -->
+    <div id="stepEmail">
+      <h2>Content Admin</h2>
+      <p class="sub">Enter your email and we'll send you a six-digit code. No password to remember.</p>
+      <div class="field">
+        <label for="emailInput">Email address</label>
+        <input id="emailInput" type="email" autocomplete="email" placeholder="you@masterartist.co">
+      </div>
+      <button class="btn" id="sendBtn">Send me a code</button>
+    </div>
+
+    <!-- step 2: code -->
+    <div id="stepCode" style="display:none">
+      <h2>Check your email</h2>
+      <p class="sub">We sent a six-digit code to <b id="sentTo"></b>. It expires in an hour.</p>
+      <div class="field">
+        <label for="codeInput">Six-digit code</label>
+        <input id="codeInput" type="text" inputmode="numeric" autocomplete="one-time-code"
+               maxlength="6" placeholder="000000">
+      </div>
+      <button class="btn" id="verifyBtn">Sign in</button>
+      <button class="btn link" id="backBtn">Use a different email</button>
+    </div>
+
+    <!-- pending approval -->
+    <div id="stepPending" style="display:none">
+      <h2>Access pending</h2>
+      <p class="sub">
+        You're signed in as <b id="pendingEmail"></b>, but your account hasn't been
+        activated yet. An administrator needs to switch it on before you can edit anything.
+      </p>
+      <button class="btn" id="pendingOut">Sign out</button>
+    </div>
+
+    <div class="note">
+      Access is by invitation. If you sign in with an address that hasn't been approved,
+      your account is created but stays locked until an administrator activates it.
+    </div>
+  </div>
+</div>
+
+<!-- ============ PORTAL ============ -->
+<div class="app screen" id="appScreen">
+  <aside class="side">
+    <div class="brand">
+      <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="#E6B44C"/>
+        <path d="M8 56 C14 56 18 50 24 50 C30 50 30 26 34 26 C38 26 38 60 42 60 C46 60 47 20 51 20 C55 20 55 62 59 62 C63 62 63 28 67 28 C71 28 72 52 78 52 C84 52 88 46 92 44"
+        fill="none" stroke="#3B1C5A" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Content Admin</span>
+    </div>
+    <div class="me" id="meBox"></div>
+    <nav id="nav"></nav>
+    <div class="foot" id="sideFoot"></div>
+  </aside>
+
+  <div class="main">
+    <div class="top">
+      <h1 id="title">Announcement Banner</h1>
+      <div class="status"><span class="dot" id="dot"></span><span id="statusTxt">Saved</span></div>
+    </div>
+    <div class="bodyw" id="view"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
+
+/* ---------------------------------------------------------------------------
+   Supabase connection.
+   The anon key is designed to sit in browser code — every row level security
+   policy in the database still applies to it. The service_role key is a
+   different thing entirely and must NEVER appear in this file.
+   --------------------------------------------------------------------------- */
+const SUPABASE_URL  = 'https://fudaosneozobacdalncv.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1ZGFvc25lb3pvYmFjZGFsbmN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4OTIwNDUsImV4cCI6MjEwMjQ2ODA0NX0.0PKbkncE8goPg-iJlAUacNUa3MjWJSj1ZLeqTpkqPZ0';
+
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+const ROLE_LABEL = { admin:'Administrator', marketing:'Marketing', teacher:'Teacher' };
+
+const SECTIONS = [
+  { id:'banner',       key:'banner',       label:'Announcement Banner', ready:true  },
+  { id:'hero',         key:'hero',         label:'Homepage Hero',       ready:false },
+  { id:'programmes',   key:'programmes',   label:'Programmes',          ready:false },
+  { id:'classes',      key:'classes',      label:'Class Schedule',      ready:false },
+  { id:'fees',         key:'fees',         label:'Fees & Policies',     ready:false },
+  { id:'gallery',      key:'gallery',      label:'Gallery',             ready:false },
+  { id:'teachers',     key:'teachers',     label:'Teachers',            ready:false },
+  { id:'testimonials', key:'testimonials', label:'Testimonials',        ready:false },
+  { id:'settings',     key:'settings',     label:'Studio Details',      ready:false },
+  { id:'people',       key:'people',       label:'People & Access',     ready:false }
+];
+
+let me = null;      // profiles row
+let perms = {};     // { section: {read, write} }
+let current = 'banner';
+let banners = [];
+
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const initials = n => (n||'?').split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
+
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('on'); setTimeout(()=>t.classList.remove('on'),3000); }
+function busy(on,label){ $('dot').className='dot'+(on?' busy':''); $('statusTxt').textContent=label||(on?'Saving…':'Saved'); }
+function authMsg(kind,text){ $('authMsg').innerHTML = text ? `<div class="msg ${kind}">${esc(text)}</div>` : ''; }
+function canRead(s){ return !!perms[s]?.read }
+function canWrite(s){ return !!perms[s]?.write }
+
+/* ---------- sign in ---------- */
+$('sendBtn').addEventListener('click', async () => {
+  const email = $('emailInput').value.trim().toLowerCase();
+  if (!email || !email.includes('@')) { authMsg('err','Please enter a valid email address.'); return; }
+  $('sendBtn').disabled = true; authMsg('info','Sending…');
+  const { error } = await sb.auth.signInWithOtp({ email, options:{ shouldCreateUser:true } });
+  $('sendBtn').disabled = false;
+  if (error) { authMsg('err', error.message); return; }
+  authMsg('');
+  $('sentTo').textContent = email;
+  $('stepEmail').style.display='none';
+  $('stepCode').style.display='block';
+  $('codeInput').focus();
+});
+
+$('verifyBtn').addEventListener('click', async () => {
+  const email = $('sentTo').textContent;
+  const token = $('codeInput').value.trim();
+  if (token.length < 6) { authMsg('err','Enter the six-digit code from the email.'); return; }
+  $('verifyBtn').disabled = true; authMsg('info','Checking…');
+  const { error } = await sb.auth.verifyOtp({ email, token, type:'email' });
+  $('verifyBtn').disabled = false;
+  if (error) { authMsg('err', error.message); return; }
+  authMsg('');
+  await boot();
+});
+
+$('codeInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('verifyBtn').click() });
+$('emailInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('sendBtn').click() });
+$('backBtn').addEventListener('click', () => {
+  $('stepCode').style.display='none'; $('stepEmail').style.display='block'; authMsg('');
+});
+$('pendingOut').addEventListener('click', signOut);
+
+async function signOut(){
+  await sb.auth.signOut();
+  me = null; perms = {};
+  $('appScreen').classList.remove('on');
+  $('authScreen').style.display='flex';
+  $('stepPending').style.display='none';
+  $('stepCode').style.display='none';
+  $('stepEmail').style.display='block';
+  $('codeInput').value=''; authMsg('');
+}
+window.signOut = signOut;
+
+/* ---------- boot: who am I, what may I do ---------- */
+async function boot(){
+  const { data:{ session } } = await sb.auth.getSession();
+  if (!session) return;                       // stay on the sign-in screen
+
+  const { data:profile, error } = await sb.from('profiles')
+    .select('id, full_name, email, role, active').eq('id', session.user.id).maybeSingle();
+
+  if (error) { authMsg('err','Could not load your profile: ' + error.message); return; }
+
+  if (!profile || !profile.active) {
+    $('stepEmail').style.display='none';
+    $('stepCode').style.display='none';
+    $('stepPending').style.display='block';
+    $('pendingEmail').textContent = session.user.email;
+    return;
+  }
+
+  me = profile;
+
+  const { data:rows } = await sb.from('role_permissions')
+    .select('section, can_read, can_write').eq('role', profile.role);
+  perms = {};
+  (rows||[]).forEach(r => perms[r.section] = { read:r.can_read, write:r.can_write });
+
+  const first = SECTIONS.find(s => s.ready && canRead(s.key)) || SECTIONS.find(s => canRead(s.key));
+  current = first ? first.id : 'banner';
+
+  $('authScreen').style.display='none';
+  $('appScreen').classList.add('on');
+  await render();
+}
+
+/* ---------- shell ---------- */
+async function render(){
+  $('meBox').innerHTML =
+    `<span class="av">${esc(initials(me.full_name))}</span>
+     <span class="nm"><b>${esc(me.full_name)}</b><small>${esc(ROLE_LABEL[me.role]||me.role)}</small>
+     <button class="signout" onclick="signOut()">Sign out</button></span>`;
+
+  const visible = SECTIONS.filter(s => canRead(s.key));
+  $('nav').innerHTML = visible.map(s =>
+    `<button class="snav${s.id===current?' on':''}${s.ready?'':' soon'}"
+      ${s.ready?`onclick="goTo('${s.id}')"`:''}>
+       <span>${esc(s.label)}</span>${s.ready?'':'<span class="n">soon</span>'}
+     </button>`).join('');
+
+  const hidden = SECTIONS.length - visible.length;
+  $('sideFoot').innerHTML = hidden > 0
+    ? `${hidden} section${hidden>1?'s':''} hidden — your role does not have access.`
+    : 'You have access to every section.';
+
+  const sec = SECTIONS.find(s => s.id === current);
+  $('title').textContent = sec ? sec.label : '';
+
+  if (!sec || !canRead(sec.key)) {
+    $('view').innerHTML = `<div class="locked"><b>You don't have access to this section.</b><br>
+      Your role is ${esc(ROLE_LABEL[me.role]||me.role)}. Ask an administrator if you need it.</div>`;
+    return;
+  }
+  if (!sec.ready) { $('view').innerHTML = `<div class="empty">This section is still being built.</div>`; return; }
+  await views[current]();
+}
+window.goTo = async id => { current = id; await render(); window.scrollTo(0,0) };
+
+/* ---------- announcement banner ---------- */
+const views = {};
+
+views.banner = async function(){
+  busy(true,'Loading…');
+  const { data, error } = await sb.from('banner_messages').select('*').order('sort_order');
+  busy(false);
+  if (error) { $('view').innerHTML = `<div class="msg err">${esc(error.message)}</div>`; return; }
+  banners = data || [];
+
+  const today = new Date().toISOString().slice(0,10);
+  const state = b => !b.active ? ['off','Hidden']
+    : (b.ends_on   && b.ends_on   < today) ? ['exp','Expired']
+    : (b.starts_on && b.starts_on > today) ? ['off','Scheduled']
+    : ['live','Live now'];
+
+  const w = canWrite('banner');
+  let h = `<div class="hint"><b>The rotating strip at the top of every page.</b>
+    Set an end date and the message removes itself — that's what stops you advertising a
+    camp that finished last month. Three to five messages is the sweet spot.</div>`;
+
+  if (!banners.length) h += `<div class="empty">No messages yet.</div>`;
+
+  banners.forEach((b,i) => {
+    const [cls,label] = state(b);
+    h += `<div class="card">
+      <div class="card-h">
+        <span class="grip">Message ${i+1}</span>
+        <span class="pill ${cls}">${label}</span>
+        ${w?`<button class="btn sm" onclick="saveBanner('${b.id}')">Save</button>
+             <button class="btn sm" onclick="delBanner('${b.id}')">Remove</button>`:''}
+      </div>
+      <div class="card-b">
+        <div class="row">
+          <div class="f"><label>Tag</label>
+            <input data-f="${b.id}.tag" value="${esc(b.tag)}" placeholder="Now Open" ${w?'':'disabled'}></div>
+          <div class="f"><label>Links to</label>
+            <input data-f="${b.id}.link" value="${esc(b.link)}" placeholder="/schedule-fees" ${w?'':'disabled'}></div>
+        </div>
+        <div class="row"><div class="f" style="grid-column:1/-1"><label>Message</label>
+          <textarea data-f="${b.id}.message" ${w?'':'disabled'}>${esc(b.message)}</textarea></div></div>
+        <div class="row">
+          <div class="f"><label>Show from</label>
+            <input type="date" data-f="${b.id}.starts_on" value="${esc(b.starts_on)}" ${w?'':'disabled'}></div>
+          <div class="f"><label>Hide after</label>
+            <input type="date" data-f="${b.id}.ends_on" value="${esc(b.ends_on)}" ${w?'':'disabled'}>
+            <span class="help">Blank runs indefinitely.</span></div>
+          <div class="f check">
+            <input type="checkbox" data-f="${b.id}.active" ${b.active?'checked':''} ${w?'':'disabled'}>
+            <label>Active</label></div>
+        </div>
+      </div></div>`;
+  });
+
+  if (w) h += `<button class="btn sm" onclick="addBanner()">+ Add message</button>`;
+  $('view').innerHTML = h;
+};
+
+function collect(id){
+  const out = {};
+  document.querySelectorAll(`[data-f^="${id}."]`).forEach(el => {
+    const k = el.dataset.f.split('.')[1];
+    out[k] = el.type === 'checkbox' ? el.checked : (el.value === '' ? null : el.value);
+  });
+  return out;
+}
+
+window.saveBanner = async id => {
+  busy(true);
+  const { error } = await sb.from('banner_messages').update(collect(id)).eq('id', id);
+  busy(false);
+  if (error) { toast('Could not save: ' + error.message); return; }
+  toast('Saved'); await render();
+};
+
+window.delBanner = async id => {
+  busy(true);
+  const { error } = await sb.from('banner_messages').delete().eq('id', id);
+  busy(false);
+  if (error) { toast('Could not remove: ' + error.message); return; }
+  toast('Removed'); await render();
+};
+
+window.addBanner = async () => {
+  busy(true);
+  const { error } = await sb.from('banner_messages')
+    .insert({ message:'New announcement', active:false, sort_order: banners.length });
+  busy(false);
+  if (error) { toast('Could not add: ' + error.message); return; }
+  toast('Added — it stays hidden until you tick Active'); await render();
+};
+
+/* ---------- start ---------- */
+sb.auth.onAuthStateChange((event) => { if (event === 'SIGNED_OUT') signOut(); });
+boot();
+</script>
+</body>
+</html>
