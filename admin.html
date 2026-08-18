@@ -115,9 +115,9 @@ a{color:var(--purple)}
 .f{display:flex;flex-direction:column;gap:6px}
 .f label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-deep);font-weight:500}
 .f .help{font-size:11.5px;color:var(--muted)}
-.f input,.f textarea{border:1px solid var(--line);background:var(--cream);padding:10px 12px;
+.f input,.f textarea,.f select{border:1px solid var(--line);background:var(--cream);padding:10px 12px;
   border-radius:2px;width:100%}
-.f input:focus,.f textarea:focus{outline:0;border-color:var(--gold);background:#fff}
+.f input:focus,.f textarea:focus,.f select:focus{outline:0;border-color:var(--gold);background:#fff}
 .f textarea{resize:vertical;min-height:70px}
 .f.check{flex-direction:row;align-items:center;gap:9px}
 .f.check label{text-transform:none;letter-spacing:0;font-size:13.5px;color:var(--ink);font-weight:400}
@@ -128,6 +128,14 @@ a{color:var(--purple)}
 .pill.exp{border-color:var(--warn);color:var(--warn)}
 .empty{padding:30px;text-align:center;color:var(--muted);border:1px dashed var(--line);background:#fff}
 .locked{padding:36px;text-align:center;color:var(--muted);border:1px dashed var(--line);background:#fff}
+
+.imgwrap{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.imgwrap img{width:84px;height:84px;object-fit:cover;border:1px solid var(--line);background:var(--cream)}
+.imgwrap .ph{width:84px;height:84px;border:1px dashed var(--line);display:flex;align-items:center;
+  justify-content:center;color:var(--muted);font-size:10.5px;text-align:center;background:var(--cream);
+  flex-shrink:0;line-height:1.3;padding:4px}
+.imgwrap .upctl{display:flex;flex-direction:column;gap:5px}
+.imgwrap input[type=file]{font-size:12px;border:0;background:none;padding:0;width:auto}
 
 #toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,90px);
   background:var(--purple-deep);color:var(--cream);padding:13px 24px;border:1px solid var(--gold);
@@ -241,22 +249,23 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 const ROLE_LABEL = { admin:'Administrator', marketing:'Marketing', teacher:'Teacher' };
 
 const SECTIONS = [
-  { id:'banner',       key:'banner',       label:'Announcement Banner', ready:true  },
-  { id:'hero',         key:'hero',         label:'Homepage Hero',       ready:false },
-  { id:'programmes',   key:'programmes',   label:'Programmes',          ready:false },
-  { id:'classes',      key:'classes',      label:'Class Schedule',      ready:false },
-  { id:'fees',         key:'fees',         label:'Fees & Policies',     ready:false },
-  { id:'gallery',      key:'gallery',      label:'Gallery',             ready:false },
-  { id:'teachers',     key:'teachers',     label:'Teachers',            ready:false },
-  { id:'testimonials', key:'testimonials', label:'Testimonials',        ready:false },
-  { id:'settings',     key:'settings',     label:'Studio Details',      ready:false },
-  { id:'people',       key:'people',       label:'People & Access',     ready:false }
+  { id:'banner',       key:'banner',       label:'Announcement Banner', ready:true },
+  { id:'hero',         key:'hero',         label:'Homepage Hero',       ready:true },
+  { id:'programmes',   key:'programmes',   label:'Programmes',          ready:true },
+  { id:'classes',      key:'classes',      label:'Class Schedule',      ready:true },
+  { id:'fees',         key:'fees',         label:'Fees & Policies',     ready:true },
+  { id:'gallery',      key:'gallery',      label:'Gallery',             ready:true },
+  { id:'teachers',     key:'teachers',     label:'Teachers',            ready:true },
+  { id:'testimonials', key:'testimonials', label:'Testimonials',        ready:true },
+  { id:'settings',     key:'settings',     label:'Studio Details',      ready:true },
+  { id:'people',       key:'people',       label:'People & Access',     ready:true }
 ];
 
 let me = null;      // profiles row
 let perms = {};     // { section: {read, write} }
 let current = 'banner';
 let banners = [];
+let programmesCache = [];
 
 /* ---------- helpers ---------- */
 const $ = id => document.getElementById(id);
@@ -426,9 +435,67 @@ async function render(){
 }
 window.goTo = async id => { current = id; await render(); window.scrollTo(0,0) };
 
-/* ---------- announcement banner ---------- */
+/* ---------- shared field / image helpers ---------- */
 const views = {};
 
+function collect(id){
+  const out = {};
+  document.querySelectorAll(`[data-f^="${id}."]`).forEach(el => {
+    const k = el.dataset.f.split('.')[1];
+    let v;
+    if (el.type === 'checkbox') v = el.checked;
+    else if (el.type === 'number') v = el.value === '' ? null : Number(el.value);
+    else v = el.value === '' ? null : el.value;
+    out[k] = v;
+  });
+  return out;
+}
+
+async function uploadImage(file, folder){
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g,'') || 'jpg';
+  const path = `${folder}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await sb.storage.from('media').upload(path, file, { upsert:false, cacheControl:'3600' });
+  if (error) throw error;
+  const { data } = sb.storage.from('media').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+window.onImagePick = async (inputEl, table, rowId, field, folder) => {
+  const file = inputEl.files[0];
+  if (!file) return;
+  busy(true,'Uploading…');
+  try {
+    const url = await uploadImage(file, folder);
+    const { error } = await sb.from(table).update({ [field]: url }).eq('id', rowId);
+    if (error) throw error;
+    busy(false);
+    toast('Photo uploaded');
+    await render();
+  } catch (e) {
+    busy(false);
+    toast('Upload failed: ' + (e.message || e));
+  }
+};
+
+function imgWidget(table, rowId, field, url, folder, w){
+  const prev = url ? `<img src="${esc(url)}">` : `<span class="ph">No photo yet</span>`;
+  return `<div class="imgwrap">${prev}
+    ${w?`<div class="upctl"><input type="file" accept="image/*"
+        onchange="onImagePick(this,'${table}','${rowId}','${field}','${folder}')">
+        <span class="help">JPG or PNG, a few MB max.</span></div>`:''}
+  </div>`;
+}
+
+async function loadProgrammes(){
+  const { data } = await sb.from('programmes').select('id,name').order('sort_order');
+  programmesCache = data || [];
+}
+function progOptions(selectedId){
+  return `<option value="">— none —</option>` + programmesCache.map(p =>
+    `<option value="${p.id}" ${p.id===selectedId?'selected':''}>${esc(p.name)}</option>`).join('');
+}
+
+/* ---------- announcement banner ---------- */
 views.banner = async function(){
   busy(true,'Loading…');
   const { data, error } = await sb.from('banner_messages').select('*').order('sort_order');
@@ -484,15 +551,6 @@ views.banner = async function(){
   $('view').innerHTML = h;
 };
 
-function collect(id){
-  const out = {};
-  document.querySelectorAll(`[data-f^="${id}."]`).forEach(el => {
-    const k = el.dataset.f.split('.')[1];
-    out[k] = el.type === 'checkbox' ? el.checked : (el.value === '' ? null : el.value);
-  });
-  return out;
-}
-
 window.saveBanner = async id => {
   busy(true);
   const { error } = await sb.from('banner_messages').update(collect(id)).eq('id', id);
@@ -516,6 +574,545 @@ window.addBanner = async () => {
   busy(false);
   if (error) { toast('Could not add: ' + error.message); return; }
   toast('Added — it stays hidden until you tick Active'); await render();
+};
+
+/* ---------- homepage hero ---------- */
+views.hero = async function(){
+  busy(true,'Loading…');
+  const [{ data:h, error:e1 }, { data:photos, error:e2 }] = await Promise.all([
+    sb.from('hero').select('*').eq('id',1).maybeSingle(),
+    sb.from('hero_photos').select('*').order('sort_order')
+  ]);
+  busy(false);
+  if (e1 || e2) { $('view').innerHTML = `<div class="msg err">${esc((e1||e2).message)}</div>`; return; }
+  const w = canWrite('hero');
+
+  let html = `<div class="hint"><b>The big headline block at the top of the homepage.</b>
+    "Emphasis" is the part of the headline shown in the accent style.</div>`;
+
+  html += `<div class="card"><div class="card-h"><span class="grip">Headline</span>
+    ${w?`<button class="btn sm" onclick="saveHero()">Save</button>`:''}</div>
+    <div class="card-b">
+      <div class="row">
+        <div class="f"><label>Eyebrow</label><input data-f="hero.eyebrow" value="${esc(h?.eyebrow)}" ${w?'':'disabled'}></div>
+        <div class="f"><label>Note</label><input data-f="hero.note" value="${esc(h?.note)}" ${w?'':'disabled'}></div>
+      </div>
+      <div class="row">
+        <div class="f"><label>Headline</label><input data-f="hero.headline" value="${esc(h?.headline)}" ${w?'':'disabled'}></div>
+        <div class="f"><label>Emphasis (accent part)</label><input data-f="hero.emphasis" value="${esc(h?.emphasis)}" ${w?'':'disabled'}></div>
+      </div>
+      <div class="row"><div class="f" style="grid-column:1/-1"><label>Lede</label>
+        <textarea data-f="hero.lede" ${w?'':'disabled'}>${esc(h?.lede)}</textarea></div></div>
+      <div class="row">
+        <div class="f"><label>Primary button text</label><input data-f="hero.cta_primary" value="${esc(h?.cta_primary)}" ${w?'':'disabled'}></div>
+        <div class="f"><label>Secondary button text</label><input data-f="hero.cta_secondary" value="${esc(h?.cta_secondary)}" ${w?'':'disabled'}></div>
+      </div>
+    </div></div>`;
+
+  html += `<div class="card"><div class="card-h"><span class="grip">Hero photos / slides</span></div>
+    <div class="card-b">`;
+  if (!photos.length) html += `<div class="empty">No photos yet — add one below.</div>`;
+  photos.forEach(p => {
+    html += `<div style="padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid var(--line)">
+      ${imgWidget('hero_photos', p.id, 'image_path', p.image_path, 'hero', w)}
+      <div class="row">
+        <div class="f"><label>Alt text</label><input data-f="${p.id}.alt_text" value="${esc(p.alt_text)}" ${w?'':'disabled'}></div>
+        <div class="f"><label>Order</label><input type="number" data-f="${p.id}.sort_order" value="${p.sort_order}" ${w?'':'disabled'}></div>
+      </div>
+      ${w?`<button class="btn sm" onclick="saveHeroPhoto('${p.id}')">Save</button>
+           <button class="btn sm" onclick="delHeroPhoto('${p.id}')">Remove</button>`:''}
+    </div>`;
+  });
+  if (w) html += `<button class="btn sm" onclick="addHeroPhoto()">+ Add photo slot</button>`;
+  html += `</div></div>`;
+
+  $('view').innerHTML = html;
+};
+
+window.saveHero = async () => {
+  busy(true);
+  const { error } = await sb.from('hero').update(collect('hero')).eq('id',1);
+  busy(false);
+  if (error) { toast('Could not save: ' + error.message); return; }
+  toast('Saved'); await render();
+};
+window.saveHeroPhoto = async id => {
+  busy(true);
+  const { error } = await sb.from('hero_photos').update(collect(id)).eq('id', id);
+  busy(false);
+  if (error) { toast('Could not save: ' + error.message); return; }
+  toast('Saved'); await render();
+};
+window.delHeroPhoto = async id => {
+  if (!confirm('Remove this hero photo?')) return;
+  busy(true);
+  const { error } = await sb.from('hero_photos').delete().eq('id', id);
+  busy(false);
+  if (error) { toast('Could not remove: ' + error.message); return; }
+  toast('Removed'); await render();
+};
+window.addHeroPhoto = async () => {
+  busy(true);
+  const { error } = await sb.from('hero_photos').insert({ image_path:'', alt_text:'New photo', sort_order:0 });
+  busy(false);
+  if (error) { toast('Could not add: ' + error.message); return; }
+  toast('Added — upload a photo below'); await render();
+};
+
+/* ---------- programmes ---------- */
+views.programmes = async function(){
+  busy(true,'Loading…');
+  const { data, error } = await sb.from('programmes').select('*').order('sort_order');
+  busy(false);
+  if (error) { $('view').innerHTML = `<div class="msg err">${esc(error.message)}</div>`; return; }
+  programmesCache = data || [];
+  const w = canWrite('programmes');
+  let html = `<div class="hint"><b>The programme cards on the homepage and schedule.</b>
+    Untick "Visible" to hide a programme without deleting its data.</div>`;
+  if (!data.length) html += `<div class="empty">No programmes yet.</div>`;
+  data.forEach(p => {
+    html += `<div class="card"><div class="card-h"><span class="grip">${esc(p.name)||'New programme'}</span>
+      <span class="pill ${p.visible?'live':'off'}">${p.visible?'Visible':'Hidden'}</span>
+      ${w?`<button class="btn sm" onclick="saveProgramme('${p.id}')">Save</button>
+           <button class="btn sm" onclick="delProgramme('${p.id}')">Delete</button>`:''}</div>
+      <div class="card-b">
+        <div class="row">
+          <div class="f"><label>Name</label><input data-f="${p.id}.name" value="${esc(p.name)}" ${w?'':'disabled'}></div>
+          <div class="f"><label>Slug</label><input data-f="${p.id}.slug" value="${esc(p.slug)}" ${w?'':'disabled'}></div>
+          <div class="f"><label>Age range</label><input data-f="${p.id}.age_range" value="${esc(p.age_range)}" ${w?'':'disabled'}></div>
+        </div>
+        <div class="row"><div class="f" style="grid-column:1/-1"><label>Blurb</label>
+          <textarea data-f="${p.id}.blurb" ${w?'':'disabled'}>${esc(p.blurb)}</textarea></div></div>
+        <div class="row">
+          <div class="f"><label>Term length</label><input data-f="${p.id}.term_length" value="${esc(p.term_length)}" ${w?'':'disabled'}></div>
+          <div class="f"><label>Fee (MYR)</label><input type="number" step="0.01" data-f="${p.id}.fee_myr" value="${p.fee_myr??''}" ${w?'':'disabled'}></div>
+          <div class="f"><label>Order</label><input type="number" data-f="${p.id}.sort_order" value="${p.sort_order}" ${w?'':'disabled'}></div>
+          <div class="f check"><input type="checkbox" data-f="${p.id}.visible" ${p.visible?'checked':''} ${w?'':'disabled'}><label>Visible</label></div>
+        </div>
+      </div></div>`;
+  });
+  if (w) html += `<button class="btn sm" onclick="addProgramme()">+ Add programme</button>`;
+  $('view').innerHTML = html;
+};
+window.saveProgramme = async id => {
+  busy(true);
+  const { error } = await sb.from('programmes').update(collect(id)).eq('id', id);
+  busy(false);
+  if (error) { toast('Could not save: ' + error.message); return; }
+  toast('Saved'); await render();
+};
+window.delProgramme = async id => {
+  if (!confirm('Delete this programme? This cannot be undone.')) return;
+  busy(true);
+  const { error } = await sb.from('programmes').delete().eq('id', id);
+  busy(false);
+  if (error) { toast('Could not delete: ' + error.message); return; }
+  toast('Deleted'); await render();
+};
+window.addProgramme = async () => {
+  busy(true);
+  const { error } = await sb.from('programmes')
+    .insert({ slug:'new-'+Date.now(), name:'New programme', visible:false, sort_order:99 });
+  busy(false);
+  if (error) { toast('Could not add: ' + error.message); return; }
+  toast('Added — it stays hidden until you tick Visible'); await render();
+};
+
+/* ---------- class schedule ---------- */
+views.classes = async function(){
+  busy(true,'Loading…');
+  await loadProgrammes();
+  const { data, error } = await sb.from('classes').select('*').order('day_of_week').order('start_time');
+  busy(false);
+  if (error) { $('view').innerHTML = `<div class="msg err">${esc(error.message)}</div>`; return; }
+  const w = canWrite('classes');
+  const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  let html = `<div class="hint"><b>The weekly class timetable.</b> Link each slot to a programme so it can show on the right page.</div>`;
+  if (!data.length) html += `<div class="empty">No classes scheduled yet.</div>`;
+  data.forEach(c => {
+    html += `<div class="card"><div class="card-h"><span class="grip">${esc(c.day_of_week)} · ${esc(c.start_time)}</span>
+      ${w?`<button class="btn sm" onclick="saveClass('${c.id}')">Save</button>
+           <button class="btn sm" onclick="delClass('${c.id}')">Delete</button>`:''}</div>
+      <div class="card-b">
+        <div class="row">
+          <div class="f"><label>Day</label>
+            <select data-f="${c.id}.day_of_week" ${w?'':'disabled'}>
+              ${days.map(d=>`<option ${d===c.day_of_week?'selected':''}>${d}</option>`).join('')}
+            </select></div>
+          <div class="f"><label>Start time</label><input data-f="${c.id}.start_time" value="${esc(c.start_time)}" placeholder="4:00 PM" ${w?'':'disabled'}></div>
+          <div class="f"><label>End time</label><input data-f="${c.id}.end_time" value="${esc(c.end_time)}" placeholder="5:00 PM" ${w?'':'disabled'}></div>
+        </div>
+        <div class="row">
+          <div class="f"><label>Programme</label>
+            <select data-f="${c.id}.programme_id" ${w?'':'disabled'}>${progOptions(c.programme_id)}</select></div>
+          <div class="f"><label>Age range</label><input data-f="${c.id}.age_range" value="${esc(c.age_range)}" ${w?'':'disabled'}></div>
+          <div class="f"><label>Teacher</label><input data-f="${c.id}.teacher_name" value="${esc(c.teacher_name)}" ${w?'':'disabled'}></div>
+          <div class="f"><label>Spaces left</label><input type="number" data-f="${c.id}.spaces_left" value="${c.spaces_left}" ${w?'':'disabled'}></div>
+        </div>
+      </div></div>`;
+  });
+  if (w) html += `<button class="btn sm" onclick="addClass()">+ Add class</button>`;
+  $('view').innerHTML = html;
+};
+window.saveClass = async id => {
+  busy(true);
+  const { error } = await sb.from('classes').update(collect(id)).eq('id', id);
+  busy(false);
+  if (error) { toast('Could not save: ' + error.message); return; }
+  toast('Saved'); await render();
+};
+window.delClass = async id => {
+  if (!confirm('Delete this class slot?')) return;
+  busy(true);
+  const { error } = await sb.from('classes').delete().eq('id', id);
+  busy(false);
+  if (error) { toast('Could not delete: ' + error.message); return; }
+  toast('Deleted'); await render();
+};
+window.addClass = async () => {
+  busy(true);
+  const { error } = await sb.from('classes')
+    .insert({ day_of_week:'Monday', start_time:'4:00 PM', spaces_left:0 });
+  busy(false);
+  if (error) { toast('Could not add: ' + error.message); return; }
+  toast('Added'); await render();
+};
+
+/* ---------- fees & policies ---------- */
+views.fees = async function(){
+  busy(true,'Loading…');
+  const { data:f, error } = await sb.from('fees').select('*').eq('id',1).maybeSingle();
+  busy(false);
+  if (error) { $('view').innerHTML = `<div class="msg err">${esc(error.message)}</div>`; return; }
+  const w = canWrite('fees');
+  let html = `<div class="hint"><b>Fees & policies shown on the schedule/fees page.</b></div>`;
+  html += `<div class="card"><div class="card-h"><span class="grip">Fees & Policies</span>
+    ${w?`<button class="btn sm" onclick="saveFees()">Save</button>`:''}</div>
+    <div class="card-b">
+      <div class="row">
+        <div class="f"><label>Registration fee (MYR)</label><input type="number" step="0.01" data-f="fees.registration_myr" value="${f?.registration_myr??''}" ${w?'':'disabled'}></div>
+        <div class="f"><label>Sibling discount</label><input data-f="fees.sibling_discount" value="${esc(f?.sibling_discount)}" ${w?'':'disabled'}></div>
+      </div>
+      <div class="row"><div class="f" style="grid-column:1/-1"><label>Materials note</label>
+        <textarea data-f="fees.materials_note" ${w?'':'disabled'}>${esc(f?.materials_note)}</textarea></div></div>
+      <div class="row"><div class="f" style="grid-column:1/-1"><label>Make-up class policy</label>
+        <textarea data-f="fees.makeup_policy" ${w?'':'disabled'}>${esc(f?.makeup_policy)}</textarea></div></div>
+      <div class="row"><div class="f" style="grid-column:1/-1"><label>Refund policy</label>
+        <textarea data-f="fees.refund_policy" ${w?'':'disabled'}>${esc(f?.refund_policy)}</textarea></div></div>
+    </div></div>`;
+  $('view').innerHTML = html;
+};
+window.saveFees = async () => {
+  busy(true);
+  const { error } = await sb.from('fees').update(collect('fees')).eq('id',1);
+  busy(false);
+  if (error) { toast('Could not save: ' + error.message); return; }
+  toast('Saved'); await render();
+};
+
+/* ---------- gallery ---------- */
+views.gallery = async function(){
+  busy(true,'Loading…');
+  await loadProgrammes();
+  const { data, error } = await sb.from('gallery_items').select('*').order('sort_order');
+  busy(false);
+  if (error) { $('view').innerHTML = `<div class="msg err">${esc(error.message)}</div>`; return; }
+  const w = canWrite('gallery');
+  let html = `<div class="hint"><b>Photos in the homepage gallery.</b>
+    Only tick "Consent on file" once you have a signed photo consent for the people in the image —
+    that's what keeps a photo eligible to show publicly.</div>`;
+  if (!data.length) html += `<div class="empty">No gallery photos yet.</div>`;
+  data.forEach(g => {
+    html += `<div class="card"><div class="card-h"><span class="grip">${esc(g.caption)||'Untitled'}</span>
+      <span class="pill ${g.consent_on_file?'live':'off'}">${g.consent_on_file?'Consent on file':'No consent yet'}</span>
+      ${w?`<button class="btn sm" onclick="saveGallery('${g.id}')">Save</button>
+           <button class="btn sm" onclick="delGallery('${g.id}')">Delete</button>`:''}</div>
+      <div class="card-b">
+        ${imgWidget('gallery_items', g.id, 'image_path', g.image_path, 'gallery', w)}
+        <div class="row"><div class="f" style="grid-column:1/-1"><label>Caption</label>
+          <input data-f="${g.id}.caption" value="${esc(g.caption)}" ${w?'':'disabled'}></div></div>
+        <div class="row">
+          <div class="f"><label>Programme</label>
+            <select data-f="${g.id}.programme_id" ${w?'':'disabled'}>${progOptions(g.programme_id)}</select></div>
+          <div class="f"><label>Order</label><input type="number" data-f="${g.id}.sort_order" value="${g.sort_order}" ${w?'':'disabled'}></div>
+          <div class="f check"><input type="checkbox" data-f="${g.id}.consent_on_file" ${g.consent_on_file?'checked':''} ${w?'':'disabled'}><label>Consent on file</label></div>
+        </div>
+        <div class="row"><div class="f" style="grid-column:1/-1"><label>Consent note</label>
+          <input data-f="${g.id}.consent_note" value="${esc(g.consent_note)}" placeholder="e.g. release form filed 2026-05-01" ${w?'':'disabled'}></div></div>
+      </div></div>`;
+  });
+  if (w) html += `<button class="btn sm" onclick="addGallery()">+ Add photo slot</button>`;
+  $('view').innerHTML = html;
+};
+window.saveGallery = async id => {
+  busy(true);
+  const { error } = await sb.from('gallery_items').update(collect(id)).eq('id', id);
+  busy(false);
+  if (error) { toast('Could not save: ' + error.message); return; }
+  toast('Saved'); await render();
+};
+window.delGallery = async id => {
+  if (!confirm('Delete this photo?')) return;
+  busy(true);
+  const { error } = await sb.from('gallery_items').delete().eq('id', id);
+  busy(false);
+  if (error) { toast('Could not delete: ' + error.message); return; }
+  toast('Deleted'); await render();
+};
+window.addGallery = async () => {
+  busy(true);
+  const { error } = await sb.from('gallery_items')
+    .insert({ image_path:'', consent_on_file:false, sort_order:99 });
+  busy(false);
+  if (error) { toast('Could not add: ' + error.message); return; }
+  toast('Added — upload a photo below'); await render();
+};
+
+/* ---------- teachers ---------- */
+views.teachers = async function(){
+  busy(true,'Loading…');
+  const { data, error } = await sb.from('teachers').select('*').order('sort_order');
+  busy(false);
+  if (error) { $('view').innerHTML = `<div class="msg err">${esc(error.message)}</div>`; return; }
+  const w = canWrite('teachers');
+  let html = `<div class="hint"><b>Teacher profiles.</b> Untick "Visible" to hide someone from the public Teachers page without deleting their record.</div>`;
+  if (!data.length) html += `<div class="empty">No teachers yet.</div>`;
+  data.forEach(t => {
+    html += `<div class="card"><div class="card-h"><span class="grip">${esc(t.full_name)||'New teacher'}</span>
+      <span class="pill ${t.visible?'live':'off'}">${t.visible?'Visible':'Hidden'}</span>
+      ${w?`<button class="btn sm" onclick="saveTeacher('${t.id}')">Save</button>
+           <button class="btn sm" onclick="delTeacher('${t.id}')">Delete</button>`:''}</div>
+      <div class="card-b">
+        ${imgWidget('teachers', t.id, 'image_path', t.image_path, 'teachers', w)}
+        <div class="row">
+          <div class="f"><label>Full name</label><input data-f="${t.id}.full_name" value="${esc(t.full_name)}" ${w?'':'disabled'}></div>
+          <div class="f"><label>Role / title</label><input data-f="${t.id}.role_title" value="${esc(t.role_title)}" ${w?'':'disabled'}></div>
+        </div>
+        <div class="row"><div class="f" style="grid-column:1/-1"><label>Bio</label>
+          <textarea data-f="${t.id}.bio" ${w?'':'disabled'}>${esc(t.bio)}</textarea></div></div>
+        <div class="row">
+          <div class="f"><label>Credentials</label><input data-f="${t.id}.credentials" value="${esc(t.credentials)}" ${w?'':'disabled'}></div>
+          <div class="f"><label>Order</label><input type="number" data-f="${t.id}.sort_order" value="${t.sort_order}" ${w?'':'disabled'}></div>
+          <div class="f check"><input type="checkbox" data-f="${t.id}.visible" ${t.visible?'checked':''} ${w?'':'disabled'}><label>Visible</label></div>
+        </div>
+      </div></div>`;
+  });
+  if (w) html += `<button class="btn sm" onclick="addTeacher()">+ Add teacher</button>`;
+  $('view').innerHTML = html;
+};
+window.saveTeacher = async id => {
+  busy(true);
+  const { error } = await sb.from('teachers').update(collect(id)).eq('id', id);
+  busy(false);
+  if (error) { toast('Could not save: ' + error.message); return; }
+  toast('Saved'); await render();
+};
+window.delTeacher = async id => {
+  if (!confirm('Delete this teacher?')) return;
+  busy(true);
+  const { error } = await sb.from('teachers').delete().eq('id', id);
+  busy(false);
+  if (error) { toast('Could not delete: ' + error.message); return; }
+  toast('Deleted'); await render();
+};
+window.addTeacher = async () => {
+  busy(true);
+  const { error } = await sb.from('teachers').insert({ full_name:'New teacher', visible:false, sort_order:99 });
+  busy(false);
+  if (error) { toast('Could not add: ' + error.message); return; }
+  toast('Added — it stays hidden until you tick Visible'); await render();
+};
+
+/* ---------- testimonials ---------- */
+views.testimonials = async function(){
+  busy(true,'Loading…');
+  const { data, error } = await sb.from('testimonials').select('*').order('sort_order');
+  busy(false);
+  if (error) { $('view').innerHTML = `<div class="msg err">${esc(error.message)}</div>`; return; }
+  const w = canWrite('testimonials');
+  let html = `<div class="hint"><b>Parent quotes shown on the homepage.</b></div>`;
+  if (!data.length) html += `<div class="empty">No testimonials yet.</div>`;
+  data.forEach(t => {
+    html += `<div class="card"><div class="card-h"><span class="grip">${esc(t.author_name)||'New testimonial'}</span>
+      <span class="pill ${t.visible?'live':'off'}">${t.visible?'Visible':'Hidden'}</span>
+      ${w?`<button class="btn sm" onclick="saveTestimonial('${t.id}')">Save</button>
+           <button class="btn sm" onclick="delTestimonial('${t.id}')">Delete</button>`:''}</div>
+      <div class="card-b">
+        <div class="row"><div class="f" style="grid-column:1/-1"><label>Quote</label>
+          <textarea data-f="${t.id}.quote" ${w?'':'disabled'}>${esc(t.quote)}</textarea></div></div>
+        <div class="row">
+          <div class="f"><label>Author name</label><input data-f="${t.id}.author_name" value="${esc(t.author_name)}" ${w?'':'disabled'}></div>
+          <div class="f"><label>Author note</label><input data-f="${t.id}.author_note" value="${esc(t.author_note)}" placeholder="Parent of a 7-year-old" ${w?'':'disabled'}></div>
+          <div class="f"><label>Order</label><input type="number" data-f="${t.id}.sort_order" value="${t.sort_order}" ${w?'':'disabled'}></div>
+          <div class="f check"><input type="checkbox" data-f="${t.id}.visible" ${t.visible?'checked':''} ${w?'':'disabled'}><label>Visible</label></div>
+        </div>
+      </div></div>`;
+  });
+  if (w) html += `<button class="btn sm" onclick="addTestimonial()">+ Add testimonial</button>`;
+  $('view').innerHTML = html;
+};
+window.saveTestimonial = async id => {
+  busy(true);
+  const { error } = await sb.from('testimonials').update(collect(id)).eq('id', id);
+  busy(false);
+  if (error) { toast('Could not save: ' + error.message); return; }
+  toast('Saved'); await render();
+};
+window.delTestimonial = async id => {
+  if (!confirm('Delete this testimonial?')) return;
+  busy(true);
+  const { error } = await sb.from('testimonials').delete().eq('id', id);
+  busy(false);
+  if (error) { toast('Could not delete: ' + error.message); return; }
+  toast('Deleted'); await render();
+};
+window.addTestimonial = async () => {
+  busy(true);
+  const { error } = await sb.from('testimonials').insert({ quote:'New quote', visible:false, sort_order:99 });
+  busy(false);
+  if (error) { toast('Could not add: ' + error.message); return; }
+  toast('Added — it stays hidden until you tick Visible'); await render();
+};
+
+/* ---------- studio details ---------- */
+views.settings = async function(){
+  busy(true,'Loading…');
+  const { data:s, error } = await sb.from('site_settings').select('*').eq('id',1).maybeSingle();
+  busy(false);
+  if (error) { $('view').innerHTML = `<div class="msg err">${esc(error.message)}</div>`; return; }
+  const w = canWrite('settings');
+  let html = `<div class="hint"><b>Studio contact details shown across the site.</b></div>`;
+  html += `<div class="card"><div class="card-h"><span class="grip">Studio Details</span>
+    ${w?`<button class="btn sm" onclick="saveSettings()">Save</button>`:''}</div>
+    <div class="card-b">
+      <div class="row"><div class="f" style="grid-column:1/-1"><label>Address</label>
+        <input data-f="settings.address" value="${esc(s?.address)}" ${w?'':'disabled'}></div></div>
+      <div class="row">
+        <div class="f"><label>Google Maps URL</label><input data-f="settings.maps_url" value="${esc(s?.maps_url)}" ${w?'':'disabled'}></div>
+        <div class="f"><label>Opening hours</label><input data-f="settings.opening_hours" value="${esc(s?.opening_hours)}" ${w?'':'disabled'}></div>
+      </div>
+      <div class="row">
+        <div class="f"><label>Phone</label><input data-f="settings.phone" value="${esc(s?.phone)}" ${w?'':'disabled'}></div>
+        <div class="f"><label>WhatsApp</label><input data-f="settings.whatsapp" value="${esc(s?.whatsapp)}" ${w?'':'disabled'}></div>
+        <div class="f"><label>Email</label><input data-f="settings.email" value="${esc(s?.email)}" ${w?'':'disabled'}></div>
+      </div>
+      <div class="row">
+        <div class="f"><label>Instagram URL</label><input data-f="settings.instagram" value="${esc(s?.instagram)}" ${w?'':'disabled'}></div>
+        <div class="f"><label>Facebook URL</label><input data-f="settings.facebook" value="${esc(s?.facebook)}" ${w?'':'disabled'}></div>
+        <div class="f"><label>TikTok URL</label><input data-f="settings.tiktok" value="${esc(s?.tiktok)}" ${w?'':'disabled'}></div>
+      </div>
+      <div class="row">
+        <div class="f"><label>Stat: student:teacher ratio</label><input data-f="settings.stat_ratio" value="${esc(s?.stat_ratio)}" ${w?'':'disabled'}></div>
+        <div class="f"><label>Stat: students</label><input data-f="settings.stat_students" value="${esc(s?.stat_students)}" ${w?'':'disabled'}></div>
+      </div>
+    </div></div>`;
+  $('view').innerHTML = html;
+};
+window.saveSettings = async () => {
+  busy(true);
+  const { error } = await sb.from('site_settings').update(collect('settings')).eq('id',1);
+  busy(false);
+  if (error) { toast('Could not save: ' + error.message); return; }
+  toast('Saved'); await render();
+};
+
+/* ---------- people & access ---------- */
+views.people = async function(){
+  busy(true,'Loading…');
+  const [{ data:profs, error:e1 }, { data:invited, error:e2 }] = await Promise.all([
+    sb.from('profiles').select('*').order('full_name'),
+    sb.from('invited_people').select('*').order('invited_at', { ascending:false })
+  ]);
+  busy(false);
+  if (e1 || e2) { $('view').innerHTML = `<div class="msg err">${esc((e1||e2).message)}</div>`; return; }
+  const w = canWrite('people');
+  const roles = ['admin','marketing','teacher'];
+
+  let html = `<div class="hint"><b>Who can sign in, and what they can do.</b>
+    To grant someone access for the first time, add them below under "Invited emails" —
+    when they sign in with that address they're activated automatically with the role you set.
+    Accounts that have already signed in appear under "Team accounts" and can be deactivated
+    or have their role changed there.</div>`;
+
+  html += `<div class="card"><div class="card-h"><span class="grip">Team accounts</span></div><div class="card-b">`;
+  if (!profs.length) html += `<div class="empty">No one has signed in yet.</div>`;
+  profs.forEach(p => {
+    html += `<div style="padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid var(--line)">
+      <div class="row">
+        <div class="f"><label>Name</label><input value="${esc(p.full_name)}${p.id===me.id?' (you)':''}" disabled></div>
+        <div class="f"><label>Email</label><input value="${esc(p.email)}" disabled></div>
+        <div class="f"><label>Role</label>
+          <select data-f="${p.id}.role" ${w?'':'disabled'}>
+            ${roles.map(r=>`<option value="${r}" ${r===p.role?'selected':''}>${esc(ROLE_LABEL[r])}</option>`).join('')}
+          </select></div>
+        <div class="f check"><input type="checkbox" data-f="${p.id}.active" ${p.active?'checked':''} ${w?'':'disabled'}><label>Active</label></div>
+      </div>
+      ${w?`<button class="btn sm" onclick="saveProfile('${p.id}')">Save</button>`:''}
+    </div>`;
+  });
+  html += `</div></div>`;
+
+  html += `<div class="card"><div class="card-h"><span class="grip">Invited emails (pre-approved)</span></div><div class="card-b">`;
+  if (!invited.length) html += `<div class="empty">No pending invitations.</div>`;
+  invited.forEach(inv => {
+    const key = btoa(unescape(encodeURIComponent(inv.email))).replace(/[^a-zA-Z0-9]/g,'');
+    html += `<div id="invrow-${key}" style="padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid var(--line)">
+      <div class="row">
+        <div class="f"><label>Email</label><input value="${esc(inv.email)}" disabled></div>
+        <div class="f"><label>Full name</label><input data-field="full_name" value="${esc(inv.full_name)}" ${w?'':'disabled'}></div>
+        <div class="f"><label>Role</label>
+          <select data-field="role" ${w?'':'disabled'}>
+            ${roles.map(r=>`<option value="${r}" ${r===inv.role?'selected':''}>${esc(ROLE_LABEL[r])}</option>`).join('')}
+          </select></div>
+      </div>
+      ${w?`<button class="btn sm" onclick="saveInvite('${esc(inv.email)}','${key}')">Save</button>
+           <button class="btn sm" onclick="delInvite('${esc(inv.email)}')">Remove</button>`:''}
+    </div>`;
+  });
+  if (w) html += `<div class="row">
+      <div class="f"><label>Email</label><input id="newInvEmail" placeholder="name@example.com"></div>
+      <div class="f"><label>Full name</label><input id="newInvName" placeholder="Full name"></div>
+      <div class="f"><label>Role</label><select id="newInvRole">${roles.map(r=>`<option value="${r}">${esc(ROLE_LABEL[r])}</option>`).join('')}</select></div>
+    </div><button class="btn sm" onclick="addInvite()">+ Add invitation</button>`;
+  html += `</div></div>`;
+
+  $('view').innerHTML = html;
+};
+window.saveProfile = async id => {
+  busy(true);
+  const { error } = await sb.from('profiles').update(collect(id)).eq('id', id);
+  busy(false);
+  if (error) { toast('Could not save: ' + error.message); return; }
+  toast('Saved'); await render();
+};
+window.saveInvite = async (email, key) => {
+  const row = document.getElementById('invrow-'+key);
+  const full_name = row.querySelector('[data-field=full_name]').value;
+  const role = row.querySelector('[data-field=role]').value;
+  busy(true);
+  const { error } = await sb.from('invited_people').update({ full_name, role }).eq('email', email);
+  busy(false);
+  if (error) { toast('Could not save: ' + error.message); return; }
+  toast('Saved'); await render();
+};
+window.delInvite = async email => {
+  if (!confirm('Remove this invitation? This does not revoke access already granted.')) return;
+  busy(true);
+  const { error } = await sb.from('invited_people').delete().eq('email', email);
+  busy(false);
+  if (error) { toast('Could not remove: ' + error.message); return; }
+  toast('Removed'); await render();
+};
+window.addInvite = async () => {
+  const email = $('newInvEmail').value.trim().toLowerCase();
+  const full_name = $('newInvName').value.trim();
+  const role = $('newInvRole').value;
+  if (!email || !email.includes('@') || !full_name) { toast('Enter an email and full name.'); return; }
+  busy(true);
+  const { error } = await sb.from('invited_people').insert({ email, full_name, role });
+  busy(false);
+  if (error) { toast('Could not add: ' + error.message); return; }
+  toast('Invited — they get access automatically when they sign in with that email'); await render();
 };
 
 /* ---------- start ---------- */
