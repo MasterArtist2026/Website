@@ -157,10 +157,11 @@ header{
   display:flex;align-items:center;justify-content:center;text-align:center;padding:32px;
 }
 .hslide.is-on{opacity:1}
+.hslide img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .hslide:nth-child(1){background:linear-gradient(160deg,rgba(198,183,226,.13),rgba(230,180,76,.07))}
 .hslide:nth-child(2){background:linear-gradient(160deg,rgba(230,180,76,.13),rgba(198,183,226,.06))}
 .hslide:nth-child(3){background:linear-gradient(200deg,rgba(198,183,226,.09),rgba(230,180,76,.11))}
-.hslide span{color:rgba(198,183,226,.75);font-size:12px;letter-spacing:.14em;text-transform:uppercase;line-height:2.1}
+.hslide span{position:relative;z-index:1;color:rgba(198,183,226,.75);font-size:12px;letter-spacing:.14em;text-transform:uppercase;line-height:2.1}
 .hdots{position:absolute;right:26px;bottom:26px;z-index:4;display:flex;flex-direction:column;gap:9px}
 .hdot{
   width:6px;height:6px;border-radius:50%;background:rgba(246,241,232,.3);
@@ -232,13 +233,47 @@ section{padding:112px 0}
 }
 .chip:hover{background:var(--purple);color:var(--gold)}
 
+/* ---------- schedule ---------- */
+.sched-day{margin-bottom:34px}
+.sched-day h3{font-size:19px;color:var(--purple);font-weight:500;margin-bottom:14px;letter-spacing:.02em}
+.sched-row{
+  display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+  padding:16px 0;border-bottom:1px solid rgba(59,28,90,.12);font-size:15px;
+}
+.sched-row .time{font-family:'Fraunces';color:var(--gold-deep);min-width:130px;font-size:16px}
+.sched-row .what{color:var(--purple);font-weight:500;min-width:160px}
+.sched-row .who{color:var(--muted);font-size:13.5px}
+.sched-row .left{margin-left:auto;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-deep)}
+.sched-empty{color:var(--muted);font-size:15px;font-weight:300;text-align:center;padding:20px 0}
+.fees-box{
+  margin-top:56px;border-top:1px solid rgba(59,28,90,.14);padding-top:44px;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:32px;
+}
+.fees-box .fitem dt{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:8px}
+.fees-box .fitem dd{color:var(--muted);font-size:14.5px;font-weight:300;line-height:1.7}
+
+/* ---------- teachers ---------- */
+.teachers-sec{background:var(--lavender-pale)}
+.teach-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:2px;background:rgba(59,28,90,.12)}
+.teach{background:var(--cream);padding:34px 30px;text-align:center}
+.teach .photo{
+  width:88px;height:88px;border-radius:50%;margin:0 auto 18px;object-fit:cover;
+  background:var(--lavender-pale);display:flex;align-items:center;justify-content:center;
+  color:var(--muted);font-family:'Fraunces';font-size:26px;
+}
+.teach h3{font-size:19px;color:var(--purple);font-weight:500;margin-bottom:4px}
+.teach .role{display:block;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:12px}
+.teach p{color:var(--muted);font-size:14px;font-weight:300;line-height:1.65}
+
 /* ---------- gallery ---------- */
 .gal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:2px;background:rgba(59,28,90,.12)}
 .gal{
   aspect-ratio:1;background:var(--cream-deep);
   display:flex;align-items:center;justify-content:center;color:var(--muted);
   font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;text-align:center;padding:16px;
+  position:relative;overflow:hidden;
 }
+.gal img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .gal:nth-child(even){background:var(--lavender-pale)}
 
 /* ---------- testimonials ---------- */
@@ -336,27 +371,16 @@ footer a:hover{color:var(--gold)}
 <div class="draft-flag">Preview site · content not final · hidden from Google</div>
 
 <!-- ============ REVOLVING ANNOUNCEMENT BAR ============
-     Each .ann-item below becomes one editable entry in your CMS:
-     tag / message / link / start date / end date.
-     Add, remove or reorder them without touching this file.
+     Populated at runtime from the banner_live view (Supabase). If there are
+     no active messages, the whole bar is hidden.
 =========================================================== -->
 <div class="announce" id="announce">
   <div class="wrap announce-inner">
-    <div class="ann-track" aria-live="polite">
+    <div class="ann-track" id="annTrack" aria-live="polite">
       <a class="ann-item is-on" href="#">
         <span class="tag">Now Open</span>
         <span>Term 3 enrolment closes 29 August — limited places in Art &amp; Music</span>
         <span class="go">Enrol</span>
-      </a>
-      <a class="ann-item" href="#">
-        <span class="tag">Holiday Camp</span>
-        <span>November Creative Camp · 24–28 Nov · Ages 7–12</span>
-        <span class="go">See dates</span>
-      </a>
-      <a class="ann-item" href="#">
-        <span class="tag">This Saturday</span>
-        <span>Free open studio, 10am–12pm. Bring the children, no booking needed</span>
-        <span class="go">Details</span>
       </a>
     </div>
     <div class="ann-dots" id="annDots"></div>
@@ -375,7 +399,7 @@ footer a:hover{color:var(--gold)}
     </a>
     <nav class="navlinks">
       <a href="#programmes">Programmes</a>
-      <a href="#">Schedule</a>
+      <a href="#schedule">Schedule</a>
       <a href="#">About</a>
       <a href="#gallery">Gallery</a>
       <a href="#visit">Visit</a>
@@ -388,14 +412,14 @@ footer a:hover{color:var(--gold)}
 <div class="hero">
   <div class="wrap">
     <div>
-      <span class="eyebrow">Kuala Lumpur · Ages 4 to Adult</span>
-      <h1>Where children discover <em>what they're great at</em></h1>
-      <p class="lede">Music, art, graphic design, videography and baking — taught in small classes by working creatives. One studio, five ways for your child to find their thing.</p>
+      <span class="eyebrow" id="heroEyebrow">Kuala Lumpur · Ages 4 to Adult</span>
+      <h1 id="heroHeadline">Where children discover <em>what they're great at</em></h1>
+      <p class="lede" id="heroLede">Music, art, graphic design, videography and baking — taught in small classes by working creatives. One studio, five ways for your child to find their thing.</p>
       <div class="hero-cta">
-        <a href="#trial" class="btn btn-gold">Book a Free Trial</a>
-        <a href="#" class="btn btn-ghost-light">Message us</a>
+        <a href="#trial" class="btn btn-gold" id="heroCtaPrimary">Book a Free Trial</a>
+        <a href="#" class="btn btn-ghost-light" id="heroCtaSecondary">Message us</a>
       </div>
-      <p class="hero-note">No commitment. Come once, decide after.</p>
+      <p class="hero-note" id="heroNote">No commitment. Come once, decide after.</p>
     </div>
     <!-- Hero imagery crossfades; the headline and call to action stay put -->
     <div class="hero-visual" id="heroSlides">
@@ -410,8 +434,8 @@ footer a:hover{color:var(--gold)}
 <div class="trust">
   <div class="wrap">
     <div><b>5</b><small>Disciplines</small></div>
-    <div><b>TBC</b><small>Teacher to student</small></div>
-    <div><b>TBC</b><small>Students taught</small></div>
+    <div><b id="statRatio">TBC</b><small>Teacher to student</small></div>
+    <div><b id="statStudents">TBC</b><small>Students taught</small></div>
     <div><b>4+</b><small>Ages welcome</small></div>
   </div>
 </div>
@@ -424,8 +448,8 @@ footer a:hover{color:var(--gold)}
       <h2>Five ways to become a <em>Master Artist</em></h2>
       <p>Every programme runs in short terms — so a child can try one, switch, or take two.</p>
     </div>
-    <div class="prog-grid">
-      <a class="prog" href="#">
+    <div class="prog-grid" id="progGrid">
+      <a class="prog" href="#schedule">
         <span class="num">01</span>
         <div class="prog-icon">
           <svg viewBox="0 0 24 24"><circle cx="6.5" cy="18" r="3"/><circle cx="17" cy="15.5" r="3"/><path d="M9.5 18V6l10.5-3v12.5"/><path d="M9.5 9L20 6"/></svg>
@@ -435,7 +459,7 @@ footer a:hover{color:var(--gold)}
         <p>Instrument, voice and theory. From first notes to performing on stage with real confidence.</p>
         <span class="more">Explore</span>
       </a>
-      <a class="prog" href="#">
+      <a class="prog" href="#schedule">
         <span class="num">02</span>
         <div class="prog-icon">
           <svg viewBox="0 0 24 24"><path d="M3.5 20.5c-.5-2.5.5-4.5 2.5-4.5s3 1.3 3 3-1.8 2.9-5.5 1.5z"/><path d="M9 17L20.2 5.8a2.6 2.6 0 0 0-3.7-3.7L5.3 13.3"/><path d="M15.5 4.5l4 4"/></svg>
@@ -445,7 +469,7 @@ footer a:hover{color:var(--gold)}
         <p>Drawing, painting, sculpture, mixed media. Technique first — imagination always.</p>
         <span class="more">Explore</span>
       </a>
-      <a class="prog" href="#">
+      <a class="prog" href="#schedule">
         <span class="num">03</span>
         <div class="prog-icon">
           <svg viewBox="0 0 24 24"><path d="M12 2.2l7.6 7.4L12 21.8 4.4 9.6z"/><circle cx="12" cy="9.6" r="2.3"/><path d="M12 11.9v9.9"/></svg>
@@ -455,7 +479,7 @@ footer a:hover{color:var(--gold)}
         <p>Real design software, real briefs. The creative skill that quietly turns into a career.</p>
         <span class="more">Explore</span>
       </a>
-      <a class="prog" href="#">
+      <a class="prog" href="#schedule">
         <span class="num">04</span>
         <div class="prog-icon">
           <svg viewBox="0 0 24 24"><rect x="1.8" y="6.5" width="13.5" height="11" rx="1.6"/><path d="M15.3 10.6l6.9-3.3v9.4l-6.9-3.3z"/><path d="M5 6.5l2 -3.5M10 6.5l2 -3.5"/></svg>
@@ -465,7 +489,7 @@ footer a:hover{color:var(--gold)}
         <p>Shoot, edit, tell a story. Every term ends with a film the class has made together.</p>
         <span class="more">Explore</span>
       </a>
-      <a class="prog" href="#">
+      <a class="prog" href="#schedule">
         <span class="num">05</span>
         <div class="prog-icon">
           <svg viewBox="0 0 24 24"><path d="M4.6 11.5h14.8l-1.9 9.4a1 1 0 0 1-1 .8H7.5a1 1 0 0 1-1-.8z"/><path d="M4.6 11.5a3.6 3.6 0 0 1 2.2-3.3 3.9 3.9 0 0 1 7.4-1.6 3.3 3.3 0 0 1 5.2 4.9"/><path d="M10.4 15.2l-.8 5M13.6 15.2l.8 5"/></svg>
@@ -496,6 +520,19 @@ footer a:hover{color:var(--gold)}
   </div>
 </section>
 
+<section id="schedule">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Weekly Timetable</span>
+      <hr class="hair">
+      <h2>Find your <em>class time</em></h2>
+      <p>Every slot below is a real class you can drop into for a free trial.</p>
+    </div>
+    <div id="schedList"><p class="sched-empty">Full timetable coming soon — message us for current class times.</p></div>
+    <div id="feesBox" class="fees-box" style="display:none"></div>
+  </div>
+</section>
+
 <section id="gallery">
   <div class="wrap">
     <div class="sec-head">
@@ -504,7 +541,7 @@ footer a:hover{color:var(--gold)}
       <h2>Made here, <em>this term</em></h2>
       <p>Paintings, short films, posters, cakes and recitals — the work speaks for the teaching.</p>
     </div>
-    <div class="gal-grid">
+    <div class="gal-grid" id="galGrid">
       <div class="gal">Student artwork</div>
       <div class="gal">Film still</div>
       <div class="gal">Poster design</div>
@@ -512,7 +549,19 @@ footer a:hover{color:var(--gold)}
       <div class="gal">Recital</div>
       <div class="gal">Sculpture</div>
     </div>
-    <p style="text-align:center;margin-top:52px"><a href="#" class="btn btn-ghost-dark">View the full gallery</a></p>
+    <p style="text-align:center;margin-top:52px"><a href="#gallery" class="btn btn-ghost-dark">View the full gallery</a></p>
+  </div>
+</section>
+
+<section class="teachers-sec" id="teachers" style="display:none">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Meet the Studio</span>
+      <hr class="hair">
+      <h2>Taught by <em>working creatives</em></h2>
+      <p>Every class is led by someone who still practises the craft they teach.</p>
+    </div>
+    <div class="teach-grid" id="teachGrid"></div>
   </div>
 </section>
 
@@ -524,7 +573,7 @@ footer a:hover{color:var(--gold)}
       <h2>What families <em>tell us</em></h2>
       <p>Three real quotes, with permission, before launch.</p>
     </div>
-    <div class="q-grid">
+    <div class="q-grid" id="qGrid">
       <div class="q">
         <span class="mark">&ldquo;</span>
         <p>Your first parent testimonial will appear here.</p>
@@ -563,12 +612,12 @@ footer a:hover{color:var(--gold)}
       <h2>Come and see <em>the studio</em></h2>
       <p>Parents are welcome to look around before enrolling. Drop in during opening hours, or message us and we'll show you through.</p>
       <dl>
-        <dt>Address</dt><dd>Your studio address, Kuala Lumpur</dd>
-        <dt>Opening hours</dt><dd>Tue–Fri 2pm–8pm · Sat–Sun 9am–6pm · Closed Mondays</dd>
-        <dt>WhatsApp</dt><dd>+60 1X-XXX XXXX</dd>
-        <dt>Email</dt><dd>hello@masterartist.co</dd>
+        <dt>Address</dt><dd id="visitAddress">Your studio address, Kuala Lumpur</dd>
+        <dt>Opening hours</dt><dd id="visitHours">Tue–Fri 2pm–8pm · Sat–Sun 9am–6pm · Closed Mondays</dd>
+        <dt>WhatsApp</dt><dd id="visitWhatsapp">+60 1X-XXX XXXX</dd>
+        <dt>Email</dt><dd id="visitEmail">hello@masterartist.co</dd>
       </dl>
-      <a href="#" class="btn btn-ghost-dark">Get directions</a>
+      <a href="#" class="btn btn-ghost-dark" id="visitDirections">Get directions</a>
     </div>
     <div class="map">Google Map</div>
   </div>
@@ -590,15 +639,15 @@ footer a:hover{color:var(--gold)}
       </div>
       <div>
         <h4>Programmes</h4>
-        <ul><li><a href="#">Music</a></li><li><a href="#">Art</a></li><li><a href="#">Graphic Design</a></li><li><a href="#">Videography</a></li><li><a href="#">Baking</a></li></ul>
+        <ul><li><a href="#programmes">Music</a></li><li><a href="#programmes">Art</a></li><li><a href="#programmes">Graphic Design</a></li><li><a href="#programmes">Videography</a></li><li><a href="#programmes">Baking</a></li></ul>
       </div>
       <div>
         <h4>Attend</h4>
-        <ul><li><a href="#">Schedule &amp; Fees</a></li><li><a href="#">Book a Trial</a></li><li><a href="#">Holiday Camps</a></li><li><a href="#">Birthday Parties</a></li></ul>
+        <ul><li><a href="#schedule">Schedule &amp; Fees</a></li><li><a href="#trial">Book a Trial</a></li><li><a href="#">Holiday Camps</a></li><li><a href="#">Birthday Parties</a></li></ul>
       </div>
       <div>
         <h4>About</h4>
-        <ul><li><a href="#">Our Story</a></li><li><a href="#">Our Teachers</a></li><li><a href="#">FAQ</a></li><li><a href="#">Contact</a></li></ul>
+        <ul><li><a href="#">Our Story</a></li><li><a href="#teachers">Our Teachers</a></li><li><a href="#">FAQ</a></li><li><a href="#">Contact</a></li></ul>
       </div>
     </div>
     <div class="f-bot">
@@ -612,87 +661,249 @@ footer a:hover{color:var(--gold)}
   </div>
 </footer>
 
-<a href="#" class="fab" aria-label="WhatsApp us">
+<a href="#" class="fab" aria-label="WhatsApp us" id="fabWhatsapp">
   <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.25-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.06 2.88 1.21 3.08c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.22 1.36.19 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.7.25-1.29.17-1.41-.07-.13-.27-.2-.57-.35zM12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm0 18.15c-1.53 0-3.03-.41-4.34-1.19l-.31-.18-3.12.82.83-3.04-.2-.31a8.2 8.2 0 01-1.26-4.37c0-4.53 3.69-8.22 8.23-8.22 2.2 0 4.26.86 5.82 2.41a8.17 8.17 0 012.41 5.82c0 4.54-3.69 8.23-8.23 8.23z"/></svg>
 </a>
 
-<script>
-(function () {
-  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 
-  /* ---- generic rotator: items + dots + autoplay + pause on hover ----
-     slide === true gives a horizontal slide with direction awareness;
-     otherwise items simply crossfade.                                  */
-  function rotator(items, dotHost, dotClass, interval, hoverHost, slide) {
-    if (!items.length) return;
-    var i = 0, timer = null, dots = [];
+/* Same anon key pattern as admin.html — safe in the browser because every
+   table this reads from is either a public-safe view or already public. */
+const SUPABASE_URL  = 'https://fudaosneozobacdalncv.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1ZGFvc25lb3pvYmFjZGFsbmN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4OTIwNDUsImV4cCI6MjEwMjQ2ODA0NX0.0PKbkncE8goPg-iJlAUacNUa3MjWJSj1ZLeqTpkqPZ0';
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
-    if (dotHost && items.length > 1) {
-      items.forEach(function (_, n) {
-        var d = document.createElement('button');
-        d.className = dotClass + (n === 0 ? ' is-on' : '');
-        d.setAttribute('aria-label', 'Show item ' + (n + 1));
-        d.addEventListener('click', function () { go(n); restart(); });
-        dotHost.appendChild(d);
-        dots.push(d);
-      });
-    }
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    function go(n) {
-      n = (n + items.length) % items.length;
-      if (n === i) return;
-
-      // shortest path around the loop decides which way things travel
-      var fwd = ((n - i + items.length) % items.length) <= (items.length / 2);
-      var prev = items[i], next = items[n];
-
-      if (slide) {
-        prev.classList.remove('is-on');
-        prev.classList.toggle('back', !fwd);
-        prev.classList.add('is-out');
-
-        // park the incoming item off-screen on the correct side, then release it
-        next.classList.remove('is-out');
-        next.classList.toggle('back', !fwd);
-        void next.offsetWidth;                     // force the browser to apply that position
-        next.classList.add('is-on');
-      } else {
-        prev.classList.remove('is-on');
-        next.classList.add('is-on');
-      }
-
-      if (dots[i]) dots[i].classList.remove('is-on');
-      if (dots[n]) dots[n].classList.add('is-on');
-      i = n;
-    }
-    function start() { if (!reduce && items.length > 1) timer = setInterval(function () { go(i + 1); }, interval); }
-    function stop()  { clearInterval(timer); }
-    function restart() { stop(); start(); }
-
-    if (hoverHost) {
-      hoverHost.addEventListener('mouseenter', stop);
-      hoverHost.addEventListener('mouseleave', start);
-      hoverHost.addEventListener('focusin', stop);
-      hoverHost.addEventListener('focusout', start);
-    }
-    document.addEventListener('visibilitychange', function () {
-      document.hidden ? stop() : restart();
+/* ---- generic rotator: items + dots + autoplay + pause on hover ---- */
+function rotator(items, dotHost, dotClass, interval, hoverHost, slide) {
+  if (!items.length) return;
+  var i = 0, timer = null, dots = [];
+  if (dotHost && items.length > 1) {
+    items.forEach(function (_, n) {
+      var d = document.createElement('button');
+      d.className = dotClass + (n === 0 ? ' is-on' : '');
+      d.setAttribute('aria-label', 'Show item ' + (n + 1));
+      d.addEventListener('click', function () { go(n); restart(); });
+      dotHost.appendChild(d);
+      dots.push(d);
     });
-    start();
+  }
+  function go(n) {
+    n = (n + items.length) % items.length;
+    if (n === i) return;
+    var fwd = ((n - i + items.length) % items.length) <= (items.length / 2);
+    var prev = items[i], next = items[n];
+    if (slide) {
+      prev.classList.remove('is-on');
+      prev.classList.toggle('back', !fwd);
+      prev.classList.add('is-out');
+      next.classList.remove('is-out');
+      next.classList.toggle('back', !fwd);
+      void next.offsetWidth;
+      next.classList.add('is-on');
+    } else {
+      prev.classList.remove('is-on');
+      next.classList.add('is-on');
+    }
+    if (dots[i]) dots[i].classList.remove('is-on');
+    if (dots[n]) dots[n].classList.add('is-on');
+    i = n;
+  }
+  function start() { if (!reduce && items.length > 1) timer = setInterval(function () { go(i + 1); }, interval); }
+  function stop()  { clearInterval(timer); }
+  function restart() { stop(); start(); }
+  if (hoverHost) {
+    hoverHost.addEventListener('mouseenter', stop);
+    hoverHost.addEventListener('mouseleave', start);
+    hoverHost.addEventListener('focusin', stop);
+    hoverHost.addEventListener('focusout', start);
+  }
+  document.addEventListener('visibilitychange', function () { document.hidden ? stop() : restart(); });
+  start();
+}
+
+const PROG_ICONS = {
+  music: '<svg viewBox="0 0 24 24"><circle cx="6.5" cy="18" r="3"/><circle cx="17" cy="15.5" r="3"/><path d="M9.5 18V6l10.5-3v12.5"/><path d="M9.5 9L20 6"/></svg>',
+  art: '<svg viewBox="0 0 24 24"><path d="M3.5 20.5c-.5-2.5.5-4.5 2.5-4.5s3 1.3 3 3-1.8 2.9-5.5 1.5z"/><path d="M9 17L20.2 5.8a2.6 2.6 0 0 0-3.7-3.7L5.3 13.3"/><path d="M15.5 4.5l4 4"/></svg>',
+  'graphic-design': '<svg viewBox="0 0 24 24"><path d="M12 2.2l7.6 7.4L12 21.8 4.4 9.6z"/><circle cx="12" cy="9.6" r="2.3"/><path d="M12 11.9v9.9"/></svg>',
+  videography: '<svg viewBox="0 0 24 24"><rect x="1.8" y="6.5" width="13.5" height="11" rx="1.6"/><path d="M15.3 10.6l6.9-3.3v9.4l-6.9-3.3z"/><path d="M5 6.5l2 -3.5M10 6.5l2 -3.5"/></svg>',
+  baking: '<svg viewBox="0 0 24 24"><path d="M4.6 11.5h14.8l-1.9 9.4a1 1 0 0 1-1 .8H7.5a1 1 0 0 1-1-.8z"/><path d="M4.6 11.5a3.6 3.6 0 0 1 2.2-3.3 3.9 3.9 0 0 1 7.4-1.6 3.3 3.3 0 0 1 5.2 4.9"/><path d="M10.4 15.2l-.8 5M13.6 15.2l.8 5"/></svg>',
+  _default: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>'
+};
+
+async function boot() {
+  const [banner, hero, heroPhotos, programmes, gallery, testimonials, settings, teachers, classes, fees] =
+    await Promise.all([
+      sb.from('banner_live').select('*'),
+      sb.from('hero_public').select('*').maybeSingle(),
+      sb.from('hero_photos_public').select('*'),
+      sb.from('programmes_public').select('*'),
+      sb.from('gallery_publishable').select('*'),
+      sb.from('testimonials_public').select('*'),
+      sb.from('site_settings_public').select('*').maybeSingle(),
+      sb.from('teachers_public').select('*'),
+      sb.from('classes_public').select('*'),
+      sb.from('fees_public').select('*').maybeSingle()
+    ]);
+
+  renderBanner(banner.data || []);
+  renderHero(hero.data, heroPhotos.data || []);
+  renderTrust(settings.data);
+  renderProgrammes(programmes.data || []);
+  renderGallery(gallery.data || []);
+  renderTeachers(teachers.data || []);
+  renderTestimonials(testimonials.data || []);
+  renderVisit(settings.data);
+  renderSchedule(classes.data || [], fees.data);
+
+  // Hero photo crossfade still runs even when the slides are the static
+  // placeholders, so parents always see *something* moving.
+  var hero_el = $('heroSlides');
+  rotator(Array.prototype.slice.call(document.querySelectorAll('.hslide')),
+    $('heroDots'), 'hdot', 6000, hero_el, false);
+}
+
+function renderBanner(rows) {
+  const wrap = document.getElementById('announce');
+  if (!rows.length) { wrap.style.display = 'none'; return; }
+  const track = $('annTrack');
+  track.innerHTML = rows.map((b, n) => `
+    <a class="ann-item${n===0?' is-on':''}" href="${esc(b.link || '#')}">
+      ${b.tag ? `<span class="tag">${esc(b.tag)}</span>` : ''}
+      <span>${esc(b.message)}</span>
+      <span class="go">${b.link ? 'View' : ''}</span>
+    </a>`).join('');
+  rotator(Array.prototype.slice.call(track.querySelectorAll('.ann-item')),
+    $('annDots'), 'ann-dot', 5200, wrap, true);
+}
+
+function renderHero(h, photos) {
+  if (!h) return;
+  if (h.eyebrow) $('heroEyebrow').textContent = h.eyebrow;
+  if (h.headline) {
+    $('heroHeadline').innerHTML = esc(h.headline) + (h.emphasis ? ' <em>' + esc(h.emphasis) + '</em>' : '');
+  }
+  if (h.lede) $('heroLede').textContent = h.lede;
+  if (h.cta_primary) $('heroCtaPrimary').textContent = h.cta_primary;
+  if (h.cta_secondary) $('heroCtaSecondary').textContent = h.cta_secondary;
+  if (h.note) $('heroNote').textContent = h.note;
+
+  if (photos.length) {
+    const host = $('heroSlides');
+    const dots = $('heroDots');
+    host.querySelectorAll('.hslide').forEach(el => el.remove());
+    photos.forEach((p, n) => {
+      const div = document.createElement('div');
+      div.className = 'hslide' + (n === 0 ? ' is-on' : '');
+      div.innerHTML = `<img src="${esc(p.image_path)}" alt="${esc(p.alt_text)}">`;
+      host.insertBefore(div, dots);
+    });
+  }
+}
+
+function renderTrust(s) {
+  if (!s) return;
+  if (s.stat_ratio) $('statRatio').textContent = s.stat_ratio;
+  if (s.stat_students) $('statStudents').textContent = s.stat_students;
+}
+
+function renderProgrammes(rows) {
+  if (!rows.length) return; // keep the static five as a safe fallback
+  const grid = $('progGrid');
+  grid.innerHTML = rows.map((p, n) => `
+    <a class="prog" href="#schedule">
+      <span class="num">${String(n+1).padStart(2,'0')}</span>
+      <div class="prog-icon">${PROG_ICONS[p.slug] || PROG_ICONS._default}</div>
+      <h3>${esc(p.name)}</h3>
+      <span class="ages">${esc(p.age_range || '')}</span>
+      <p>${esc(p.blurb || '')}</p>
+      <span class="more">Explore</span>
+    </a>`).join('');
+}
+
+function renderGallery(rows) {
+  if (!rows.length) return; // keep the six placeholder tiles
+  const grid = $('galGrid');
+  grid.innerHTML = rows.map(g => `
+    <div class="gal">
+      ${g.image_path ? `<img src="${esc(g.image_path)}" alt="${esc(g.caption||'')}">` : esc(g.caption || 'Student work')}
+    </div>`).join('');
+}
+
+function renderTeachers(rows) {
+  if (!rows.length) return; // section stays hidden until real teachers are added
+  $('teachers').style.display = '';
+  $('teachGrid').innerHTML = rows.map(t => `
+    <div class="teach">
+      ${t.image_path
+        ? `<img class="photo" src="${esc(t.image_path)}" alt="${esc(t.full_name)}">`
+        : `<div class="photo">${esc((t.full_name||'?').split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase())}</div>`}
+      <h3>${esc(t.full_name)}</h3>
+      ${t.role_title ? `<span class="role">${esc(t.role_title)}</span>` : ''}
+      <p>${esc(t.bio || '')}</p>
+    </div>`).join('');
+}
+
+function renderTestimonials(rows) {
+  if (!rows.length) return; // keep the three "awaiting real quote" placeholders
+  const grid = $('qGrid');
+  grid.innerHTML = rows.map(t => `
+    <div class="q">
+      <span class="mark">&ldquo;</span>
+      <p>${esc(t.quote)}</p>
+      <cite>${esc(t.author_name || '')}${t.author_note ? ' · ' + esc(t.author_note) : ''}</cite>
+    </div>`).join('');
+}
+
+function renderVisit(s) {
+  if (!s) return;
+  if (s.address) $('visitAddress').textContent = s.address;
+  if (s.opening_hours) $('visitHours').textContent = s.opening_hours;
+  if (s.whatsapp) $('visitWhatsapp').textContent = s.whatsapp;
+  if (s.email) $('visitEmail').textContent = s.email;
+  if (s.maps_url) $('visitDirections').href = s.maps_url;
+  if (s.whatsapp) {
+    const digits = s.whatsapp.replace(/[^0-9]/g, '');
+    if (digits) $('fabWhatsapp').href = 'https://wa.me/' + digits;
+  }
+}
+
+function renderSchedule(rows, fees) {
+  if (rows.length) {
+    const byDay = {};
+    const order = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    rows.forEach(c => { (byDay[c.day_of_week] = byDay[c.day_of_week] || []).push(c); });
+    $('schedList').innerHTML = order.filter(d => byDay[d]).map(day => `
+      <div class="sched-day">
+        <h3>${esc(day)}</h3>
+        ${byDay[day].map(c => `
+          <div class="sched-row">
+            <span class="time">${esc(c.start_time)}${c.end_time ? '–' + esc(c.end_time) : ''}</span>
+            <span class="what">${esc(c.programme_name || '')}</span>
+            <span class="who">${esc(c.age_range || '')}${c.teacher_name ? ' · ' + esc(c.teacher_name) : ''}</span>
+            ${c.spaces_left != null ? `<span class="left">${c.spaces_left > 0 ? c.spaces_left + ' spaces left' : 'Full'}</span>` : ''}
+          </div>`).join('')}
+      </div>`).join('');
   }
 
-  var announce = document.getElementById('announce');
-  rotator(
-    Array.prototype.slice.call(document.querySelectorAll('.ann-item')),
-    document.getElementById('annDots'), 'ann-dot', 5200, announce, true   // slides horizontally
-  );
+  if (fees && (fees.registration_myr != null || fees.materials_note || fees.sibling_discount || fees.makeup_policy || fees.refund_policy)) {
+    const box = $('feesBox');
+    box.style.display = '';
+    const items = [];
+    if (fees.registration_myr != null) items.push(['Registration fee', 'RM ' + fees.registration_myr]);
+    if (fees.sibling_discount) items.push(['Sibling discount', fees.sibling_discount]);
+    if (fees.materials_note) items.push(['Materials', fees.materials_note]);
+    if (fees.makeup_policy) items.push(['Make-up classes', fees.makeup_policy]);
+    if (fees.refund_policy) items.push(['Refunds', fees.refund_policy]);
+    box.innerHTML = items.map(([k,v]) => `<dl class="fitem"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></dl>`).join('');
+  }
+}
 
-  var hero = document.getElementById('heroSlides');
-  rotator(
-    Array.prototype.slice.call(document.querySelectorAll('.hslide')),
-    document.getElementById('heroDots'), 'hdot', 6000, hero, false        // photos crossfade
-  );
-})();
+boot();
 </script>
 
 </body>
