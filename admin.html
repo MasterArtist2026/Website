@@ -993,6 +993,11 @@ views.settings = async function(){
         <div class="f"><label>Opening hours</label><input data-f="settings.opening_hours" value="${esc(s?.opening_hours)}" ${w?'':'disabled'}></div>
       </div>
       <div class="row">
+        <div class="f"><label>Map latitude</label><input type="number" step="any" data-f="settings.map_lat" value="${s?.map_lat ?? ''}" placeholder="e.g. 3.1624067" ${w?'':'disabled'}></div>
+        <div class="f"><label>Map longitude</label><input type="number" step="any" data-f="settings.map_lng" value="${s?.map_lng ?? ''}" placeholder="e.g. 101.6486298" ${w?'':'disabled'}></div>
+      </div>
+      <div class="hint" style="margin:0 0 4px">Drop a pin on <a href="https://www.google.com/maps" target="_blank" rel="noopener">Google Maps</a>, right-click it, and copy the two numbers it shows (lat, lng) into the fields above — that's what draws the live map on the Visit section.</div>
+      <div class="row">
         <div class="f"><label>Phone</label><input data-f="settings.phone" value="${esc(s?.phone)}" ${w?'':'disabled'}></div>
         <div class="f"><label>WhatsApp</label><input data-f="settings.whatsapp" value="${esc(s?.whatsapp)}" ${w?'':'disabled'}></div>
         <div class="f"><label>Email</label><input data-f="settings.email" value="${esc(s?.email)}" ${w?'':'disabled'}></div>
