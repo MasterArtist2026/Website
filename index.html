@@ -275,6 +275,16 @@ section{padding:112px 0}
 }
 .gal img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .gal:nth-child(even){background:var(--lavender-pale)}
+.gal-brand{
+  aspect-ratio:auto;background:var(--purple-deep);
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  padding:20px;
+}
+.gal-brand svg{width:clamp(28px,4vw,56px);height:auto;flex-shrink:0}
+.gal-brand span{
+  font-family:'Fraunces';font-weight:500;color:var(--cream);
+  font-size:clamp(16px,2.2vw,30px);letter-spacing:.005em;white-space:nowrap;
+}
 
 /* ---------- testimonials ---------- */
 .quotes{background:var(--purple);color:var(--cream)}
@@ -826,13 +836,49 @@ function renderProgrammes(rows) {
 }
 
 function renderGallery(rows) {
-  if (!rows.length) return; // keep the six placeholder tiles
   const grid = $('galGrid');
-  grid.innerHTML = rows.map(g => `
-    <div class="gal">
-      ${g.image_path ? `<img src="${esc(g.image_path)}" alt="${esc(g.caption||'')}">` : esc(g.caption || 'Student work')}
-    </div>`).join('');
+  if (rows.length) {
+    grid.innerHTML = rows.map(g => `
+      <div class="gal">
+        ${g.image_path ? `<img src="${esc(g.image_path)}" alt="${esc(g.caption||'')}">` : esc(g.caption || 'Student work')}
+      </div>`).join('');
+  } // else: keep the six placeholder tiles already in the markup
+  placeBrandTile(grid, rows.length || grid.querySelectorAll('.gal:not(.gal-brand)').length);
 }
+
+// Fills whatever leftover space is left in the gallery grid's last row with the
+// Master Artist mark, so the section never ends on a dead empty strip. Recomputed
+// on resize since the grid's column count is responsive (auto-fit).
+function placeBrandTile(grid, photoCount) {
+  let tile = document.getElementById('galBrand');
+  if (!tile) {
+    tile = document.createElement('div');
+    tile.id = 'galBrand';
+    tile.className = 'gal gal-brand';
+    tile.innerHTML = `
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="50" cy="50" r="42" fill="#E6B44C"/>
+        <path d="M8 56 C14 56 18 50 24 50 C30 50 30 26 34 26 C38 26 38 60 42 60 C46 60 47 20 51 20 C55 20 55 62 59 62 C63 62 63 28 67 28 C71 28 72 52 78 52 C84 52 88 46 92 44"
+              fill="none" stroke="#3B1C5A" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>Master Artist</span>`;
+  }
+  grid.appendChild(tile); // always keep it last
+  const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length || 1;
+  const remainder = photoCount % cols;
+  const span = remainder === 0 ? cols : (cols - remainder);
+  tile.style.gridColumn = `span ${Math.max(1, Math.min(span, cols))}`;
+}
+
+let brandResizeT;
+window.addEventListener('resize', () => {
+  clearTimeout(brandResizeT);
+  brandResizeT = setTimeout(() => {
+    const grid = $('galGrid');
+    if (!grid || !document.getElementById('galBrand')) return;
+    placeBrandTile(grid, grid.querySelectorAll('.gal:not(.gal-brand)').length);
+  }, 150);
+});
 
 function renderTeachers(rows) {
   if (!rows.length) return; // section stays hidden until real teachers are added
