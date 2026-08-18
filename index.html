@@ -477,7 +477,7 @@ footer a:hover{color:var(--gold)}
         <h3>Graphic Design</h3>
         <span class="ages">Ages 9+</span>
         <p>Real design software, real briefs. The creative skill that quietly turns into a career.</p>
-        <span class="more">Explore</span>
+        <span class="more">Coming Soon</span>
       </a>
       <a class="prog" href="#schedule">
         <span class="num">04</span>
@@ -487,7 +487,7 @@ footer a:hover{color:var(--gold)}
         <h3>Videography</h3>
         <span class="ages">Ages 10+</span>
         <p>Shoot, edit, tell a story. Every term ends with a film the class has made together.</p>
-        <span class="more">Explore</span>
+        <span class="more">Coming Soon</span>
       </a>
       <a class="prog" href="#schedule">
         <span class="num">05</span>
@@ -821,7 +821,7 @@ function renderProgrammes(rows) {
       <h3>${esc(p.name)}</h3>
       <span class="ages">${esc(p.age_range || '')}</span>
       <p>${esc(p.blurb || '')}</p>
-      <span class="more">Explore</span>
+      <span class="more">${esc(p.cta_label || 'Explore')}</span>
     </a>`).join('');
 }
 

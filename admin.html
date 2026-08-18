@@ -689,6 +689,7 @@ views.programmes = async function(){
           <div class="f"><label>Order</label><input type="number" data-f="${p.id}.sort_order" value="${p.sort_order}" ${w?'':'disabled'}></div>
           <div class="f check"><input type="checkbox" data-f="${p.id}.visible" ${p.visible?'checked':''} ${w?'':'disabled'}><label>Visible</label></div>
         </div>
+        <div class="row"><div class="f"><label>Button label</label><input data-f="${p.id}.cta_label" value="${esc(p.cta_label)}" placeholder="Explore" ${w?'':'disabled'}></div></div>
       </div></div>`;
   });
   if (w) html += `<button class="btn sm" onclick="addProgramme()">+ Add programme</button>`;
