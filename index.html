@@ -444,6 +444,7 @@ footer a:hover{color:var(--gold)}
   </div>
 </div>
 
+<!-- Trust strip hidden per feedback (slide 1) — restore by uncommenting.
 <div class="trust">
   <div class="wrap">
     <div><b>5</b><small>Disciplines</small></div>
@@ -452,6 +453,8 @@ footer a:hover{color:var(--gold)}
     <div><b>4+</b><small>Ages welcome</small></div>
   </div>
 </div>
+-->
+
 
 <section id="programmes">
   <div class="wrap">
@@ -578,6 +581,7 @@ footer a:hover{color:var(--gold)}
   </div>
 </section>
 
+<!-- Testimonials section hidden per feedback (slide 7: "Remove this section first") — restore by uncommenting.
 <section class="quotes">
   <div class="wrap">
     <div class="sec-head">
@@ -605,6 +609,8 @@ footer a:hover{color:var(--gold)}
     </div>
   </div>
 </section>
+-->
+
 
 <section class="cta-band" id="trial">
   <div class="wrap">
@@ -612,8 +618,7 @@ footer a:hover{color:var(--gold)}
     <h2>Try one class. <em>Free.</em></h2>
     <p>Pick a programme, come in, and see how your child takes to it. No sign-up fee, no pressure to enrol.</p>
     <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
-      <a href="#" class="btn btn-purple">Book a Free Trial</a>
-      <a href="#" class="btn btn-ghost-dark">Message us</a>
+      <a href="#" class="btn btn-purple" id="ctaBandBookTrial">Book a Free Trial</a>
     </div>
   </div>
 </section>
@@ -820,8 +825,11 @@ function renderHero(h, photos) {
 
 function renderTrust(s) {
   if (!s) return;
-  if (s.stat_ratio) $('statRatio').textContent = s.stat_ratio;
-  if (s.stat_students) $('statStudents').textContent = s.stat_students;
+  // Trust strip is hidden (slide 1 feedback); guard in case it's restored later.
+  const ratioEl = document.getElementById('statRatio');
+  const studentsEl = document.getElementById('statStudents');
+  if (s.stat_ratio && ratioEl) ratioEl.textContent = s.stat_ratio;
+  if (s.stat_students && studentsEl) studentsEl.textContent = s.stat_students;
 }
 
 function renderProgrammes(rows) {
@@ -899,7 +907,9 @@ function renderTeachers(rows) {
 
 function renderTestimonials(rows) {
   if (!rows.length) return; // keep the three "awaiting real quote" placeholders
-  const grid = $('qGrid');
+  // Testimonials section is hidden (slide 7 feedback); guard in case it's restored later.
+  const grid = document.getElementById('qGrid');
+  if (!grid) return;
   grid.innerHTML = rows.map(t => `
     <div class="q">
       <span class="mark">&ldquo;</span>
@@ -921,7 +931,15 @@ function renderVisit(s) {
   }
   if (s.whatsapp) {
     const digits = s.whatsapp.replace(/[^0-9]/g, '');
-    if (digits) $('fabWhatsapp').href = 'https://wa.me/' + digits;
+    if (digits) {
+      const waLink = 'https://wa.me/' + digits;
+      $('fabWhatsapp').href = waLink;
+      // Hero "Message us" (slide 2) and CTA-band "Book a Free Trial" (slide 8) both link to WhatsApp.
+      const heroSecondary = document.getElementById('heroCtaSecondary');
+      if (heroSecondary) heroSecondary.href = waLink;
+      const ctaBandTrial = document.getElementById('ctaBandBookTrial');
+      if (ctaBandTrial) ctaBandTrial.href = waLink;
+    }
   }
 }
 
