@@ -3,9 +3,33 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex, nofollow">
+<link rel="canonical" href="https://masterartist.co/">
 <meta name="description" content="Master Artist — music, art, graphic design, videography and baking classes for children and adults in Kuala Lumpur.">
 <title>Master Artist — Music, Art, Design, Film &amp; Baking Classes</title>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "EducationalOrganization",
+  "name": "Master Artist",
+  "url": "https://masterartist.co/",
+  "image": "https://masterartist.co/favicon.png",
+  "telephone": "+60102779426",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "38-2, Jalan 28/70A, Desa Sri Hartamas",
+    "addressLocality": "Kuala Lumpur",
+    "postalCode": "50480",
+    "addressRegion": "Wilayah Persekutuan Kuala Lumpur",
+    "addressCountry": "MY"
+  },
+  "geo": { "@type": "GeoCoordinates", "latitude": 3.1624067, "longitude": 101.6486298 },
+  "sameAs": ["https://www.instagram.com/masterartist_co/"],
+  "openingHoursSpecification": [
+    { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Sunday","Monday","Tuesday","Wednesday","Thursday"], "opens": "10:30", "closes": "19:00" },
+    { "@type": "OpeningHoursSpecification", "dayOfWeek": "Friday", "opens": "10:00", "closes": "16:00" }
+  ]
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -129,7 +153,24 @@ header{
 }
 .navlinks a:hover{color:var(--gold);border-bottom-color:var(--gold)}
 .navlinks .btn{margin-left:6px;border-bottom:1px solid var(--gold)}
-.burger{display:none;margin-left:auto;background:none;border:0;color:var(--cream);font-size:24px;cursor:pointer}
+.burger-wrap{display:none;margin-left:auto;position:relative}
+.burger{background:none;border:0;color:var(--cream);font-size:24px;cursor:pointer;line-height:1;padding:4px}
+.nav-dropdown{
+  position:absolute;top:calc(100% + 12px);right:0;min-width:196px;
+  background:var(--purple-deep);border:1px solid rgba(230,180,76,.25);border-radius:8px;
+  padding:8px;box-shadow:0 16px 36px rgba(20,8,32,.4);
+  opacity:0;visibility:hidden;transform:translateY(-8px);
+  transition:opacity .2s ease,transform .2s ease,visibility .2s;
+  z-index:80;
+}
+.nav-dropdown.is-open{opacity:1;visibility:visible;transform:translateY(0)}
+.nav-dropdown a{
+  display:block;padding:13px 14px;font-size:12.5px;font-weight:400;
+  letter-spacing:.13em;text-transform:uppercase;color:rgba(246,241,232,.85);
+  border-radius:5px;transition:.15s;
+}
+.nav-dropdown a:hover,.nav-dropdown a:focus-visible{background:rgba(230,180,76,.14);color:var(--gold);outline:none}
+@media(prefers-reduced-motion:reduce){.nav-dropdown{transition:none}}
 
 /* ---------- hero ---------- */
 .hero{background:var(--purple);color:var(--cream);padding:110px 0 124px;position:relative;overflow:hidden}
@@ -245,12 +286,6 @@ section{padding:112px 0}
 .sched-row .who{color:var(--muted);font-size:13.5px}
 .sched-row .left{margin-left:auto;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-deep)}
 .sched-empty{color:var(--muted);font-size:15px;font-weight:300;text-align:center;padding:20px 0}
-.fees-box{
-  margin-top:56px;border-top:1px solid rgba(59,28,90,.14);padding-top:44px;
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:32px;
-}
-.fees-box .fitem dt{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:8px}
-.fees-box .fitem dd{color:var(--muted);font-size:14.5px;font-weight:300;line-height:1.7}
 
 /* ---------- teachers ---------- */
 .teachers-sec{background:var(--lavender-pale)}
@@ -329,6 +364,22 @@ section{padding:112px 0}
 .map::after{content:"";position:absolute;inset:14px;border:1px solid rgba(59,28,90,.12)}
 .map iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 
+/* ---------- faq ---------- */
+.faq-list{border-top:1px solid rgba(59,28,90,.14)}
+.faq-item{border-bottom:1px solid rgba(59,28,90,.14)}
+.faq-item summary{
+  cursor:pointer;list-style:none;padding:24px 2px;
+  font-family:'Fraunces';font-size:18px;font-weight:400;color:var(--purple);
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary::after{
+  content:'+';font-family:'Inter';font-size:21px;font-weight:400;
+  color:var(--gold-deep);flex-shrink:0;transition:.2s;
+}
+.faq-item[open] summary::after{content:'\2013'}
+.faq-item p{color:var(--muted);font-size:15px;font-weight:300;line-height:1.75;padding:0 2px 26px;max-width:56em}
+
 /* ---------- footer ---------- */
 footer{background:var(--purple-deep);color:rgba(198,183,226,.72);padding:82px 0 32px;font-size:14.5px;font-weight:300}
 .f-grid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:46px;margin-bottom:56px}
@@ -368,7 +419,7 @@ footer a:hover{color:var(--gold)}
 }
 @media(max-width:780px){
   .navlinks{display:none}
-  .burger{display:block}
+  .burger-wrap{display:block}
   .wrap{padding:0 22px}
   section{padding:72px 0}
   .hero{padding:66px 0 78px}
@@ -390,9 +441,9 @@ footer a:hover{color:var(--gold)}
 <div class="announce" id="announce">
   <div class="wrap announce-inner">
     <div class="ann-track" id="annTrack" aria-live="polite">
-      <a class="ann-item is-on" href="#">
+      <a class="ann-item is-on" href="#trial">
         <span class="tag">Now Open</span>
-        <span>Term 3 enrolment closes 29 August — limited places in Art &amp; Music</span>
+        <span>Term enrolment is open — limited places in Art &amp; Music</span>
         <span class="go">Enrol</span>
       </a>
     </div>
@@ -402,7 +453,7 @@ footer a:hover{color:var(--gold)}
 
 <header>
   <div class="wrap nav">
-    <a href="#" class="brand">
+    <a href="/" class="brand">
       <svg viewBox="0 0 100 100" aria-hidden="true">
         <circle cx="50" cy="50" r="42" fill="#E6B44C"/>
         <path d="M8 56 C14 56 18 50 24 50 C30 50 30 26 34 26 C38 26 38 60 42 60 C46 60 47 20 51 20 C55 20 55 62 59 62 C63 62 63 28 67 28 C71 28 72 52 78 52 C84 52 88 46 92 44"
@@ -413,12 +464,20 @@ footer a:hover{color:var(--gold)}
     <nav class="navlinks">
       <a href="#programmes">Programmes</a>
       <a href="#schedule">Schedule</a>
-      <a href="#">About</a>
       <a href="#gallery">Gallery</a>
       <a href="#visit">Visit</a>
       <a href="#trial" class="btn btn-gold">Book a Trial</a>
     </nav>
-    <button class="burger" aria-label="Menu">☰</button>
+    <div class="burger-wrap">
+      <button class="burger" id="burgerBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false">☰</button>
+      <nav class="nav-dropdown" id="navDropdown" aria-label="Mobile menu">
+        <a href="#faq">FAQ</a>
+        <a href="#about">About Us</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#schedule">Schedule</a>
+        <a href="#programmes">Classes</a>
+      </nav>
+    </div>
   </div>
 </header>
 
@@ -429,10 +488,10 @@ footer a:hover{color:var(--gold)}
       <h1 id="heroHeadline">Where children discover <em>what they're great at</em></h1>
       <p class="lede" id="heroLede">Music, art, graphic design, videography and baking — taught in small classes by working creatives. One studio, five ways for your child to find their thing.</p>
       <div class="hero-cta">
-        <a href="#trial" class="btn btn-gold" id="heroCtaPrimary">Book a Free Trial</a>
+        <a href="#trial" class="btn btn-gold" id="heroCtaPrimary">Book a Trial — RM50</a>
         <a href="#" class="btn btn-ghost-light" id="heroCtaSecondary">Message us</a>
       </div>
-      <p class="hero-note" id="heroNote">No commitment. Come once, decide after.</p>
+      <p class="hero-note" id="heroNote">RM50 trial, credited to your first month. No commitment beyond that — come once, decide after.</p>
     </div>
     <!-- Hero imagery crossfades; the headline and call to action stay put -->
     <div class="hero-visual" id="heroSlides">
@@ -455,6 +514,17 @@ footer a:hover{color:var(--gold)}
 </div>
 -->
 
+<section id="about">
+  <div class="wrap" style="max-width:760px">
+    <div class="sec-head" style="margin-bottom:44px">
+      <span class="eyebrow">Our Story</span>
+      <hr class="hair">
+      <h2>Why <em>Master Artist</em> exists</h2>
+    </div>
+    <p style="color:var(--muted);font-weight:300;font-size:17px;line-height:1.85;margin-bottom:22px">Master Artist was started by Sabrina Hew, an international recording artist who has recorded and performed on stage in the United States. These days her focus is different: helping children and adults find their own voice — musically, and through art. That's the idea the whole studio is built on.</p>
+    <p style="color:var(--muted);font-weight:300;font-size:17px;line-height:1.85">One studio, several ways in, taught by people who still practise the craft they teach — not just instructors, working artists. Every class is capped at six students, and programmes run in short terms, so your child can try one discipline, switch to another, or take two, without being locked into a long commitment.</p>
+  </div>
+</section>
 
 <section id="programmes">
   <div class="wrap">
@@ -462,7 +532,7 @@ footer a:hover{color:var(--gold)}
       <span class="eyebrow">The Programmes</span>
       <hr class="hair">
       <h2>Five ways to become a <em>Master Artist</em></h2>
-      <p>Every programme runs in short terms — so a child can try one, switch, or take two.</p>
+      <p>Every programme runs in short terms, capped at six students per class — so a child can try one, switch, or take two.</p>
     </div>
     <div class="prog-grid" id="progGrid">
       <a class="prog" href="#schedule">
@@ -488,26 +558,6 @@ footer a:hover{color:var(--gold)}
       <a class="prog" href="#schedule">
         <span class="num">03</span>
         <div class="prog-icon">
-          <svg viewBox="0 0 24 24"><path d="M12 2.2l7.6 7.4L12 21.8 4.4 9.6z"/><circle cx="12" cy="9.6" r="2.3"/><path d="M12 11.9v9.9"/></svg>
-        </div>
-        <h3>Graphic Design</h3>
-        <span class="ages">Ages 9+</span>
-        <p>Real design software, real briefs. The creative skill that quietly turns into a career.</p>
-        <span class="more">Coming Soon</span>
-      </a>
-      <a class="prog" href="#schedule">
-        <span class="num">04</span>
-        <div class="prog-icon">
-          <svg viewBox="0 0 24 24"><rect x="1.8" y="6.5" width="13.5" height="11" rx="1.6"/><path d="M15.3 10.6l6.9-3.3v9.4l-6.9-3.3z"/><path d="M5 6.5l2 -3.5M10 6.5l2 -3.5"/></svg>
-        </div>
-        <h3>Videography</h3>
-        <span class="ages">Ages 10+</span>
-        <p>Shoot, edit, tell a story. Every term ends with a film the class has made together.</p>
-        <span class="more">Coming Soon</span>
-      </a>
-      <a class="prog" href="#schedule">
-        <span class="num">05</span>
-        <div class="prog-icon">
           <svg viewBox="0 0 24 24"><path d="M4.6 11.5h14.8l-1.9 9.4a1 1 0 0 1-1 .8H7.5a1 1 0 0 1-1-.8z"/><path d="M4.6 11.5a3.6 3.6 0 0 1 2.2-3.3 3.9 3.9 0 0 1 7.4-1.6 3.3 3.3 0 0 1 5.2 4.9"/><path d="M10.4 15.2l-.8 5M13.6 15.2l.8 5"/></svg>
         </div>
         <h3>Baking</h3>
@@ -516,6 +566,9 @@ footer a:hover{color:var(--gold)}
         <span class="more">Explore</span>
       </a>
     </div>
+    <p id="progComingSoon" style="text-align:center;margin-top:40px;color:var(--muted);font-size:14.5px">
+      Also opening next term: <strong style="color:var(--purple);font-weight:500">Graphic Design</strong> (ages 9+) and <strong style="color:var(--purple);font-weight:500">Videography</strong> (ages 10+).
+    </p>
   </div>
 </section>
 
@@ -542,10 +595,9 @@ footer a:hover{color:var(--gold)}
       <span class="eyebrow">Weekly Timetable</span>
       <hr class="hair">
       <h2>Find your <em>class time</em></h2>
-      <p>Every slot below is a real class you can drop into for a free trial.</p>
+      <p>Class times change each term — message us on WhatsApp and we'll send you this term's timetable.</p>
     </div>
-    <div id="schedList"><p class="sched-empty">Full timetable coming soon — message us for current class times.</p></div>
-    <div id="feesBox" class="fees-box" style="display:none"></div>
+    <div id="schedList"><p class="sched-empty">Message us on WhatsApp for this term's current class times.</p></div>
   </div>
 </section>
 
@@ -566,6 +618,11 @@ footer a:hover{color:var(--gold)}
       <div class="gal">Sculpture</div>
     </div>
     <p style="text-align:center;margin-top:52px"><a href="#gallery" class="btn btn-ghost-dark">View the full gallery</a></p>
+    <div style="max-width:700px;margin:64px auto 0;text-align:center;border-top:1px solid rgba(59,28,90,.14);padding-top:44px">
+      <h3 style="font-family:'Fraunces';font-weight:400;font-size:21px;color:var(--purple);margin-bottom:14px">Your child's safety</h3>
+      <p style="color:var(--muted);font-size:15px;font-weight:300;line-height:1.75">Classes are capped at six students so no child is overlooked. All teaching staff are vetted before they work with children, and parents are welcome to stay and watch at any time.</p>
+      <p style="color:var(--muted);font-size:15px;font-weight:300;line-height:1.75;margin-top:14px"><strong style="color:var(--purple);font-weight:500">We never publish a photograph of a child without written permission from a parent.</strong> Consent is recorded, and you can withdraw it at any time by messaging us — the photo comes down.</p>
+    </div>
   </div>
 </section>
 
@@ -611,14 +668,57 @@ footer a:hover{color:var(--gold)}
 </section>
 -->
 
+<section id="faq" style="background:var(--lavender-pale)">
+  <div class="wrap" style="max-width:760px">
+    <div class="sec-head">
+      <span class="eyebrow">Good to Know</span>
+      <hr class="hair">
+      <h2>Frequently asked <em>questions</em></h2>
+    </div>
+    <div class="faq-list">
+      <details class="faq-item">
+        <summary>How much does a trial class cost?</summary>
+        <p>RM50. If you enrol afterward, that RM50 is credited in full to your first month.</p>
+      </details>
+      <details class="faq-item">
+        <summary>What ages do you teach?</summary>
+        <p>From age 4 through to adults. Each programme lists its own age range, and our age finder above can point you to the right starting point.</p>
+      </details>
+      <details class="faq-item">
+        <summary>How many students are in a class?</summary>
+        <p>Every class is capped at six students, so your child gets real, individual attention every session.</p>
+      </details>
+      <details class="faq-item">
+        <summary>What if my child wants to switch programmes?</summary>
+        <p>That's completely normal here. Programmes run in short terms on purpose, so a child can try one discipline, switch to another, or take two — no long contract to break.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Will you photograph my child?</summary>
+        <p>Only with written parental consent recorded for that specific child, and only ever used the way you agreed to. You can withdraw consent at any time by messaging us.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Can I stay and watch a class?</summary>
+        <p>Yes — parents are welcome to sit in on any class, any time. Nothing happens behind a closed door.</p>
+      </details>
+      <details class="faq-item">
+        <summary>What are your opening hours?</summary>
+        <p>Sunday to Thursday, 10:30am–7pm. Friday, 10am–4pm. Closed Saturdays.</p>
+      </details>
+      <details class="faq-item">
+        <summary>How do I book a trial?</summary>
+        <p>Message us on WhatsApp and we'll get you booked in for a time that works.</p>
+      </details>
+    </div>
+  </div>
+</section>
 
 <section class="cta-band" id="trial">
   <div class="wrap">
     <span class="eyebrow">No Obligation</span>
-    <h2>Try one class. <em>Free.</em></h2>
-    <p>Pick a programme, come in, and see how your child takes to it. No sign-up fee, no pressure to enrol.</p>
+    <h2>Try one class. <em>RM50.</em></h2>
+    <p>Pick a programme, come in, and see how your child takes to it. RM50 for the trial class, credited to your first month if you enrol. No pressure either way.</p>
     <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
-      <a href="#" class="btn btn-purple" id="ctaBandBookTrial">Book a Free Trial</a>
+      <a href="#" class="btn btn-purple" id="ctaBandBookTrial">Book a Trial</a>
     </div>
   </div>
 </section>
@@ -629,12 +729,14 @@ footer a:hover{color:var(--gold)}
       <span class="eyebrow">Visit</span>
       <h2>Come and see <em>the studio</em></h2>
       <p>Parents are welcome to look around before enrolling. Drop in during opening hours, or message us and we'll show you through.</p>
+      <p style="color:var(--muted);font-weight:300;font-size:15px;line-height:1.75;margin-top:-14px">A short drive from Mont Kiara: classes capped at six students, five disciplines under one roof — so siblings can be taught in the same hour — and a founder who still teaches every week.</p>
       <dl>
         <dt>Address</dt><dd id="visitAddress">Your studio address, Kuala Lumpur</dd>
         <dt>Opening hours</dt><dd id="visitHours">Tue–Fri 2pm–8pm · Sat–Sun 9am–6pm · Closed Mondays</dd>
         <dt>WhatsApp</dt><dd id="visitWhatsapp">+60 1X-XXX XXXX</dd>
         <dt>Email</dt><dd id="visitEmail">hello@masterartist.co</dd>
       </dl>
+      <p style="color:var(--muted);font-weight:300;font-size:14px;line-height:1.75;margin-top:-14px;margin-bottom:28px"><strong style="color:var(--purple);font-weight:500">Why we're closed on Saturdays</strong> — we keep Saturdays as a day of rest for our teaching team, so classes run Sunday through Friday instead.</p>
       <a href="#" class="btn btn-ghost-dark" id="visitDirections">Get directions</a>
     </div>
     <div class="map" id="visitMap">Google Map</div>
@@ -645,7 +747,7 @@ footer a:hover{color:var(--gold)}
   <div class="wrap">
     <div class="f-grid">
       <div>
-        <a href="#" class="brand" style="margin-bottom:22px">
+        <a href="/" class="brand" style="margin-bottom:22px">
           <svg viewBox="0 0 100 100" aria-hidden="true">
             <circle cx="50" cy="50" r="42" fill="#E6B44C"/>
             <path d="M8 56 C14 56 18 50 24 50 C30 50 30 26 34 26 C38 26 38 60 42 60 C46 60 47 20 51 20 C55 20 55 62 59 62 C63 62 63 28 67 28 C71 28 72 52 78 52 C84 52 88 46 92 44"
@@ -657,22 +759,22 @@ footer a:hover{color:var(--gold)}
       </div>
       <div>
         <h4>Programmes</h4>
-        <ul><li><a href="#programmes">Music</a></li><li><a href="#programmes">Art</a></li><li><a href="#programmes">Graphic Design</a></li><li><a href="#programmes">Videography</a></li><li><a href="#programmes">Baking</a></li></ul>
+        <ul><li><a href="#programmes">Music</a></li><li><a href="#programmes">Art</a></li><li><a href="#programmes">Baking</a></li><li><a href="#programmes">Graphic Design (soon)</a></li><li><a href="#programmes">Videography (soon)</a></li></ul>
       </div>
       <div>
         <h4>Attend</h4>
-        <ul><li><a href="#schedule">Schedule &amp; Fees</a></li><li><a href="#trial">Book a Trial</a></li><li><a href="#">Holiday Camps</a></li><li><a href="#">Birthday Parties</a></li></ul>
+        <ul><li><a href="#schedule">Schedule &amp; Fees</a></li><li><a href="#trial">Book a Trial</a></li></ul>
       </div>
       <div>
         <h4>About</h4>
-        <ul><li><a href="#">Our Story</a></li><li><a href="#teachers">Our Teachers</a></li><li><a href="#">FAQ</a></li><li><a href="#">Contact</a></li></ul>
+        <ul><li><a href="#teachers">Our Teachers</a></li><li><a href="#visit">Contact</a></li></ul>
       </div>
     </div>
     <div class="f-bot">
       <span>© 2026 Master Artist</span>
       <span>
-        <a href="#">Privacy Policy</a> &nbsp;·&nbsp;
-        <a href="#">Terms &amp; Enrolment</a> &nbsp;·&nbsp;
+        <a href="privacy.html">Privacy Policy</a> &nbsp;·&nbsp;
+        <a href="terms.html">Terms &amp; Enrolment</a> &nbsp;·&nbsp;
         <a href="admin.html" class="staff" rel="nofollow">Staff login</a>
       </span>
     </div>
@@ -695,6 +797,20 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---- mobile menu dropdown (FAQ / About Us / Gallery / Schedule / Classes) ---- */
+(function initBurgerMenu() {
+  const btn = $('burgerBtn');
+  const menu = $('navDropdown');
+  if (!btn || !menu) return;
+  function open() { menu.classList.add('is-open'); btn.setAttribute('aria-expanded', 'true'); }
+  function close() { menu.classList.remove('is-open'); btn.setAttribute('aria-expanded', 'false'); }
+  function isOpen() { return menu.classList.contains('is-open'); }
+  btn.addEventListener('click', e => { e.stopPropagation(); isOpen() ? close() : open(); });
+  menu.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
+  document.addEventListener('click', e => { if (isOpen() && !menu.contains(e.target) && e.target !== btn) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && isOpen()) { close(); btn.focus(); } });
+})();
 
 /* ---- generic rotator: items + dots + autoplay + pause on hover ---- */
 function rotator(items, dotHost, dotClass, interval, hoverHost, slide) {
@@ -754,7 +870,7 @@ const PROG_ICONS = {
 };
 
 async function boot() {
-  const [banner, hero, heroPhotos, programmes, gallery, testimonials, settings, teachers, classes, fees] =
+  const [banner, hero, heroPhotos, programmes, gallery, testimonials, settings, teachers, classes] =
     await Promise.all([
       sb.from('banner_live').select('*'),
       sb.from('hero_public').select('*').maybeSingle(),
@@ -764,8 +880,8 @@ async function boot() {
       sb.from('testimonials_public').select('*'),
       sb.from('site_settings_public').select('*').maybeSingle(),
       sb.from('teachers_public').select('*'),
-      sb.from('classes_public').select('*'),
-      sb.from('fees_public').select('*').maybeSingle()
+      sb.from('classes_public').select('*')
+      /* fees_public intentionally not fetched — no fee structure shown besides the RM50 trial */
     ]);
 
   renderBanner(banner.data || []);
@@ -776,7 +892,7 @@ async function boot() {
   renderTeachers(teachers.data || []);
   renderTestimonials(testimonials.data || []);
   renderVisit(settings.data);
-  renderSchedule(classes.data || [], fees.data);
+  renderSchedule(classes.data || []);
 
   // Hero photo crossfade still runs even when the slides are the static
   // placeholders, so parents always see *something* moving.
@@ -833,9 +949,11 @@ function renderTrust(s) {
 }
 
 function renderProgrammes(rows) {
-  if (!rows.length) return; // keep the static five as a safe fallback
+  if (!rows.length) return; // keep the static three + coming-soon line as a safe fallback
+  const available = rows.filter(p => (p.cta_label || '').trim().toLowerCase() !== 'coming soon');
+  const comingSoon = rows.filter(p => (p.cta_label || '').trim().toLowerCase() === 'coming soon');
   const grid = $('progGrid');
-  grid.innerHTML = rows.map((p, n) => `
+  grid.innerHTML = available.map((p, n) => `
     <a class="prog" href="#schedule">
       <span class="num">${String(n+1).padStart(2,'0')}</span>
       <div class="prog-icon">${PROG_ICONS[p.slug] || PROG_ICONS._default}</div>
@@ -844,6 +962,16 @@ function renderProgrammes(rows) {
       <p>${esc(p.blurb || '')}</p>
       <span class="more">${esc(p.cta_label || 'Explore')}</span>
     </a>`).join('');
+  const note = $('progComingSoon');
+  if (note) {
+    if (comingSoon.length) {
+      note.innerHTML = 'Also opening next term: ' +
+        comingSoon.map(p => `<strong style="color:var(--purple);font-weight:500">${esc(p.name)}</strong> (${esc(p.age_range || '')})`).join(' and ') + '.';
+      note.style.display = '';
+    } else {
+      note.style.display = 'none';
+    }
+  }
 }
 
 function renderGallery(rows) {
@@ -943,7 +1071,7 @@ function renderVisit(s) {
   }
 }
 
-function renderSchedule(rows, fees) {
+function renderSchedule(rows) {
   if (rows.length) {
     const byDay = {};
     const order = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
@@ -960,19 +1088,9 @@ function renderSchedule(rows, fees) {
           </div>`).join('')}
       </div>`).join('');
   }
-
-  if (fees && (fees.registration_myr != null || fees.materials_note || fees.sibling_discount || fees.makeup_policy || fees.refund_policy)) {
-    const box = $('feesBox');
-    box.style.display = '';
-    const items = [];
-    if (fees.registration_myr != null) items.push(['Registration fee', 'RM ' + fees.registration_myr]);
-    if (fees.sibling_discount) items.push(['Sibling discount', fees.sibling_discount]);
-    if (fees.materials_note) items.push(['Materials', fees.materials_note]);
-    if (fees.makeup_policy) items.push(['Make-up classes', fees.makeup_policy]);
-    if (fees.refund_policy) items.push(['Refunds', fees.refund_policy]);
-    box.innerHTML = items.map(([k,v]) => `<dl class="fitem"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></dl>`).join('');
-  }
 }
+/* Fee structure intentionally not shown anywhere on the site except the RM50
+   trial-class price above — see hero and #trial CTA band. No fees table/box. */
 
 boot();
 </script>
