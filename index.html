@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-7R43FD6EMW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-7R43FD6EMW');
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="canonical" href="https://masterartist.co/">
@@ -476,8 +485,7 @@ footer a:hover{color:var(--gold)}
       <h1 id="heroHeadline">Where children discover <em>what they're great at</em></h1>
       <p class="lede" id="heroLede">Music, art, graphic design, videography and baking — taught in small classes by working creatives. One studio, five ways for your child to find their thing.</p>
       <div class="hero-cta">
-        <a href="#trial" class="btn btn-gold" id="heroCtaPrimary">Book a Trial — RM50</a>
-        <a href="#" class="btn btn-ghost-light" id="heroCtaSecondary">Message us</a>
+        <a href="#trial" class="btn btn-gold" id="heroCtaPrimary">Book a Trial Class</a>
       </div>
       <p class="hero-note" id="heroNote">RM50 trial, credited to your first month. No commitment beyond that — come once, decide after.</p>
     </div>
@@ -894,7 +902,8 @@ function renderHero(h, photos) {
   }
   if (h.lede) $('heroLede').textContent = h.lede;
   if (h.cta_primary) $('heroCtaPrimary').textContent = h.cta_primary;
-  if (h.cta_secondary) $('heroCtaSecondary').textContent = h.cta_secondary;
+  const heroSecondaryEl = $('heroCtaSecondary');
+  if (h.cta_secondary && heroSecondaryEl) heroSecondaryEl.textContent = h.cta_secondary;
   if (h.note) $('heroNote').textContent = h.note;
 
   if (photos.length) {
@@ -1035,9 +1044,7 @@ function renderVisit(s) {
     if (digits) {
       const waLink = 'https://wa.me/' + digits;
       $('fabWhatsapp').href = waLink;
-      // Hero "Message us" (slide 2) and CTA-band "Book a Free Trial" (slide 8) both link to WhatsApp.
-      const heroSecondary = document.getElementById('heroCtaSecondary');
-      if (heroSecondary) heroSecondary.href = waLink;
+      // CTA-band "Book a Trial" (slide 8) links to WhatsApp.
       const ctaBandTrial = document.getElementById('ctaBandBookTrial');
       if (ctaBandTrial) ctaBandTrial.href = waLink;
     }
