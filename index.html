@@ -11,6 +11,8 @@
   gtag('config', 'G-7R43FD6EMW');
 </script>
 <meta charset="utf-8">
+<link rel="icon" type="image/svg+xml" href="logo.svg">
+  <link rel="icon" href="logo.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="canonical" href="https://masterartist.co/">
 <meta name="description" content="Master Artist — music, art, graphic design, videography and baking classes for children and adults in Kuala Lumpur.">
@@ -21,7 +23,7 @@
   "@type": "EducationalOrganization",
   "name": "Master Artist",
   "url": "https://masterartist.co/",
-  "image": "https://masterartist.co/favicon.png",
+  "image": "https://masterartist.co/logo.svg",
   "telephone": "+60102779426",
   "address": {
     "@type": "PostalAddress",
@@ -149,7 +151,7 @@ header{
 }
 .nav{display:flex;align-items:center;height:88px;gap:34px}
 .brand{display:flex;align-items:center;gap:12px;flex-shrink:0}
-.brand svg{width:38px;height:38px;flex-shrink:0}
+.brand svg,.brand-mark{width:38px;height:38px;flex-shrink:0;object-fit:contain;display:block}
 .brand-name{
   font-family:'Fraunces';font-weight:500;font-size:22px;color:var(--cream);
   letter-spacing:.005em;white-space:nowrap;
@@ -314,7 +316,7 @@ section{padding:112px 0}
   display:flex;align-items:center;justify-content:center;gap:14px;
   padding:20px;
 }
-.gal-brand svg{width:clamp(28px,4vw,56px);height:auto;flex-shrink:0}
+.gal-brand svg,.gal-brand .brand-mark{width:clamp(28px,4vw,56px);height:auto;flex-shrink:0;object-fit:contain}
 .gal-brand span{
   font-family:'Fraunces';font-weight:500;color:var(--cream);
   font-size:clamp(16px,2.2vw,30px);letter-spacing:.005em;white-space:nowrap;
@@ -452,11 +454,7 @@ footer a:hover{color:var(--gold)}
 <header>
   <div class="wrap nav">
     <a href="/" class="brand">
-      <svg viewBox="0 0 100 100" aria-hidden="true">
-        <circle cx="50" cy="50" r="42" fill="#E6B44C"/>
-        <path d="M8 56 C14 56 18 50 24 50 C30 50 30 26 34 26 C38 26 38 60 42 60 C46 60 47 20 51 20 C55 20 55 62 59 62 C63 62 63 28 67 28 C71 28 72 52 78 52 C84 52 88 46 92 44"
-              fill="none" stroke="#3B1C5A" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
+      <img class="brand-mark" src="logo.svg" alt="Master Artist logo">
       <span class="brand-name">Master Artist</span>
     </a>
     <nav class="navlinks">
@@ -731,11 +729,7 @@ footer a:hover{color:var(--gold)}
     <div class="f-grid">
       <div>
         <a href="/" class="brand" style="margin-bottom:22px">
-          <svg viewBox="0 0 100 100" aria-hidden="true">
-            <circle cx="50" cy="50" r="42" fill="#E6B44C"/>
-            <path d="M8 56 C14 56 18 50 24 50 C30 50 30 26 34 26 C38 26 38 60 42 60 C46 60 47 20 51 20 C55 20 55 62 59 62 C63 62 63 28 67 28 C71 28 72 52 78 52 C84 52 88 46 92 44"
-                  fill="none" stroke="#3B1C5A" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <img class="brand-mark" src="logo.svg" alt="Master Artist logo">
           <span class="brand-name">Master Artist</span>
         </a>
         <p style="max-width:25em">Music, art, graphic design, videography and baking classes for children and adults in Kuala Lumpur.</p>
@@ -988,11 +982,7 @@ function placeBrandTile(grid, photoCount) {
     tile.id = 'galBrand';
     tile.className = 'gal gal-brand';
     tile.innerHTML = `
-      <svg viewBox="0 0 100 100" aria-hidden="true">
-        <circle cx="50" cy="50" r="42" fill="#E6B44C"/>
-        <path d="M8 56 C14 56 18 50 24 50 C30 50 30 26 34 26 C38 26 38 60 42 60 C46 60 47 20 51 20 C55 20 55 62 59 62 C63 62 63 28 67 28 C71 28 72 52 78 52 C84 52 88 46 92 44"
-              fill="none" stroke="#3B1C5A" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
+      <img class="brand-mark" src="logo.svg" alt="Master Artist logo">
       <span>Master Artist</span>`;
   }
   grid.appendChild(tile); // always keep it last
