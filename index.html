@@ -541,7 +541,7 @@ footer a:hover{color:var(--gold)}
         <p>Instrument, voice and theory. From first notes to performing on stage with real confidence.</p>
         <span class="more">Explore</span>
       </a>
-      <a class="prog" href="#schedule">
+      <a class="prog" href="art.html">
         <span class="num">02</span>
         <div class="prog-icon">
           <svg viewBox="0 0 24 24"><path d="M3.5 20.5c-.5-2.5.5-4.5 2.5-4.5s3 1.3 3 3-1.8 2.9-5.5 1.5z"/><path d="M9 17L20.2 5.8a2.6 2.6 0 0 0-3.7-3.7L5.3 13.3"/><path d="M15.5 4.5l4 4"/></svg>
@@ -738,7 +738,7 @@ footer a:hover{color:var(--gold)}
       </div>
       <div>
         <h4>Programmes</h4>
-        <ul><li><a href="music.html">Music</a></li><li><a href="#programmes">Art</a></li><li><a href="workshops.html">Workshops</a></li><li><a href="#programmes">Graphic Design (soon)</a></li><li><a href="#programmes">Videography (soon)</a></li></ul>
+        <ul><li><a href="music.html">Music</a></li><li><a href="art.html">Art</a></li><li><a href="workshops.html">Workshops</a></li><li><a href="#programmes">Graphic Design (soon)</a></li><li><a href="#programmes">Videography (soon)</a></li></ul>
       </div>
       <div>
         <h4>Attend</h4>
@@ -928,7 +928,7 @@ function renderTrust(s) {
   if (s.stat_students && studentsEl) studentsEl.textContent = s.stat_students;
 }
 
-const PROG_LINKS = { music: 'music.html', baking: 'workshops.html' };
+const PROG_LINKS = { music: 'music.html', baking: 'workshops.html', art: 'art.html' };
 
 function renderProgrammes(rows) {
   if (!rows.length) return; // keep the static three + coming-soon line as a safe fallback
