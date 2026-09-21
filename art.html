@@ -60,6 +60,13 @@ section{padding:88px 0}
 .class-block .body strong{color:var(--purple);font-weight:500}
 .photo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:24px}
 .photo-grid img{width:100%;height:190px;object-fit:cover;border-radius:4px;display:block}
+.schedule{display:grid;grid-template-columns:repeat(2,1fr);gap:2px;background:rgba(59,28,90,.12);margin-top:14px}
+.slot{background:var(--lavender-pale);padding:22px 24px}
+.slot .day{display:block;font-family:'Fraunces';font-size:17px;color:var(--purple);font-weight:500;margin-bottom:4px}
+.slot .time{display:block;color:var(--gold-deep);font-size:13px;font-weight:500;letter-spacing:.04em;margin-bottom:8px}
+.slot p{color:var(--muted);font-size:14px;font-weight:300;line-height:1.6;margin:0}
+.schedule-note{margin-top:14px;font-size:13.5px;color:var(--muted);font-weight:300}
+.schedule-note a{color:var(--purple);text-decoration:underline}
 .cta-band{background:var(--gold);text-align:center;padding:76px 0}
 .cta-band h2{font-size:clamp(28px,3.6vw,40px);color:var(--purple-deep);font-weight:300;margin-bottom:18px}
 .cta-band h2 em{font-style:italic}
@@ -69,6 +76,7 @@ footer a{color:var(--gold)}
 @media(max-width:780px){
   .class-block{grid-template-columns:1fr;gap:20px}
   .photo-grid{grid-template-columns:repeat(2,1fr)}
+  .schedule{grid-template-columns:1fr}
   section{padding:56px 0}
   .hero{padding:56px 0}
 }
@@ -112,6 +120,20 @@ footer a{color:var(--gold)}
         <p>Art class covers drawing, painting, sculpture and mixed media, taught by <strong>Cheong Chui Yen</strong>, who trained in fine arts and has years of experience teaching the subject — from young children through to adults.</p>
         <p>The approach is technique first: students build real, transferable skills in line, form, colour and composition before being turned loose on their own ideas. Lessons are suited to complete beginners as well as students who already draw or paint and want to sharpen their craft.</p>
         <p>Classes stay small and hands-on, with plenty of individual guidance — the goal is always patient, careful teaching rather than rushing a student through a finished piece.</p>
+        <span class="tag" style="margin-top:6px;display:block">Class Times</span>
+        <div class="schedule">
+          <div class="slot">
+            <span class="day">Tuesdays &amp; Thursdays</span>
+            <span class="time">4:00 – 6:00 PM</span>
+            <p>Right after school lets out — the best fit for our main student age group, with a buffer before the pickup rush.</p>
+          </div>
+          <div class="slot">
+            <span class="day">Sundays</span>
+            <span class="time">10:30 AM – 12:30 PM</span>
+            <p>A weekend option for families who prefer mornings, or younger children who are freshest earlier in the day.</p>
+          </div>
+        </div>
+        <p class="schedule-note">Suggested starting schedule (2 hours per session) — happy to adjust once we see demand. <a href="https://wa.me/60102779426?text=Hi%2C%20I%27d%20like%20to%20ask%20about%20Art%20Class%20times" target="_blank" rel="noopener">Message us</a> to confirm a slot.</p>
         <a class="tag-cta" href="https://wa.me/60102779426?text=Hi%2C%20I%27d%20like%20to%20sign%20up%20for%20Art%20Class" target="_blank" rel="noopener">I want to sign up</a>
         <div class="photo-grid">
           <img src="art-photo-1.jpg" alt="Students at Master Artist showing their finished paintings">
