@@ -426,6 +426,20 @@ footer a:hover{color:var(--gold)}
   .hero{padding:66px 0 78px}
   .sec-head{margin-bottom:48px}
 }
+
+/* ---------- lightbox ---------- */
+.gal img{cursor:zoom-in;transition:opacity .2s}
+.gal img:hover{opacity:.85}
+.lightbox{position:fixed;inset:0;background:rgba(20,8,32,.92);z-index:200;display:none;align-items:center;justify-content:center;padding:40px}
+.lightbox.is-open{display:flex}
+.lightbox img{max-width:92vw;max-height:82vh;object-fit:contain;border-radius:4px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.lightbox-close{position:absolute;top:22px;right:28px;background:none;border:0;color:var(--cream);font-size:32px;cursor:pointer;line-height:1;padding:8px}
+.lightbox-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(246,241,232,.12);border:1px solid rgba(246,241,232,.3);color:var(--cream);width:48px;height:48px;border-radius:50%;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s}
+.lightbox-nav:hover{background:rgba(246,241,232,.22)}
+.lightbox-prev{left:22px}
+.lightbox-next{right:22px}
+.lightbox-count{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);color:rgba(246,241,232,.7);font-size:12.5px;letter-spacing:.12em;text-transform:uppercase}
+@media(max-width:600px){.lightbox-nav{width:40px;height:40px;font-size:18px}.lightbox-close{font-size:26px;top:14px;right:14px}}
 </style>
 </head>
 <body>
@@ -600,9 +614,9 @@ footer a:hover{color:var(--gold)}
     </div>
     <p style="text-align:center;margin-top:52px"><a href="#gallery" class="btn btn-ghost-dark">View the full gallery</a></p>
     <div style="max-width:700px;margin:64px auto 0;text-align:center;border-top:1px solid rgba(59,28,90,.14);padding-top:44px">
-      <h3 style="font-family:'Fraunces';font-weight:400;font-size:21px;color:var(--purple);margin-bottom:14px">Your child's safety</h3>
-      <p style="color:var(--muted);font-size:15px;font-weight:300;line-height:1.75">Classes are capped at six students so no child is overlooked. All teaching staff are vetted before they work with children, and parents are welcome to stay and watch at any time.</p>
-      <p style="color:var(--muted);font-size:15px;font-weight:300;line-height:1.75;margin-top:14px"><strong style="color:var(--purple);font-weight:500">We never publish a photograph of a child without written permission from a parent.</strong> Consent is recorded, and you can withdraw it at any time by messaging us — the photo comes down.</p>
+      <h3 style="font-family:'Fraunces';font-weight:400;font-size:21px;color:var(--purple);margin-bottom:14px">Follow along on Instagram</h3>
+      <p style="color:var(--muted);font-size:15px;font-weight:300;line-height:1.75">New student work, workshop moments and behind-the-scenes clips go up on our Instagram between updates here — the easiest way to see what's happening at the studio this week.</p>
+      <p style="margin-top:22px"><a href="https://www.instagram.com/masterartist_co/" target="_blank" rel="noopener" class="btn btn-ghost-dark">Follow @masterartist_co</a></p>
     </div>
   </div>
 </section>
@@ -761,6 +775,14 @@ footer a:hover{color:var(--gold)}
 <a href="#" class="fab" aria-label="WhatsApp us" id="fabWhatsapp">
   <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.25-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.06 2.88 1.21 3.08c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.22 1.36.19 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.7.25-1.29.17-1.41-.07-.13-.27-.2-.57-.35zM12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm0 18.15c-1.53 0-3.03-.41-4.34-1.19l-.31-.18-3.12.82.83-3.04-.2-.31a8.2 8.2 0 01-1.26-4.37c0-4.53 3.69-8.22 8.23-8.22 2.2 0 4.26.86 5.82 2.41a8.17 8.17 0 012.41 5.82c0 4.54-3.69 8.23-8.23 8.23z"/></svg>
 </a>
+
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" aria-label="Close">&times;</button>
+  <button class="lightbox-nav lightbox-prev" aria-label="Previous">&#8249;</button>
+  <img alt="">
+  <button class="lightbox-nav lightbox-next" aria-label="Next">&#8250;</button>
+  <span class="lightbox-count"></span>
+</div>
 
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
@@ -966,11 +988,61 @@ function renderGallery(rows) {
   if (rows.length) {
     grid.innerHTML = rows.map(g => `
       <div class="gal">
-        ${g.image_path ? `<img src="${esc(g.image_path)}" alt="${esc(g.caption||'')}">` : esc(g.caption || 'Student work')}
+        ${g.image_path ? `<img src="${esc(g.image_path)}" alt="${esc(g.caption||'')}" data-lightbox-group="gallery">` : esc(g.caption || 'Student work')}
       </div>`).join('');
   } // else: keep the six placeholder tiles already in the markup
   placeBrandTile(grid, rows.length || grid.querySelectorAll('.gal:not(.gal-brand)').length);
 }
+
+/* ---- lightbox: click any gallery photo to view it full-size. Uses event
+   delegation (not per-image listeners) because gallery photos are injected
+   dynamically by renderGallery() after this script runs. ---- */
+(function initLightbox(){
+  var overlay = document.getElementById('lightbox');
+  if (!overlay) return;
+  var imgEl = overlay.querySelector('img');
+  var countEl = overlay.querySelector('.lightbox-count');
+  var closeBtn = overlay.querySelector('.lightbox-close');
+  var prevBtn = overlay.querySelector('.lightbox-prev');
+  var nextBtn = overlay.querySelector('.lightbox-next');
+  var currentGroup = [], currentIndex = 0;
+
+  function show(i){
+    currentIndex = (i + currentGroup.length) % currentGroup.length;
+    var src = currentGroup[currentIndex];
+    imgEl.src = src.src;
+    imgEl.alt = src.alt || '';
+    countEl.textContent = currentGroup.length > 1 ? (currentIndex+1) + ' / ' + currentGroup.length : '';
+    prevBtn.style.display = nextBtn.style.display = currentGroup.length > 1 ? '' : 'none';
+  }
+  function openLb(group, index){
+    currentGroup = group;
+    show(index);
+    overlay.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLb(){
+    overlay.classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+  document.addEventListener('click', function(e){
+    var img = e.target.closest && e.target.closest('[data-lightbox-group]');
+    if (!img) return;
+    var g = img.dataset.lightboxGroup;
+    var group = Array.prototype.slice.call(document.querySelectorAll('[data-lightbox-group="' + g + '"]'));
+    openLb(group, group.indexOf(img));
+  });
+  closeBtn.addEventListener('click', closeLb);
+  prevBtn.addEventListener('click', function(){ show(currentIndex-1); });
+  nextBtn.addEventListener('click', function(){ show(currentIndex+1); });
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) closeLb(); });
+  document.addEventListener('keydown', function(e){
+    if(!overlay.classList.contains('is-open')) return;
+    if(e.key==='Escape') closeLb();
+    if(e.key==='ArrowLeft') show(currentIndex-1);
+    if(e.key==='ArrowRight') show(currentIndex+1);
+  });
+})();
 
 // Fills whatever leftover space is left in the gallery grid's last row with the
 // Master Artist mark, so the section never ends on a dead empty strip. Recomputed
