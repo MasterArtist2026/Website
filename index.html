@@ -548,7 +548,8 @@ footer a:hover{color:var(--gold)}
       <h2>Why <em>Master Artist</em> exists</h2>
     </div>
     <p style="color:var(--muted);font-weight:300;font-size:17px;line-height:1.85;margin-bottom:22px">Master Artist was started by Sabrina Hew, an international recording artist who has recorded and performed on stage in the United States. These days her focus is different: helping children and adults find their own voice — musically, and through art. That's the idea the whole studio is built on.</p>
-    <p style="color:var(--muted);font-weight:300;font-size:17px;line-height:1.85">One studio, several ways in, taught by people who still practise the craft they teach — not just instructors, working artists. Every class is capped at six students, and programmes run in short terms, so your child can try one discipline, switch to another, or take two, without being locked into a long commitment.</p>
+    <p style="color:var(--muted);font-weight:300;font-size:17px;line-height:1.85;margin-bottom:22px">One studio, several ways in, taught by people who still practise the craft they teach — not just instructors, working artists. Classes stay small and personal, and programmes run in short terms, so your child can try one discipline, switch to another, or take two, without being locked into a long commitment.</p>
+    <p style="color:var(--muted);font-weight:300;font-size:17px;line-height:1.85">It's also where friendships are built. Many of our students grow up together in the studio, meeting week after week, cheering each other on at recitals and exhibitions — the community ends up mattering just as much as the craft.</p>
   </div>
 </section>
 
@@ -558,7 +559,7 @@ footer a:hover{color:var(--gold)}
       <span class="eyebrow">The Programmes</span>
       <hr class="hair">
       <h2>Five ways to become a <em>Master Artist</em></h2>
-      <p>Every programme runs in short terms, capped at six students per class — so a child can try one, switch, or take two.</p>
+      <p>Every programme runs in short terms, in small classes — so a child can try one, switch, or take two.</p>
     </div>
     <div class="prog-grid" id="progGrid">
       <a class="prog" href="music.html">
@@ -741,7 +742,7 @@ footer a:hover{color:var(--gold)}
       <span class="eyebrow">Visit</span>
       <h2>Come and see <em>the studio</em></h2>
       <p>Parents are welcome to look around before enrolling. Drop in during opening hours, or message us and we'll show you through.</p>
-      <p style="color:var(--muted);font-weight:300;font-size:15px;line-height:1.75;margin-top:-14px">A short drive from Mont Kiara: classes capped at six students, five disciplines under one roof — so siblings can be taught in the same hour — and a founder who still teaches every week.</p>
+      <p style="color:var(--muted);font-weight:300;font-size:15px;line-height:1.75;margin-top:-14px">A short drive from Mont Kiara: small classes, five disciplines under one roof — so siblings can be taught in the same hour — and a founder who still teaches every week.</p>
       <dl>
         <dt>Address</dt><dd id="visitAddress">Your studio address, Kuala Lumpur</dd>
         <dt>Opening hours</dt><dd id="visitHours">Tue–Fri 2pm–8pm · Sat–Sun 9am–6pm · Closed Mondays</dd>
@@ -1154,7 +1155,6 @@ function renderSchedule(rows) {
             <span class="time">${esc(c.start_time)}${c.end_time ? '–' + esc(c.end_time) : ''}</span>
             <span class="what">${esc(c.programme_name || '')}</span>
             <span class="who">${esc(c.age_range || '')}${c.teacher_name ? ' · ' + esc(c.teacher_name) : ''}</span>
-            ${c.spaces_left != null ? `<span class="left">${c.spaces_left > 0 ? c.spaces_left + ' spaces left' : 'Full'}</span>` : ''}
           </div>`).join('')}
       </div>`).join('');
   }
