@@ -114,7 +114,8 @@ function rotator(items, dotHost, dotClass, interval, hoverHost, slide) {
   function show(i) {
     idx = (i + group.length) % group.length;
     imgEl.src = group[idx].src; imgEl.alt = group[idx].alt || '';
-    countEl.textContent = group.length > 1 ? (idx + 1) + ' / ' + group.length : '';
+    const cap = group[idx].alt || '';
+    countEl.textContent = [cap, group.length > 1 ? (idx + 1) + ' / ' + group.length : ''].filter(Boolean).join('  ·  ');
     prevBtn.style.display = nextBtn.style.display = group.length > 1 ? '' : 'none';
   }
   const close = () => { overlay.classList.remove('is-open'); document.body.style.overflow = ''; };
@@ -238,118 +239,71 @@ function renderHero(h, photos) {
   rotator([...host.querySelectorAll('.hslide')], $('heroDots'), 'hdot', 6000, host, false);
 }
 
-const PROG_ICONS = {
-  music: '<svg viewBox="0 0 24 24"><circle cx="6.5" cy="18" r="3"/><circle cx="17" cy="15.5" r="3"/><path d="M9.5 18V6l10.5-3v12.5"/><path d="M9.5 9L20 6"/></svg>',
-  art: '<svg viewBox="0 0 24 24"><path d="M3.5 20.5c-.5-2.5.5-4.5 2.5-4.5s3 1.3 3 3-1.8 2.9-5.5 1.5z"/><path d="M9 17L20.2 5.8a2.6 2.6 0 0 0-3.7-3.7L5.3 13.3"/><path d="M15.5 4.5l4 4"/></svg>',
-  'graphic-design': '<svg viewBox="0 0 24 24"><path d="M12 2.2l7.6 7.4L12 21.8 4.4 9.6z"/><circle cx="12" cy="9.6" r="2.3"/><path d="M12 11.9v9.9"/></svg>',
-  videography: '<svg viewBox="0 0 24 24"><rect x="1.8" y="6.5" width="13.5" height="11" rx="1.6"/><path d="M15.3 10.6l6.9-3.3v9.4l-6.9-3.3z"/><path d="M5 6.5l2 -3.5M10 6.5l2 -3.5"/></svg>',
-  baking: '<svg viewBox="0 0 24 24"><path d="M4.6 11.5h14.8l-1.9 9.4a1 1 0 0 1-1 .8H7.5a1 1 0 0 1-1-.8z"/><path d="M4.6 11.5a3.6 3.6 0 0 1 2.2-3.3 3.9 3.9 0 0 1 7.4-1.6 3.3 3.3 0 0 1 5.2 4.9"/><path d="M10.4 15.2l-.8 5M13.6 15.2l.8 5"/></svg>',
-  _default: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>'
-};
-const PROG_PHOTOS = {
-  music: { src: 'vocal-singing.jpg', alt: 'Sabrina Hew performing as a vocalist' },
-  art: { src: 'art-photo-1.jpg', alt: 'Students at Master Artist showing their finished paintings' },
-  baking: { src: 'baking-1.jpg', alt: 'Students baking together at a Master Artist workshop' }
-};
-const PROG_LINKS = { music: 'music.html', baking: 'workshops.html', art: 'art.html' };
-const isSoon = p => (p.cta_label || '').trim().toLowerCase() === 'coming soon';
+/* Programme cards and prices are written into the pages directly (from the
+   Master Artist price list), so the admin Programmes/Fees sections no longer
+   drive them. Timetables, gallery, teachers and the hero still come from admin. */
 
-function renderProgrammes(rows) {
-  const grid = $('progGrid');
-  if (!grid || !rows || !rows.length) return; // keep the static cards as a fallback
-  const available = rows.filter(p => !isSoon(p)), soon = rows.filter(isSoon);
-  grid.innerHTML = available.map((p, n) => `
-    <a class="prog" href="${PROG_LINKS[p.slug] || 'pricing.html'}">
-      ${PROG_PHOTOS[p.slug] ? `<img class="prog-photo" src="${esc(PROG_PHOTOS[p.slug].src)}" alt="${esc(PROG_PHOTOS[p.slug].alt)}">` : ''}
-      <span class="num">${String(n + 1).padStart(2, '0')}</span>
-      <div class="prog-icon">${PROG_ICONS[p.slug] || PROG_ICONS._default}</div>
-      <h3>${esc(p.name)}</h3>
-      <span class="ages">${esc(p.age_range || '')}</span>
-      <p>${esc(p.blurb || '')}</p>
-      <span class="more">${esc(p.cta_label || 'Explore')}</span>
-    </a>`).join('');
-  const note = $('progComingSoon');
-  if (note) {
-    if (soon.length) {
-      note.innerHTML = 'Also opening next term: ' + soon.map(p => `<strong>${esc(p.name)}</strong> (${esc(p.age_range || '')})`).join(' and ') + '.';
-      note.style.display = '';
-    } else note.style.display = 'none';
-  }
-}
-
-function renderPricing(rows, fees) {
-  const grid = $('priceGrid');
-  if (grid && rows && rows.length) {
-    const trial = grid.querySelector('.price.feature');
-    const cards = rows.map(p => {
-      const hasFee = p.fee_myr != null && String(p.fee_myr).trim() !== '';
-      const amount = hasFee ? 'RM' + Number(p.fee_myr).toLocaleString('en-MY') : 'Ask us';
-      const per = hasFee ? (p.term_length ? 'per term · ' + esc(p.term_length) : 'per term') : (p.term_length ? esc(p.term_length) + ' terms' : 'Fees on request');
-      const soon = isSoon(p);
-      return `
-      <div class="price">
-        <span class="badge">${soon ? 'Opening next term' : 'Programme'}</span>
-        <h3>${esc(p.name)}</h3>
-        <div class="ages">${esc(p.age_range || '')}</div>
-        <div class="amt">${amount}</div>
-        <div class="per">${per}</div>
-        <p>${esc(p.blurb || '')}</p>
-        ${soon
-          ? `<a class="btn btn-ghost-dark" data-wa data-wa-text="Hi Master Artist! Please let me know when ${esc(p.name)} opens.">Register interest</a>`
-          : `<a class="btn btn-purple" href="#trial" data-pick="${esc(p.name)}">Book a trial</a>`}
-      </div>`;
-    }).join('');
-    grid.innerHTML = '';
-    if (trial) grid.appendChild(trial);
-    grid.insertAdjacentHTML('beforeend', cards);
-    applyWhatsApp();
-  }
-  const box = $('feesBox');
-  if (box && fees) {
-    const items = [
-      ['Registration', fees.registration_myr != null && fees.registration_myr !== '' ? 'RM' + Number(fees.registration_myr).toLocaleString('en-MY') + ' one-time fee' : ''],
-      ['Materials', fees.materials_note],
-      ['Siblings', fees.sibling_discount],
-      ['Make-up classes', fees.makeup_policy],
-      ['Refunds', fees.refund_policy],
-    ].filter(([, v]) => v && String(v).trim());
-    if (items.length) {
-      box.innerHTML = items.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('');
-      box.hidden = false;
-    }
-  }
-}
-
+/* Timetable: classes from the admin panel, plus any fixed sessions listed in a
+   <script type="application/json" data-extra> next to the timetable (used for
+   the Mont Kiara Orchestra). */
 function renderSchedule(rows) {
   const host = $('schedList');
-  if (!host || !rows) return;
+  if (!host) return;
   const only = (host.dataset.programmes || '').split(',').map(s => s.trim()).filter(Boolean);
-  const list = only.length ? rows.filter(c => only.includes(c.programme_slug)) : rows;
+  const list = (rows || []).filter(c => !only.length || only.includes(c.programme_slug)).map(c => ({
+    day: c.day_of_week, start: c.start_time, end: c.end_time, name: c.programme_name,
+    who: [c.age_range, c.teacher_name].filter(Boolean).join(' · ')
+  }));
+  const extraEl = host.parentElement.querySelector('script[data-extra]');
+  if (extraEl) { try { list.push(...JSON.parse(extraEl.textContent)); } catch (e) { console.warn('[site] bad timetable extras', e); } }
   if (!list.length) return; // keep the static fallback text
+  const toMin = t => { const m = String(t || '').match(/(\d+)(?::(\d+))?\s*(am|pm)?/i); if (!m) return 0; let h = +m[1] % 12; if (/pm/i.test(m[3] || '')) h += 12; return h * 60 + (+m[2] || 0); };
   const byDay = {};
-  list.forEach(c => (byDay[c.day_of_week] = byDay[c.day_of_week] || []).push(c));
+  list.forEach(c => (byDay[c.day] = byDay[c.day] || []).push(c));
   host.innerHTML = DAYS.filter(d => byDay[d]).map(day => `
     <div class="sched-day">
       <h3>${esc(day)}</h3>
-      ${byDay[day].map(c => `
+      ${byDay[day].sort((x, y) => toMin(x.start) - toMin(y.start)).map(c => `
         <div class="sched-row">
-          <span class="time">${esc(c.start_time)}${c.end_time ? '–' + esc(c.end_time) : ''}</span>
-          <span class="what">${esc(c.programme_name || '')}</span>
-          <span class="who">${esc(c.age_range || '')}${c.teacher_name ? ' · ' + esc(c.teacher_name) : ''}</span>
+          <span class="time">${esc(c.start)}${c.end ? '–' + esc(c.end) : ''}</span>
+          <span class="what">${esc(c.name || '')}</span>
+          <span class="who">${esc(c.who || '')}</span>
         </div>`).join('')}
     </div>`).join('');
 }
 
-function renderGallery(rows) {
+/* Gallery: optional filter tabs (data-filters) by programme, captions on
+   every photo and in the full-size view. */
+function renderGallery(rows, programmes) {
   const grid = $('galGrid');
   if (!grid) return;
   const limit = parseInt(grid.dataset.limit || '0', 10);
   if (rows && rows.length) {
+    const progName = Object.fromEntries((programmes || []).map(p => [p.id, p.name]));
     const list = limit ? rows.slice(0, limit) : rows;
     grid.innerHTML = list.map(g => `
-      <div class="gal">
+      <figure class="gal" data-prog="${esc(progName[g.programme_id] || '')}">
         ${g.image_path ? `<img src="${esc(g.image_path)}" alt="${esc(g.caption || '')}" loading="lazy" data-lightbox-group="gallery">` : esc(g.caption || 'Student work')}
-      </div>`).join('');
+        ${g.caption && g.image_path ? `<figcaption>${esc(g.caption)}</figcaption>` : ''}
+      </figure>`).join('');
+    const tabs = $('galTabs');
+    if (tabs && grid.dataset.filters !== undefined) {
+      const names = [...new Set(list.map(g => progName[g.programme_id]).filter(Boolean))];
+      if (names.length > 1) {
+        tabs.innerHTML = ['All', ...names].map((n, i) => `<button type="button" class="${i === 0 ? 'on' : ''}" data-f="${i === 0 ? '' : esc(n)}">${esc(n)}</button>`).join('');
+        tabs.hidden = false;
+        tabs.addEventListener('click', e => {
+          const b = e.target.closest('button'); if (!b) return;
+          tabs.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+          grid.querySelectorAll('.gal:not(.gal-brand)').forEach(el => {
+            const show = !b.dataset.f || el.dataset.prog === b.dataset.f;
+            el.hidden = !show;
+            const img = el.querySelector('img'); if (img) img.dataset.lightboxGroup = show ? 'gallery' : 'gallery-off';
+          });
+          placeBrandTile(grid);
+        });
+      }
+    }
   }
   placeBrandTile(grid);
 }
@@ -364,7 +318,7 @@ function placeBrandTile(grid) {
     tile.innerHTML = '<img class="brand-mark" src="logo.svg" alt="Master Artist logo"><span>Master Artist</span>';
   }
   grid.appendChild(tile);
-  const count = grid.querySelectorAll('.gal:not(.gal-brand)').length;
+  const count = grid.querySelectorAll('.gal:not(.gal-brand):not([hidden])').length;
   const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length || 1;
   const rem = count % cols;
   tile.style.gridColumn = `span ${Math.max(1, Math.min(rem === 0 ? cols : cols - rem, cols))}`;
@@ -374,6 +328,9 @@ window.addEventListener('resize', () => {
   clearTimeout(brandT);
   brandT = setTimeout(() => { const g = $('galGrid'); if (g && $('galBrand')) placeBrandTile(g); }, 150);
 });
+
+// Text typed in the admin panel sometimes uses "--" or " - " for dashes.
+const tidy = s => String(s || '').replace(/\s*--\s*/g, ' — ').replace(/\s+-\s+/g, ' — ');
 
 function renderTeachers(rows) {
   const sec = $('teachers');
@@ -385,8 +342,8 @@ function renderTeachers(rows) {
         ? `<img class="photo" src="${esc(t.image_path)}" alt="${esc(t.full_name)}" loading="lazy">`
         : `<div class="photo">${esc((t.full_name || '?').split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase())}</div>`}
       <h3>${esc(t.full_name)}</h3>
-      ${t.role_title ? `<span class="role">${esc(t.role_title)}</span>` : ''}
-      <p>${esc(t.bio || '')}</p>
+      ${t.role_title ? `<span class="role">${esc(tidy(t.role_title))}</span>` : ''}
+      <p>${esc(tidy(t.bio))}</p>
     </div>`).join('');
 }
 
@@ -568,8 +525,7 @@ async function boot() {
     jobs.hero = q(sb.from('hero_public').select('*').maybeSingle());
     jobs.heroPhotos = q(sb.from('hero_photos_public').select('*'));
   }
-  if ($('progGrid') || $('priceGrid')) jobs.programmes = q(sb.from('programmes_public').select('*'));
-  if ($('feesBox')) jobs.fees = q(sb.from('fees_public').select('*').maybeSingle());
+  if ($('galGrid') && $('galGrid').dataset.filters !== undefined) jobs.programmes = q(sb.from('programmes_public').select('id,name'));
   if ($('schedList')) jobs.classes = q(sb.from('classes_public').select('*'));
   if ($('galGrid')) jobs.gallery = q(sb.from('gallery_publishable').select('*'));
   if ($('teachGrid')) jobs.teachers = q(sb.from('teachers_public').select('*'));
@@ -590,10 +546,8 @@ async function boot() {
   renderBanner(d.banner);
   renderSettings(d.settings);
   if ($('heroSlides')) renderHero(d.hero, d.heroPhotos);
-  renderProgrammes(d.programmes);
-  renderPricing(d.programmes, d.fees);
   renderSchedule(d.classes);
-  renderGallery(d.gallery);
+  renderGallery(d.gallery, d.programmes);
   renderTeachers(d.teachers);
   renderTestimonials(d.testimonials);
   renderGoogleReviews();

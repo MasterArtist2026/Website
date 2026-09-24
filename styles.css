@@ -583,3 +583,60 @@ footer a:hover{color:var(--gold)}
 .q figcaption{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .g-src .g-logo{width:18px;height:18px}
 @media(max-width:600px){.g-actions{margin-left:0;width:100%}.g-actions .btn{flex:1}}
+
+/* ---------- gallery captions + filters ---------- */
+figure.gal{margin:0}
+.gal figcaption{
+  position:absolute;left:8px;right:8px;bottom:8px;z-index:1;pointer-events:none;
+  background:rgba(42,18,64,.78);backdrop-filter:blur(6px);color:var(--cream);
+  font-size:12.5px;font-weight:600;line-height:1.35;padding:6px 10px;border-radius:8px;
+  opacity:0;transform:translateY(4px);transition:.2s;text-align:left;
+}
+.gal:hover figcaption,.gal:focus-within figcaption{opacity:1;transform:none}
+@media(hover:none){.gal figcaption{opacity:1;transform:none;font-size:11.5px}}
+.gal[hidden]{display:none}
+#galTabs[hidden]{display:none}
+.lightbox-count{max-width:88vw;text-align:center;white-space:normal;line-height:1.4}
+
+/* ---------- programme cards without a photo ---------- */
+.prog-ph{
+  width:100%;aspect-ratio:4/3;border-radius:12px;margin-bottom:18px;
+  background:linear-gradient(150deg,var(--purple),var(--purple-soft));
+  display:flex;align-items:center;justify-content:center;
+}
+.prog-ph svg{width:64px;height:64px;stroke:var(--gold);fill:none;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round}
+.prog-ph + .num + .prog-icon{display:none}
+.prog .price-tag{display:block;margin:0 12px 10px;font-size:14px;font-weight:700;color:var(--purple)}
+
+/* ---------- pricing tables ---------- */
+.fee-group{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px}
+.fee-group h3{font-size:19px;margin-bottom:2px}
+.fee-group .sub{color:var(--muted);font-size:14px;margin-bottom:10px}
+.fee-row{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:11px 0;border-top:1px solid var(--line)}
+.fee-row b{display:block;font-size:15.5px;color:var(--ink)}
+.fee-row small{display:block;color:var(--muted);font-size:13.5px}
+.fee-row .fee{text-align:right;white-space:nowrap}
+.fee-row .fee strong{display:block;font-size:17px;color:var(--purple)}
+.fee-row .fee small{font-size:12.5px}
+.fee-group .foot{margin-top:8px;font-size:13.5px;color:var(--muted);font-style:italic}
+.fee-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px}
+.save{background:var(--purple);color:var(--cream);border-radius:var(--radius);padding:22px 24px;margin-top:16px}
+.save h3{color:var(--gold);font-size:18px;margin-bottom:12px}
+.save ul{list-style:none;display:flex;flex-wrap:wrap;gap:10px 22px;margin-bottom:12px}
+.save li{display:flex;align-items:center;gap:8px;font-weight:600}
+.save li::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--gold)}
+.save p{color:rgba(246,241,232,.82);font-size:14.5px}
+.fine-print{margin-top:14px;color:var(--muted);font-size:13.5px}
+@media(max-width:600px){.fee-grid{grid-template-columns:1fr}.fee-group{padding:16px}}
+
+/* ---------- photography themes ---------- */
+.themes{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-bottom:22px}
+.theme{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:16px}
+.theme .step{font-size:12px;font-weight:700;color:var(--gold-deep);letter-spacing:.06em;text-transform:uppercase}
+.theme h3{font-size:16px;margin:2px 0 6px}
+.theme p{color:var(--muted);font-size:14px}
+.theme .brief{margin-top:8px;font-size:13.5px;color:var(--purple);font-style:italic}
+.cycle{counter-reset:c;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:22px}
+.cycle li{counter-increment:c;background:var(--lavender-pale);border-radius:var(--radius-sm);padding:14px 14px 14px 48px;position:relative;font-size:14.5px}
+.cycle li::before{content:counter(c);position:absolute;left:14px;top:13px;width:24px;height:24px;border-radius:50%;background:var(--purple);color:var(--gold);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center}
+.cycle li b{display:block;color:var(--purple)}
