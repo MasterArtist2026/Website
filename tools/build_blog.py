@@ -93,9 +93,15 @@ def build(template, p, others):
     doc = re.sub(r'<link rel="canonical" href="[^"]*">', f'<link rel="canonical" href="{url}">', doc, 1)
     doc = re.sub(r'<meta property="og:title" content="[^"]*">', f'<meta property="og:title" content="{esc(title)}">', doc, 1)
     doc = re.sub(r'<meta property="og:description" content="[^"]*">', f'<meta property="og:description" content="{esc(desc)}">', doc, 1)
-    doc = re.sub(r'<meta property="og:url" content="[^"]*">', f'<meta property="og:url" content="{url}">\n<meta property="og:type" content="article">', doc, 1)
+    doc = re.sub(r'<meta property="og:url" content="[^"]*">', f'<meta property="og:url" content="{url}">', doc, 1)
+    doc = re.sub(r'<meta property="og:type" content="[^"]*">', '<meta property="og:type" content="article">', doc, 1)
+    doc = re.sub(r'<meta property="og:image:alt" content="[^"]*">', f'<meta property="og:image:alt" content="{esc(p.get("cover_alt") or title)}">', doc, 1)
+    doc = re.sub(r'<meta name="twitter:title" content="[^"]*">', f'<meta name="twitter:title" content="{esc(title)}">', doc, 1)
+    doc = re.sub(r'<meta name="twitter:description" content="[^"]*">', f'<meta name="twitter:description" content="{esc(desc)}">', doc, 1)
     if p.get('cover_image'):
-        doc = re.sub(r'<meta property="og:image" content="[^"]*">', f'<meta property="og:image" content="{esc(abs_url(p["cover_image"]))}">', doc, 1)
+        img = esc(abs_url(p['cover_image']))
+        doc = re.sub(r'<meta property="og:image" content="[^"]*">', f'<meta property="og:image" content="{img}">', doc, 1)
+        doc = re.sub(r'<meta name="twitter:image" content="[^"]*">', f'<meta name="twitter:image" content="{img}">', doc, 1)
     # drop the template's own breadcrumb schema, add the article's
     doc = re.sub(r'<script type="application/ld\+json">\s*\{\s*"@context": "https://schema.org",\s*"@type": "BreadcrumbList".*?</script>', '', doc, 1, re.S)
     doc = doc.replace('</head>', '<script type="application/ld+json">' + json.dumps(schema, ensure_ascii=False) + '</script>\n'
