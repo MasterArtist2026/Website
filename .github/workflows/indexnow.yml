@@ -1,0 +1,29 @@
+# Tells Bing and other IndexNow search engines (which feed ChatGPT search and
+# Copilot) about changed pages as soon as they are published.
+name: IndexNow
+on:
+  push:
+    branches: [main]
+    paths: ['**.html', 'sitemap.xml']
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Wait for GitHub Pages to publish
+        run: sleep 90
+      - name: Submit changed pages
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            FILES=$(grep -o '<loc>[^<]*</loc>' sitemap.xml | sed 's/<[^>]*>//g')
+          else
+            FILES=$(git diff --name-only HEAD~1 HEAD -- '*.html' | grep -v -E '^(admin|404|post)\.html$' | sed 's#^index\.html$##' | sed 's#^#https://masterartist.co/#')
+          fi
+          URLS=$(printf '%s\n' $FILES | grep -E '^https://masterartist\.co' | sort -u | head -1000)
+          if [ -z "$URLS" ]; then echo "No page changes to submit"; exit 0; fi
+          echo "$URLS"
+          JSON=$(printf '%s\n' $URLS | python3 -c 'import sys,json; print(json.dumps({"host":"masterartist.co","key":"475d9c85bff5d57bf277e4d7e5d51074","keyLocation":"https://masterartist.co/475d9c85bff5d57bf277e4d7e5d51074.txt","urlList":[l.strip() for l in sys.stdin if l.strip()]}))')
+          curl -sS -o /dev/null -w "IndexNow response: %{http_code}\n" -X POST https://api.indexnow.org/indexnow -H 'Content-Type: application/json; charset=utf-8' -d "$JSON"
