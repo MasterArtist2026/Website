@@ -16,12 +16,14 @@ const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Satur
 /* WhatsApp number used until site_settings loads (and if it never does). */
 let waDigits = '60102779426';
 
-/* Google Ads conversion tracking. Paste the values from Google Ads →
-   Goals → Conversions → (your conversion) → Tag setup → "Use Google tag".
-   Leave empty to switch Ads tracking off; GA4 and Meta keep working. */
-const GOOGLE_ADS_ID             = '';   // e.g. 'AW-123456789'
-const GOOGLE_ADS_TRIAL_LABEL    = '';   // conversion label for "Trial form sent"
-const GOOGLE_ADS_WHATSAPP_LABEL = '';   // conversion label for "WhatsApp click"
+/* Google Ads conversion tracking. The Google tag (GA4 G-2X9E7MWMWM) is linked
+   to Google Ads account AW-18457946758, so a conversion is counted whenever one
+   of the events below is sent (the event names come from each Ads conversion's
+   "Tag setup" snippet). Set one to '' to switch that conversion off. */
+const GOOGLE_ADS_EVENTS = {
+  trial_form: 'close_convert_lead',   // Ads conversion: Trial form sent
+  whatsapp:   'qualify_lead',         // Ads conversion: WhatsApp click
+};
 
 /* Google reviews come from the "google-reviews" Supabase Edge Function
    (supabase/functions/google-reviews). The Google API key lives only in
@@ -148,18 +150,24 @@ function rotator(items, dotHost, dotClass, interval, hoverHost, slide) {
 /* ---------------------------------------------------------------- tracking
    One place that reports conversions to GA4, Google Ads and the Meta Pixel.
    Each call is wrapped so a blocked tracker can never break the page. */
-if (GOOGLE_ADS_ID && window.gtag) { try { gtag('config', GOOGLE_ADS_ID); } catch {} }
+// WhatsApp opens in a new tab, so this page stays open and the event always
+// has time to send — no delayed-navigation helper is needed.
+function adsLead(source, where) {
+  const name = GOOGLE_ADS_EVENTS[source];
+  if (!name || !window.gtag) return;
+  try { gtag('event', name, { link_location: where }); } catch {}
+}
 
 function track(kind, detail) {
   const where = detail.where || '';
   if (kind === 'trial') {
     try { window.fbq && fbq('track', 'Lead', { content_name: detail.programme || 'Trial class' }); } catch {}
     try { window.gtag && gtag('event', 'generate_lead', { programme: detail.programme || '', link_location: where }); } catch {}
-    if (GOOGLE_ADS_ID && GOOGLE_ADS_TRIAL_LABEL) { try { gtag('event', 'conversion', { send_to: GOOGLE_ADS_ID + '/' + GOOGLE_ADS_TRIAL_LABEL }); } catch {} }
+    adsLead('trial_form', where);
   } else if (kind === 'whatsapp') {
     try { window.fbq && fbq('track', 'Contact', { content_name: where }); } catch {}
     try { window.gtag && gtag('event', 'whatsapp_click', { link_location: where, page: location.pathname }); } catch {}
-    if (GOOGLE_ADS_ID && GOOGLE_ADS_WHATSAPP_LABEL) { try { gtag('event', 'conversion', { send_to: GOOGLE_ADS_ID + '/' + GOOGLE_ADS_WHATSAPP_LABEL }); } catch {} }
+    adsLead('whatsapp', where);
   }
 }
 
