@@ -273,12 +273,15 @@ function renderHero(h, photos) {
   }
   const host = $('heroSlides');
   if (photos && photos.length) {
+    // The first photo is built into the page as a compressed, preloaded copy
+    // (data-db-src says which admin photo it stands in for); add the rest.
     const dots = $('heroDots');
-    host.querySelectorAll('.hslide').forEach(el => el.remove());
-    photos.forEach((p, n) => {
+    const built = new Set([...host.querySelectorAll('.hslide[data-db-src]')].map(el => el.dataset.dbSrc));
+    host.querySelectorAll('.hslide:not([data-db-src])').forEach(el => el.remove());
+    photos.filter(p => !built.has(p.image_path)).forEach(p => {
       const div = document.createElement('div');
-      div.className = 'hslide' + (n === 0 ? ' is-on' : '');
-      div.innerHTML = `<img src="${esc(p.image_path)}" alt="${esc(p.alt_text)}">`;
+      div.className = 'hslide' + (host.querySelector('.hslide') ? '' : ' is-on');
+      div.innerHTML = `<img src="${esc(p.image_path)}" alt="${esc(p.alt_text)}" loading="lazy">`;
       host.insertBefore(div, dots);
     });
   }
@@ -329,7 +332,7 @@ function renderGallery(rows, programmes) {
     const list = limit ? rows.slice(0, limit) : rows;
     grid.innerHTML = list.map(g => `
       <figure class="gal" data-prog="${esc(progName[g.programme_id] || '')}">
-        ${g.image_path ? `<img src="${esc(g.image_path)}" alt="${esc(g.caption || '')}" loading="lazy" data-lightbox-group="gallery">` : esc(g.caption || 'Student work')}
+        ${g.image_path ? `<img src="${esc(/^(https?:)?\/\//.test(g.image_path) || g.image_path.startsWith('/') ? g.image_path : '/' + g.image_path)}" alt="${esc(g.caption || '')}" loading="lazy" data-lightbox-group="gallery">` : esc(g.caption || 'Student work')}
         ${g.caption && g.image_path ? `<figcaption>${esc(g.caption)}</figcaption>` : ''}
       </figure>`).join('');
     const tabs = $('galTabs');
@@ -361,7 +364,7 @@ function placeBrandTile(grid) {
   if (!tile) {
     tile = document.createElement('div');
     tile.id = 'galBrand'; tile.className = 'gal gal-brand';
-    tile.innerHTML = '<img class="brand-mark" src="logo.svg" alt="Master Artist logo"><span>Master Artist</span>';
+    tile.innerHTML = '<img class="brand-mark" src="/logo.svg" alt="Master Artist logo"><span>Master Artist</span>';
   }
   grid.appendChild(tile);
   const count = grid.querySelectorAll('.gal:not(.gal-brand):not([hidden])').length;
@@ -460,10 +463,10 @@ async function renderGoogleReviews() {
 /* ------------------------------------------------------------------- blog */
 function postCard(p) {
   return `
-  <a class="post-card" href="post.html?slug=${encodeURIComponent(p.slug)}">
+  <a class="post-card" href="/blog/${encodeURIComponent(p.slug)}.html">
     ${p.cover_image
       ? `<img class="cover" src="${esc(p.cover_image)}" alt="${esc(p.cover_alt || '')}" loading="lazy">`
-      : `<div class="cover ph"><img src="logo.svg" alt=""></div>`}
+      : `<div class="cover ph"><img src="/logo.svg" alt=""></div>`}
     <div class="meta">${esc(fmtDate(p.published_at))}${p.tags && p.tags.length ? ' · ' + esc(p.tags[0]) : ''}</div>
     <h3>${esc(p.title)}</h3>
     <p>${esc(p.excerpt || '')}</p>
@@ -514,10 +517,10 @@ function renderPost(p, more) {
   if (!p) {
     $('postTitle').textContent = 'Article not found';
     $('postMeta').textContent = '';
-    host.innerHTML = `<div class="empty"><h3>This article isn't available</h3><p>It may have been moved or unpublished. <a href="blog.html" style="color:var(--purple);font-weight:600">See all articles</a>.</p></div>`;
+    host.innerHTML = `<div class="empty"><h3>This article isn't available</h3><p>It may have been moved or unpublished. <a href="/blog.html" style="color:var(--purple);font-weight:600">See all articles</a>.</p></div>`;
     return;
   }
-  const url = 'https://masterartist.co/post.html?slug=' + encodeURIComponent(p.slug);
+  const url = 'https://masterartist.co/blog/' + encodeURIComponent(p.slug) + '.html';
   const desc = p.seo_description || p.excerpt || '';
   document.title = p.title + ' — Master Artist';
   setMeta('description', desc);
