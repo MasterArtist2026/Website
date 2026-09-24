@@ -15,6 +15,9 @@ where id = 1;
 update programmes set cta_label = 'Explore', age_range = 'Ages 10+' where slug = 'graphic-design';
 update programmes set cta_label = 'Explore', age_range = 'Ages 12+' where slug = 'videography';
 
+-- Music is ages 5 to adult
+update programmes set age_range = 'Ages 5+' where slug = 'music';
+
 -- Photography (ages 12+), so photos and classes can be tagged with it
 insert into programmes (slug, name, age_range, blurb, cta_label, visible, sort_order)
 select 'photography', 'Photography', 'Ages 12+',
