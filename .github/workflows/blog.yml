@@ -1,0 +1,33 @@
+# Rebuilds the static blog pages from Supabase every hour, and on demand.
+# The AI blog tool (or anyone) can trigger it straight away from GitHub →
+# Actions → "Build blog pages" → Run workflow.
+name: Build blog pages
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+  repository_dispatch:
+    types: [blog-published]
+permissions:
+  contents: write
+concurrency:
+  group: blog-build
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install bleach
+      - run: python3 tools/build_blog.py
+      - name: Commit changes
+        run: |
+          git add blog sitemap.xml
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git config user.name "blog-bot"
+          git config user.email "blog-bot@users.noreply.github.com"
+          git commit -m "Update blog pages"
+          git push
