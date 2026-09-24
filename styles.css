@@ -640,3 +640,8 @@ figure.gal{margin:0}
 .cycle li{counter-increment:c;background:var(--lavender-pale);border-radius:var(--radius-sm);padding:14px 14px 14px 48px;position:relative;font-size:14.5px}
 .cycle li::before{content:counter(c);position:absolute;left:14px;top:13px;width:24px;height:24px;border-radius:50%;background:var(--purple);color:var(--gold);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center}
 .cycle li b{display:block;color:var(--purple)}
+
+/* Why grid: fixed columns so 8 cards always sit in even rows (4 / 2 / 1) */
+.why-grid{grid-template-columns:repeat(4,1fr)}
+@media(max-width:1080px){.why-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.why-grid{grid-template-columns:1fr}}
