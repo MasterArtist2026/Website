@@ -11,9 +11,9 @@ update site_settings
 set opening_hours = 'Sun–Thu 10:30am–7pm · Fri 10:30am–4pm · Closed Saturdays'
 where id = 1;
 
--- Graphic Design and Videography are running; Graphic Design is 10+
-update programmes set cta_label = 'Explore', age_range = 'Ages 10+'
-where slug in ('graphic-design', 'videography');
+-- Graphic Design (10+) and Videography (12+) are running
+update programmes set cta_label = 'Explore', age_range = 'Ages 10+' where slug = 'graphic-design';
+update programmes set cta_label = 'Explore', age_range = 'Ages 12+' where slug = 'videography';
 
 -- Photography (ages 12+), so photos and classes can be tagged with it
 insert into programmes (slug, name, age_range, blurb, cta_label, visible, sort_order)
