@@ -144,6 +144,34 @@ a{color:var(--purple)}
   font-size:13px;transition:transform .3s;z-index:300;max-width:90vw}
 #toast.on{transform:translate(-50%,0)}
 
+/* ---------- blog ---------- */
+.blog-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.blog-tabs button{background:#fff;border:1px solid var(--line);padding:7px 14px;cursor:pointer;font-size:12.5px}
+.blog-tabs button.on{background:var(--purple);color:var(--cream);border-color:var(--purple)}
+.post-sum{display:flex;gap:14px;align-items:flex-start}
+.post-sum img{width:96px;height:72px;object-fit:cover;border:1px solid var(--line);flex-shrink:0}
+.post-sum .meta{font-size:12px;color:var(--muted);margin-top:4px}
+.post-sum h3{font-size:18px;color:var(--purple)}
+.post-sum p{color:var(--muted);font-size:13.5px;margin-top:4px}
+.count{font-size:11px;color:var(--muted);text-align:right}
+.count.bad{color:var(--warn)}
+.f textarea.code{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;min-height:320px}
+#pv{position:fixed;inset:0;background:rgba(20,8,32,.7);z-index:200;display:none;padding:30px 16px;overflow-y:auto}
+#pv.on{display:block}
+#pv .sheet{max-width:780px;margin:0 auto;background:#fff;border:1px solid var(--gold)}
+#pv .bar{display:flex;gap:10px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;flex-wrap:wrap}
+#pv .bar b{flex:1;color:var(--purple)}
+#pv .art{padding:28px 34px 40px;font-size:16px;line-height:1.75}
+#pv .art h1{font-size:30px;color:var(--purple);margin-bottom:8px}
+#pv .art .by{color:var(--muted);font-size:13px;margin-bottom:18px}
+#pv .art img{max-width:100%;height:auto}
+#pv .art .cover{width:100%;aspect-ratio:16/9;object-fit:cover;margin-bottom:22px}
+#pv .art h2{font-size:23px;color:var(--purple);margin:1.5em 0 .5em}
+#pv .art h3{font-size:18px;color:var(--purple);margin:1.2em 0 .4em;font-family:'Inter',system-ui,sans-serif;font-weight:600}
+#pv .art p,#pv .art ul,#pv .art ol,#pv .art blockquote{margin-bottom:1em}
+#pv .art ul,#pv .art ol{padding-left:1.3em}
+#pv .art blockquote{border-left:3px solid var(--gold);padding-left:14px;color:var(--purple)}
+
 @media(max-width:820px){
   .app{grid-template-columns:1fr}
   .side{position:static;height:auto}
@@ -230,6 +258,7 @@ a{color:var(--purple)}
 
 <div id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js" crossorigin="anonymous"></script>
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 
@@ -255,6 +284,7 @@ const SECTIONS = [
   { id:'gallery',      key:'gallery',      label:'Gallery',             ready:true },
   { id:'teachers',     key:'teachers',     label:'Teachers',            ready:true },
   { id:'testimonials', key:'testimonials', label:'Testimonials',        ready:true },
+  { id:'blog',         key:'blog',         label:'Blog Posts',          ready:true },
   { id:'settings',     key:'settings',     label:'Studio Details',      ready:true },
   { id:'people',       key:'people',       label:'People & Access',     ready:true }
 ];
@@ -395,6 +425,9 @@ async function boot(){
 
   const first = SECTIONS.find(s => s.ready && canRead(s.key)) || SECTIONS.find(s => canRead(s.key));
   current = first ? first.id : 'banner';
+  // Links from the blog agent's review email: admin.html#blog/<slug>
+  const hm = location.hash.match(/^#blog(?:\/([a-z0-9-]+))?$/);
+  if (hm && canRead('blog')) { current = 'blog'; blogOpenSlug = hm[1] || null; }
 
   $('authScreen').style.display='none';
   $('appScreen').classList.add('on');
@@ -971,6 +1004,154 @@ window.addTestimonial = async () => {
   busy(false);
   if (error) { toast('Could not add: ' + error.message); return; }
   toast('Added — it stays hidden until you tick Visible'); await render();
+};
+
+/* ---------- blog posts ----------
+   Drafts come from the scheduled blog agent (always unpublished). Review,
+   edit and publish them here. Publishing shows the post on /blog.html at
+   once; the hourly GitHub Action then builds its static /blog/<slug>.html. */
+let blogPosts = [], blogFilter = 'draft', blogOpenSlug = null;
+const clean = h => window.DOMPurify
+  ? DOMPurify.sanitize(h || '', { FORBID_TAGS:['style','script','iframe','form','input'], FORBID_ATTR:['style'] })
+  : esc(h || '');
+const fmtDay = d => d ? new Date(d).toLocaleDateString('en-MY', { day:'numeric', month:'short', year:'numeric' }) : '';
+const liveUrl = p => `/post.html?slug=${encodeURIComponent(p.slug)}`;
+function lenCount(id, min, max){
+  const el = document.querySelector(`[data-f="${id}"]`), out = document.getElementById('c-' + id);
+  if (!el || !out) return;
+  const n = el.value.length;
+  out.textContent = `${n} characters (aim for ${min}–${max})`;
+  out.classList.toggle('bad', n < min || n > max);
+}
+window.lenCount = lenCount;
+
+views.blog = async function(){
+  busy(true,'Loading…');
+  const { data, error } = await sb.from('blog_posts')
+    .select('id,slug,title,excerpt,seo_description,body_html,cover_image,cover_alt,tags,published,published_at,created_at,updated_at')
+    .order('created_at', { ascending:false });
+  busy(false);
+  if (error) {
+    $('view').innerHTML = `<div class="msg err">${esc(error.message)}</div>
+      <div class="hint">If this says the table doesn't exist, run <b>supabase/blog.sql</b> in the Supabase SQL Editor.</div>`;
+    return;
+  }
+  blogPosts = data || [];
+  const w = canWrite('blog');
+  const drafts = blogPosts.filter(p => !p.published).length;
+  const shown = blogPosts.filter(p => blogFilter === 'all' ? true : blogFilter === 'draft' ? !p.published : p.published);
+
+  let html = `<div class="hint"><b>Blog drafts from the blog agent appear here.</b> Preview a draft, edit anything that needs changing,
+    then press <b>Publish</b>. It shows on the website straight away, and as its own page at masterartist.co/blog/&lt;slug&gt;.html within the hour.</div>
+    <div class="blog-tabs">
+      <button class="${blogFilter==='draft'?'on':''}" onclick="blogTab('draft')">Drafts (${drafts})</button>
+      <button class="${blogFilter==='live'?'on':''}" onclick="blogTab('live')">Published (${blogPosts.length - drafts})</button>
+      <button class="${blogFilter==='all'?'on':''}" onclick="blogTab('all')">All (${blogPosts.length})</button>
+    </div>`;
+  if (!shown.length) html += `<div class="empty">${blogFilter==='draft' ? 'No drafts waiting — the blog agent writes new ones on Mondays, Wednesdays and Fridays.' : 'No posts here yet.'}</div>`;
+
+  shown.forEach(p => {
+    const open = blogOpenSlug === p.slug;
+    html += `<div class="card" id="post-${esc(p.slug)}"><div class="card-h">
+        <span class="grip">${p.published ? 'Published ' + fmtDay(p.published_at) : 'Draft · written ' + fmtDay(p.created_at)}</span>
+        <span class="pill ${p.published?'live':'off'}">${p.published?'Live':'Draft'}</span>
+        <button class="btn sm" onclick="previewPost('${p.id}')">Preview</button>
+        ${w ? `<button class="btn sm" onclick="toggleEdit('${esc(p.slug)}')">${open?'Close':'Edit'}</button>
+               ${p.published
+                 ? `<button class="btn sm" onclick="setPublished('${p.id}', false)">Unpublish</button>`
+                 : `<button class="btn sm" style="background:var(--gold);border-color:var(--gold)" onclick="setPublished('${p.id}', true)">Publish</button>`}
+               <button class="btn sm" onclick="delPost('${p.id}')">Delete</button>` : ''}
+      </div>
+      <div class="card-b">
+        <div class="post-sum">
+          ${p.cover_image ? `<img src="${esc(p.cover_image)}" alt="">` : ''}
+          <div><h3>${esc(p.title)}</h3>
+            <div class="meta">/blog/${esc(p.slug)}.html · ${(p.tags||[]).map(esc).join(', ') || 'no tags'} · ${Math.round((p.body_html||'').replace(/<[^>]+>/g,' ').split(/\s+/).filter(Boolean).length)} words
+              ${p.published ? ` · <a href="${liveUrl(p)}" target="_blank" rel="noopener">View on site</a>` : ''}</div>
+            <p>${esc(p.excerpt || '')}</p></div>
+        </div>
+        ${open && w ? `<div style="margin-top:18px;border-top:1px solid var(--line);padding-top:18px">
+          <div class="row">
+            <div class="f" style="grid-column:1/-1"><label>Title</label><input data-f="${p.id}.title" value="${esc(p.title)}" oninput="lenCount('${p.id}.title',30,60)"><span class="count" id="c-${p.id}.title"></span></div>
+          </div>
+          <div class="row">
+            <div class="f"><label>Web address (slug)</label><input data-f="${p.id}.slug" value="${esc(p.slug)}" ${p.published?'disabled':''}>
+              <span class="help">${p.published ? 'Locked after publishing, so links keep working.' : 'Lowercase words joined by hyphens.'}</span></div>
+            <div class="f"><label>Tags (comma-separated)</label><input id="tags-${p.id}" value="${esc((p.tags||[]).join(', '))}"></div>
+          </div>
+          <div class="row"><div class="f" style="grid-column:1/-1"><label>Google description</label>
+            <textarea data-f="${p.id}.seo_description" oninput="lenCount('${p.id}.seo_description',140,160)">${esc(p.seo_description)}</textarea><span class="count" id="c-${p.id}.seo_description"></span></div></div>
+          <div class="row"><div class="f" style="grid-column:1/-1"><label>Excerpt (shown on the blog list)</label>
+            <textarea data-f="${p.id}.excerpt">${esc(p.excerpt)}</textarea></div></div>
+          <div class="row">
+            <div class="f"><label>Cover image</label><input data-f="${p.id}.cover_image" value="${esc(p.cover_image)}"><span class="help">A site photo such as /piano-photo.jpg, or a full image address.</span></div>
+            <div class="f"><label>Cover description</label><input data-f="${p.id}.cover_alt" value="${esc(p.cover_alt)}"></div>
+          </div>
+          <div class="row"><div class="f" style="grid-column:1/-1"><label>Article (HTML)</label>
+            <textarea class="code" data-f="${p.id}.body_html">${esc(p.body_html)}</textarea>
+            <span class="help">Headings are &lt;h2&gt;/&lt;h3&gt;, paragraphs &lt;p&gt;, links &lt;a href="/music.html"&gt;. Use Preview to check it.</span></div></div>
+          <button class="btn sm" onclick="savePost('${p.id}')">Save changes</button>
+          <button class="btn sm" onclick="previewPost('${p.id}', true)">Preview unsaved changes</button>
+        </div>` : ''}
+      </div></div>`;
+  });
+  $('view').innerHTML = html + `<div id="pv" onclick="if(event.target.id==='pv')closePreview()"><div class="sheet"><div class="bar"><b id="pvTitle"></b>
+      <button class="btn sm" onclick="closePreview()">Close</button></div><div class="art" id="pvBody"></div></div></div>`;
+
+  if (blogOpenSlug) {
+    const p = blogPosts.find(x => x.slug === blogOpenSlug);
+    if (p) {
+      ['title','seo_description'].forEach(k => lenCount(`${p.id}.${k}`, k==='title'?30:140, k==='title'?60:160));
+      document.getElementById('post-' + p.slug)?.scrollIntoView({ block:'start' });
+    }
+  }
+};
+window.blogTab = async f => { blogFilter = f; blogOpenSlug = null; await render(); };
+window.toggleEdit = async slug => { blogOpenSlug = blogOpenSlug === slug ? null : slug; await render(); };
+
+window.previewPost = (id, unsaved) => {
+  const p = blogPosts.find(x => x.id === id); if (!p) return;
+  const v = unsaved ? { ...p, ...collect(id) } : p;
+  $('pvTitle').textContent = (v.published ? 'Live · ' : 'Draft preview · ') + v.title;
+  $('pvBody').innerHTML = `<h1>${esc(v.title)}</h1><div class="by">${fmtDay(v.published_at || v.created_at)} · Master Artist</div>
+    ${v.cover_image ? `<img class="cover" src="${esc(v.cover_image)}" alt="${esc(v.cover_alt)}">` : ''}${clean(v.body_html)}`;
+  $('pvBody').querySelectorAll('a').forEach(a => { a.target = '_blank'; a.rel = 'noopener'; });
+  $('pv').classList.add('on');
+};
+window.closePreview = () => $('pv').classList.remove('on');
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('pv')) closePreview(); });
+
+window.savePost = async id => {
+  const p = blogPosts.find(x => x.id === id);
+  const v = collect(id);
+  const tagsEl = document.getElementById('tags-' + id);
+  v.tags = (tagsEl ? tagsEl.value : '').split(',').map(t => t.trim()).filter(Boolean);
+  if (p && p.published) delete v.slug;
+  else if (v.slug && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(v.slug)) { toast('The web address can only use lowercase letters, numbers and hyphens.'); return; }
+  busy(true);
+  const { error } = await sb.from('blog_posts').update(v).eq('id', id);
+  busy(false);
+  if (error) { toast('Could not save: ' + error.message); return; }
+  if (v.slug) blogOpenSlug = v.slug;
+  toast('Saved'); await render();
+};
+window.setPublished = async (id, on) => {
+  const p = blogPosts.find(x => x.id === id);
+  if (!confirm(on ? `Publish "${p.title}" on the website now?` : `Take "${p.title}" off the website?`)) return;
+  busy(true);
+  const { error } = await sb.from('blog_posts').update({ published: on }).eq('id', id);
+  busy(false);
+  if (error) { toast('Could not update: ' + error.message); return; }
+  toast(on ? 'Published — it is on the blog now' : 'Unpublished'); await render();
+};
+window.delPost = async id => {
+  const p = blogPosts.find(x => x.id === id);
+  if (!confirm(`Delete "${p.title}" permanently? This cannot be undone.`)) return;
+  busy(true);
+  const { error } = await sb.from('blog_posts').delete().eq('id', id);
+  busy(false);
+  if (error) { toast('Could not delete: ' + error.message); return; }
+  toast('Deleted'); await render();
 };
 
 /* ---------- studio details ---------- */
