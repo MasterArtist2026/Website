@@ -16,14 +16,10 @@ const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Satur
 /* WhatsApp number used until site_settings loads (and if it never does). */
 let waDigits = '60102779426';
 
-/* Google reviews (live, via the Places API). Leave GOOGLE_MAPS_KEY empty to
-   turn the live block off — hand-picked testimonials still show. The key must
-   be restricted to masterartist.co in Google Cloud (see docs/google-reviews.md).
-   If GOOGLE_PLACE_ID is empty the place is looked up by name, and its ID is
-   printed in the browser console so it can be pasted here (saves one call). */
-const GOOGLE_MAPS_KEY    = 'AIzaSyAbbyES0hybZNER4_alOcFKzxzFH2F5n9M';
-const GOOGLE_PLACE_ID    = 'ChIJ_5QUWwBJzDERfwTpMdDHLPY';
-const GOOGLE_PLACE_QUERY = 'Master Artist, 38-2 Jalan 28/70a, Desa Sri Hartamas, 50480 Kuala Lumpur';
+/* Google reviews come from the "google-reviews" Supabase Edge Function
+   (supabase/functions/google-reviews). The Google API key lives only in
+   Supabase's secrets — never in this file. */
+const GOOGLE_REVIEWS_ON  = true;
 const GOOGLE_PROFILE_URL = 'https://www.google.com/maps/place/Master+Artist/@3.1624067,101.6486298,17z/data=!4m6!3m5!1s0x31cc49005b1494ff:0xf62cc7d031e9047f!8m2!3d3.1624067!4d101.6486298!16s%2Fg%2F11m5plgbv3';
 
 /* ---------------------------------------------------------------- helpers */
@@ -416,36 +412,16 @@ function renderTestimonials(rows) {
 
 /* Live Google rating + up to 5 reviews (Google chooses which). Shown with the
    reviewer's name, photo, date and Google attribution, as Google requires. */
-function loadGoogleMaps() {
-  return new Promise((resolve, reject) => {
-    if (window.google && google.maps && google.maps.importLibrary) return resolve();
-    window.__maGoogleReady = () => resolve();
-    const s = document.createElement('script');
-    s.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(GOOGLE_MAPS_KEY) + '&v=weekly&loading=async&callback=__maGoogleReady';
-    s.async = true; s.onerror = reject;
-    document.head.appendChild(s);
-  });
-}
-
 async function renderGoogleReviews() {
   const host = $('gReviews');
-  if (!host || !GOOGLE_MAPS_KEY) return;
+  if (!host || !GOOGLE_REVIEWS_ON) return;
   try {
-    await loadGoogleMaps();
-    const { Place } = await google.maps.importLibrary('places');
-    let id = GOOGLE_PLACE_ID;
-    if (!id) {
-      const { places } = await Place.searchByText({ textQuery: GOOGLE_PLACE_QUERY, fields: ['id'], maxResultCount: 1 });
-      if (!places || !places.length) return;
-      id = places[0].id;
-      console.info('[site] Google Place ID for Master Artist:', id, '— paste into GOOGLE_PLACE_ID in site.js');
-    }
-    const place = new Place({ id });
-    await place.fetchFields({ fields: ['rating', 'userRatingCount', 'reviews', 'googleMapsURI'] });
+    const { data: place, error } = await sb.functions.invoke('google-reviews');
+    if (error || !place) { console.warn('[site] Google reviews unavailable:', error && error.message); return; }
     const reviews = (place.reviews || []).filter(r => r.text);
     if (!place.rating && !reviews.length) return;
-    const profile = place.googleMapsURI || GOOGLE_PROFILE_URL;
-    const writeUrl = 'https://search.google.com/local/writereview?placeid=' + encodeURIComponent(id);
+    const profile = place.googleMapsUri || GOOGLE_PROFILE_URL;
+    const writeUrl = 'https://search.google.com/local/writereview?placeid=' + encodeURIComponent(place.placeId || '');
     host.innerHTML = `
       <div class="g-head">
         ${G_LOGO}
@@ -459,16 +435,15 @@ async function renderGoogleReviews() {
         </div>
       </div>
       ${reviews.length ? `<div class="g-grid">${reviews.map(r => {
-        const a = r.authorAttribution || {};
-        const name = esc(a.displayName || 'Google user');
+        const name = esc(r.author || 'Google user');
         return `
         <figure class="g-review">
           <figcaption>
-            ${a.photoURI ? `<img src="${esc(a.photoURI)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : `<span class="g-av">${name.slice(0, 1)}</span>`}
-            <span><b>${a.uri ? `<a href="${esc(a.uri)}" target="_blank" rel="noopener">${name}</a>` : name}</b><small>${esc(r.relativePublishTimeDescription || fmtDate(r.publishTime))}</small></span>
+            ${r.authorPhoto ? `<img src="${esc(r.authorPhoto)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : `<span class="g-av">${name.slice(0, 1)}</span>`}
+            <span><b>${r.authorUri ? `<a href="${esc(r.authorUri)}" target="_blank" rel="noopener">${name}</a>` : name}</b><small>${esc(r.when || fmtDate(r.publishTime))}</small></span>
           </figcaption>
           ${stars(r.rating || 0)}
-          <blockquote><p>${esc(typeof r.text === 'string' ? r.text : (r.text && r.text.text) || '')}</p></blockquote>
+          <blockquote><p>${esc(r.text)}</p></blockquote>
           <span class="g-posted">${G_LOGO} Posted on Google</span>
         </figure>`;
       }).join('')}</div>` : ''}`;
