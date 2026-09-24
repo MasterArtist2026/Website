@@ -16,6 +16,13 @@ const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Satur
 /* WhatsApp number used until site_settings loads (and if it never does). */
 let waDigits = '60102779426';
 
+/* Google Ads conversion tracking. Paste the values from Google Ads →
+   Goals → Conversions → (your conversion) → Tag setup → "Use Google tag".
+   Leave empty to switch Ads tracking off; GA4 and Meta keep working. */
+const GOOGLE_ADS_ID             = '';   // e.g. 'AW-123456789'
+const GOOGLE_ADS_TRIAL_LABEL    = '';   // conversion label for "Trial form sent"
+const GOOGLE_ADS_WHATSAPP_LABEL = '';   // conversion label for "WhatsApp click"
+
 /* Google reviews come from the "google-reviews" Supabase Edge Function
    (supabase/functions/google-reviews). The Google API key lives only in
    Supabase's secrets — never in this file. */
@@ -138,6 +145,38 @@ function rotator(items, dotHost, dotClass, interval, hoverHost, slide) {
   });
 })();
 
+/* ---------------------------------------------------------------- tracking
+   One place that reports conversions to GA4, Google Ads and the Meta Pixel.
+   Each call is wrapped so a blocked tracker can never break the page. */
+if (GOOGLE_ADS_ID && window.gtag) { try { gtag('config', GOOGLE_ADS_ID); } catch {} }
+
+function track(kind, detail) {
+  const where = detail.where || '';
+  if (kind === 'trial') {
+    try { window.fbq && fbq('track', 'Lead', { content_name: detail.programme || 'Trial class' }); } catch {}
+    try { window.gtag && gtag('event', 'generate_lead', { programme: detail.programme || '', link_location: where }); } catch {}
+    if (GOOGLE_ADS_ID && GOOGLE_ADS_TRIAL_LABEL) { try { gtag('event', 'conversion', { send_to: GOOGLE_ADS_ID + '/' + GOOGLE_ADS_TRIAL_LABEL }); } catch {} }
+  } else if (kind === 'whatsapp') {
+    try { window.fbq && fbq('track', 'Contact', { content_name: where }); } catch {}
+    try { window.gtag && gtag('event', 'whatsapp_click', { link_location: where, page: location.pathname }); } catch {}
+    if (GOOGLE_ADS_ID && GOOGLE_ADS_WHATSAPP_LABEL) { try { gtag('event', 'conversion', { send_to: GOOGLE_ADS_ID + '/' + GOOGLE_ADS_WHATSAPP_LABEL }); } catch {} }
+  }
+}
+
+// Which part of the page a click came from, e.g. "floating-button", "orchestra", "footer"
+function placeOf(el) {
+  if (el.id === 'fabWhatsapp') return 'floating-button';
+  if (el.closest('footer')) return 'footer';
+  const sec = el.closest('[id]');
+  return sec ? sec.id : 'page';
+}
+
+// Every WhatsApp link on the site (buttons, footer, floating button)
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('a[href*="wa.me/"]');
+  if (a) track('whatsapp', { where: placeOf(a) });
+}, true);
+
 /* -------------------------------------------------------------- trial form
    Nothing is stored by the website: the form composes a WhatsApp message and
    opens it, so the family sends it themselves. It also fires a Lead event for
@@ -160,8 +199,7 @@ function rotator(items, dotHost, dotClass, interval, hoverHost, slide) {
         'Preferred day: ' + (f.day || '-'),
       ];
       if (f.message && f.message.trim()) lines.push('', f.message.trim());
-      try { window.fbq && fbq('track', 'Lead', { content_name: f.programme || 'Trial class' }); } catch {}
-      try { window.gtag && gtag('event', 'generate_lead', { programme: f.programme || '' }); } catch {}
+      track('trial', { programme: f.programme, where: placeOf(form) });
       window.open(waLink(lines.join('\n')), '_blank', 'noopener');
       form.classList.add('sent');
     });
