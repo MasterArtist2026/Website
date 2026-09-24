@@ -645,3 +645,12 @@ figure.gal{margin:0}
 .why-grid{grid-template-columns:repeat(4,1fr)}
 @media(max-width:1080px){.why-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:600px){.why-grid{grid-template-columns:1fr}}
+
+/* ---------- upcoming workshops ---------- */
+.up-list{display:grid;gap:10px}
+.up{display:grid;grid-template-columns:110px 1fr auto;gap:16px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:14px 18px}
+.up[hidden]{display:none}
+.up .when{font-weight:700;color:var(--gold-deep)}
+.up .what b{display:block;color:var(--ink);font-size:16px}
+.up .what small{color:var(--muted);font-size:13.5px}
+@media(max-width:600px){.up{grid-template-columns:1fr auto}.up .when{grid-column:1/-1}}

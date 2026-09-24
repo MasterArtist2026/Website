@@ -563,6 +563,16 @@ function renderPost(p, more) {
   if (moreHost && others.length) { moreHost.innerHTML = others.map(postCard).join(''); $('morePosts').hidden = false; }
 }
 
+/* Dated items (e.g. upcoming workshops) hide themselves after their date */
+(function hidePast() {
+  const today = new Date().toISOString().slice(0, 10);
+  document.querySelectorAll('[data-until]').forEach(el => { if (el.dataset.until < today) el.hidden = true; });
+  document.querySelectorAll('.up-list').forEach(list => {
+    const none = list.parentElement.querySelector('.up-none');
+    if (none) none.hidden = !!list.querySelector('.up:not([hidden])');
+  });
+})();
+
 /* =================================================================== boot */
 async function boot() {
   applyWhatsApp();
