@@ -573,79 +573,125 @@ function renderPost(p, more) {
   });
 })();
 
-/* ---------------------------------------------------------------- calendar
-   Homepage "What's on": a month grid (this month and the next two), the next
-   30 days as a list, and a details panel with a WhatsApp reserve button.
-   Events come from <script id="eventsData"> written by the site build. */
-(function initCalendar() {
-  const host = $('calendar'), dataEl = $('eventsData');
-  if (!host || !dataEl) return;
-  let events = [];
-  try { events = JSON.parse(dataEl.textContent); } catch { return; }
-  const pad = n => String(n).padStart(2, '0');
-  const iso = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-  const now = new Date(), todayIso = iso(now);
-  const upcoming = events.filter(e => e.date >= todayIso).sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
+/* ---------------------------------------------------------------- events
+   Events come from the admin panel (Supabase view events_public). The build
+   also writes them into the page (<script id="eventsData">) so the calendar
+   works instantly and search engines can read them; the live list replaces
+   that copy as soon as it loads. Used by the homepage calendar and the
+   Workshops page's upcoming list. */
+const pad2 = n => String(n).padStart(2, '0');
+const isoDay = d => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+function fmtTime(t) {
+  const [h, m] = String(t || '').split(':').map(Number);
+  if (isNaN(h)) return '';
+  return (h % 12 || 12) + (m ? ':' + pad2(m) : '') + (h < 12 ? 'am' : 'pm');
+}
+function eventLabel(e) {
+  const d = new Date(e.date + 'T00:00');
+  const day = d.toLocaleDateString('en-GB', { weekday: 'short' }) + ' ' + d.getDate() + ' ' + d.toLocaleDateString('en-GB', { month: 'short' });
+  let s = fmtTime(e.start), f = fmtTime(e.end);
+  if (f && s.slice(-2) === f.slice(-2)) s = s.slice(0, -2);   // "3–5pm" rather than "3pm–5pm"
+  return day + ', ' + s + (f ? '–' + f : '');
+}
+const fromRow = r => ({ date: r.event_date, start: String(r.start_time).slice(0, 5), end: r.end_time ? String(r.end_time).slice(0, 5) : '',
+  title: r.title, kind: r.kind || '', category: r.category || 'Workshop', desc: r.description || '', reserve: r.allow_reserve !== false });
+const typeLabel = e => (e.kind ? e.kind + ' ' : '') + (e.category || 'Workshop').toLowerCase();
+const reserveText = e => e.category === 'Workshop'
+  ? `Hi Master Artist! I'd like to reserve a spot at the ${e.label} workshop: ${e.title}.`
+  : `Hi Master Artist! I'd like to know more about ${e.title} on ${e.label}.`;
+
+function embeddedEvents() {
+  try { return JSON.parse($('eventsData').textContent).map(e => ({ ...e, category: e.category || 'Workshop', reserve: e.reserve !== false })); }
+  catch { return []; }
+}
+
+/* Homepage "What's on" calendar */
+let calState = null;
+function drawCalendar(events) {
+  const host = $('calendar');
+  if (!host) return;
+  const now = new Date(), todayIso = isoDay(now);
+  const upcoming = events.filter(e => e.date >= todayIso).map(e => ({ ...e, label: eventLabel(e) }))
+    .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
   const byDate = {};
   upcoming.forEach(e => (byDate[e.date] = byDate[e.date] || []).push(e));
   const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  let offset = 0;
-  // Start on the first month that has something coming up (within 2 months)
-  for (let k = 0; k < 3; k++) {
-    const m = new Date(now.getFullYear(), now.getMonth() + k, 1);
-    if (upcoming.some(e => e.date.startsWith(m.getFullYear() + '-' + pad(m.getMonth() + 1)))) { offset = k; break; }
+  if (!calState) {
+    calState = { offset: 0 };
+    for (let k = 0; k < 3; k++) {       // open on the first month with something coming up
+      const m = new Date(now.getFullYear(), now.getMonth() + k, 1);
+      if (upcoming.some(e => e.date.startsWith(m.getFullYear() + '-' + pad2(m.getMonth() + 1)))) { calState.offset = k; break; }
+    }
+    host.addEventListener('click', ev => {
+      const nav = ev.target.closest('.cal-nav');
+      if (nav) { calState.offset = Math.max(0, Math.min(2, calState.offset + Number(nav.dataset.dir))); drawMonth(); return; }
+      const b = ev.target.closest('.cal-ev'); if (b) showDetail(calState.find(b.dataset.key));
+    });
+    $('calList').addEventListener('click', ev => { const b = ev.target.closest('button'); if (b) showDetail(calState.find(b.dataset.key)); });
   }
-  const reserveLink = e => waLink(`Hi Master Artist! I'd like to reserve a spot at the ${e.label} workshop: ${e.title}.`);
+  calState.find = key => upcoming.find(e => e.date + e.start === key);
 
   function showDetail(e) {
+    if (!e) return;
     const box = $('calDetail');
-    box.innerHTML = `<span class="cal-kind">${esc(e.kind)} workshop</span><h4>${esc(e.title)}</h4>
-      <p class="cal-when">${esc(e.label)}</p><p>${esc(e.desc)}</p>
-      <p class="cal-meta">All ages · no experience needed · at our studio above Savor</p>
-      <a class="btn btn-purple btn-sm" href="${reserveLink(e)}" target="_blank" rel="noopener" data-cal-reserve>Reserve on WhatsApp</a>`;
+    box.innerHTML = `<span class="cal-kind">${esc(typeLabel(e))}</span><h4>${esc(e.title)}</h4>
+      <p class="cal-when">${esc(e.label)}</p>${e.desc ? `<p>${esc(e.desc)}</p>` : ''}
+      ${e.category === 'Workshop' ? '<p class="cal-meta">All ages · no experience needed · at our studio above Savor</p>' : ''}
+      ${e.reserve ? `<a class="btn btn-purple btn-sm" href="${waLink(reserveText(e))}" target="_blank" rel="noopener" data-cal-reserve>${e.category === 'Workshop' ? 'Reserve on WhatsApp' : 'Ask on WhatsApp'}</a>` : ''}`;
     box.hidden = false;
     host.querySelectorAll('.cal-ev').forEach(b => b.classList.toggle('on', b.dataset.key === e.date + e.start));
     $('calList').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.key === e.date + e.start));
   }
-  const find = key => upcoming.find(e => e.date + e.start === key);
-
   function drawMonth() {
-    const first = new Date(now.getFullYear(), now.getMonth() + offset, 1);
-    const y = first.getFullYear(), m = first.getMonth();
-    const days = new Date(y, m + 1, 0).getDate();
+    const first = new Date(now.getFullYear(), now.getMonth() + calState.offset, 1);
+    const y = first.getFullYear(), m = first.getMonth(), days = new Date(y, m + 1, 0).getDate();
     let cells = '';
     for (let i = 0; i < first.getDay(); i++) cells += '<div class="cal-cell blank"></div>';
     for (let d = 1; d <= days; d++) {
-      const key = y + '-' + pad(m + 1) + '-' + pad(d), dow = new Date(y, m, d).getDay();
-      const evs = byDate[key] || [];
+      const key = y + '-' + pad2(m + 1) + '-' + pad2(d), dow = new Date(y, m, d).getDay(), evs = byDate[key] || [];
       const cls = ['cal-cell', key < todayIso ? 'past' : '', key === todayIso ? 'today' : '', dow === 6 ? 'closed' : '', evs.length ? 'has' : ''].join(' ');
       cells += `<div class="${cls}"><span class="cal-d">${d}</span>${dow === 6 ? '<span class="cal-closed">Closed</span>' : ''}
         ${evs.map(e => `<button type="button" class="cal-ev" data-key="${e.date + e.start}" title="${esc(e.title)}"><span>${esc(e.title)}</span></button>`).join('')}</div>`;
     }
     host.innerHTML = `<div class="cal-head">
-        <button type="button" class="cal-nav" data-dir="-1" aria-label="Previous month" ${offset <= 0 ? 'disabled' : ''}>‹</button>
+        <button type="button" class="cal-nav" data-dir="-1" aria-label="Previous month" ${calState.offset <= 0 ? 'disabled' : ''}>‹</button>
         <h3>${MONTHS[m]} ${y}</h3>
-        <button type="button" class="cal-nav" data-dir="1" aria-label="Next month" ${offset >= 2 ? 'disabled' : ''}>›</button>
+        <button type="button" class="cal-nav" data-dir="1" aria-label="Next month" ${calState.offset >= 2 ? 'disabled' : ''}>›</button>
       </div>
       <div class="cal-grid" role="grid">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => `<div class="cal-dow">${d}</div>`).join('')}${cells}</div>`;
   }
+  const limit = isoDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 30));
+  const soon = upcoming.filter(e => e.date <= limit);
+  $('calList').innerHTML = soon.length
+    ? soon.map(e => `<button type="button" data-key="${e.date + e.start}"><b>${esc(e.label)}</b><span>${esc(e.title)}</span></button>`).join('')
+    : `<p class="cal-empty">Nothing in the next 30 days yet — <a href="${waLink('Hi Master Artist! When is the next workshop?')}" target="_blank" rel="noopener">ask us what's coming up</a>.</p>`;
+  drawMonth();
+  if (upcoming.length) showDetail(soon[0] || upcoming[0]); else $('calDetail').hidden = true;
+}
 
-  function drawList() {
-    const limit = iso(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 30));
-    const soon = upcoming.filter(e => e.date <= limit);
-    $('calList').innerHTML = soon.length
-      ? soon.map(e => `<button type="button" data-key="${e.date + e.start}"><b>${esc(e.label)}</b><span>${esc(e.title)}</span></button>`).join('')
-      : `<p class="cal-empty">No workshops in the next 30 days yet — <a href="${waLink('Hi Master Artist! When is the next workshop?')}" target="_blank" rel="noopener">ask us what's coming up</a>.</p>`;
-  }
+/* Workshops page "Upcoming workshops" list */
+function drawUpcomingList(events) {
+  const list = document.querySelector('.up-list');
+  if (!list) return;
+  const today = isoDay(new Date());
+  const ws = events.filter(e => e.date >= today && (e.category || 'Workshop') === 'Workshop')
+    .map(e => ({ ...e, label: eventLabel(e) })).sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
+  list.innerHTML = ws.map(e => `<div class="up"><div class="when">${esc(e.label)}</div><div class="what"><b>${esc(e.title)}</b>
+      <small>${esc(typeLabel(e))} · all ages · no experience needed</small></div>
+      ${e.reserve ? `<a class="btn btn-purple btn-sm" href="${waLink(reserveText(e))}" target="_blank" rel="noopener">Reserve</a>` : ''}</div>`).join('');
+  const none = list.parentElement.querySelector('.up-none');
+  if (none) none.hidden = ws.length > 0;
+}
 
-  host.addEventListener('click', ev => {
-    const nav = ev.target.closest('.cal-nav');
-    if (nav) { offset = Math.max(0, Math.min(2, offset + Number(nav.dataset.dir))); drawMonth(); return; }
-    const b = ev.target.closest('.cal-ev'); if (b) showDetail(find(b.dataset.key));
+(function initEvents() {
+  if (!$('calendar') && !document.querySelector('.up-list')) return;
+  const first = embeddedEvents();
+  if (first.length) { drawCalendar(first); drawUpcomingList(first); }
+  q(sb.from('events_public').select('*')).then(rows => {
+    if (!rows) return;   // events table not set up yet — keep what the page already shows
+    const live = rows.map(fromRow);
+    drawCalendar(live); drawUpcomingList(live);
   });
-  $('calList').addEventListener('click', ev => { const b = ev.target.closest('button'); if (b) showDetail(find(b.dataset.key)); });
-  drawMonth(); drawList();
-  if (upcoming.length) showDetail(upcoming[0]);
 })();
 
 /* =================================================================== boot */
