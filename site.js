@@ -573,6 +573,81 @@ function renderPost(p, more) {
   });
 })();
 
+/* ---------------------------------------------------------------- calendar
+   Homepage "What's on": a month grid (this month and the next two), the next
+   30 days as a list, and a details panel with a WhatsApp reserve button.
+   Events come from <script id="eventsData"> written by the site build. */
+(function initCalendar() {
+  const host = $('calendar'), dataEl = $('eventsData');
+  if (!host || !dataEl) return;
+  let events = [];
+  try { events = JSON.parse(dataEl.textContent); } catch { return; }
+  const pad = n => String(n).padStart(2, '0');
+  const iso = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  const now = new Date(), todayIso = iso(now);
+  const upcoming = events.filter(e => e.date >= todayIso).sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
+  const byDate = {};
+  upcoming.forEach(e => (byDate[e.date] = byDate[e.date] || []).push(e));
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  let offset = 0;
+  // Start on the first month that has something coming up (within 2 months)
+  for (let k = 0; k < 3; k++) {
+    const m = new Date(now.getFullYear(), now.getMonth() + k, 1);
+    if (upcoming.some(e => e.date.startsWith(m.getFullYear() + '-' + pad(m.getMonth() + 1)))) { offset = k; break; }
+  }
+  const reserveLink = e => waLink(`Hi Master Artist! I'd like to reserve a spot at the ${e.label} workshop: ${e.title}.`);
+
+  function showDetail(e) {
+    const box = $('calDetail');
+    box.innerHTML = `<span class="cal-kind">${esc(e.kind)} workshop</span><h4>${esc(e.title)}</h4>
+      <p class="cal-when">${esc(e.label)}</p><p>${esc(e.desc)}</p>
+      <p class="cal-meta">All ages · no experience needed · at our studio above Savor</p>
+      <a class="btn btn-purple btn-sm" href="${reserveLink(e)}" target="_blank" rel="noopener" data-cal-reserve>Reserve on WhatsApp</a>`;
+    box.hidden = false;
+    host.querySelectorAll('.cal-ev').forEach(b => b.classList.toggle('on', b.dataset.key === e.date + e.start));
+    $('calList').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.key === e.date + e.start));
+  }
+  const find = key => upcoming.find(e => e.date + e.start === key);
+
+  function drawMonth() {
+    const first = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    const y = first.getFullYear(), m = first.getMonth();
+    const days = new Date(y, m + 1, 0).getDate();
+    let cells = '';
+    for (let i = 0; i < first.getDay(); i++) cells += '<div class="cal-cell blank"></div>';
+    for (let d = 1; d <= days; d++) {
+      const key = y + '-' + pad(m + 1) + '-' + pad(d), dow = new Date(y, m, d).getDay();
+      const evs = byDate[key] || [];
+      const cls = ['cal-cell', key < todayIso ? 'past' : '', key === todayIso ? 'today' : '', dow === 6 ? 'closed' : '', evs.length ? 'has' : ''].join(' ');
+      cells += `<div class="${cls}"><span class="cal-d">${d}</span>${dow === 6 ? '<span class="cal-closed">Closed</span>' : ''}
+        ${evs.map(e => `<button type="button" class="cal-ev" data-key="${e.date + e.start}" title="${esc(e.title)}"><span>${esc(e.title)}</span></button>`).join('')}</div>`;
+    }
+    host.innerHTML = `<div class="cal-head">
+        <button type="button" class="cal-nav" data-dir="-1" aria-label="Previous month" ${offset <= 0 ? 'disabled' : ''}>‹</button>
+        <h3>${MONTHS[m]} ${y}</h3>
+        <button type="button" class="cal-nav" data-dir="1" aria-label="Next month" ${offset >= 2 ? 'disabled' : ''}>›</button>
+      </div>
+      <div class="cal-grid" role="grid">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => `<div class="cal-dow">${d}</div>`).join('')}${cells}</div>`;
+  }
+
+  function drawList() {
+    const limit = iso(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 30));
+    const soon = upcoming.filter(e => e.date <= limit);
+    $('calList').innerHTML = soon.length
+      ? soon.map(e => `<button type="button" data-key="${e.date + e.start}"><b>${esc(e.label)}</b><span>${esc(e.title)}</span></button>`).join('')
+      : `<p class="cal-empty">No workshops in the next 30 days yet — <a href="${waLink('Hi Master Artist! When is the next workshop?')}" target="_blank" rel="noopener">ask us what's coming up</a>.</p>`;
+  }
+
+  host.addEventListener('click', ev => {
+    const nav = ev.target.closest('.cal-nav');
+    if (nav) { offset = Math.max(0, Math.min(2, offset + Number(nav.dataset.dir))); drawMonth(); return; }
+    const b = ev.target.closest('.cal-ev'); if (b) showDetail(find(b.dataset.key));
+  });
+  $('calList').addEventListener('click', ev => { const b = ev.target.closest('button'); if (b) showDetail(find(b.dataset.key)); });
+  drawMonth(); drawList();
+  if (upcoming.length) showDetail(upcoming[0]);
+})();
+
 /* =================================================================== boot */
 async function boot() {
   applyWhatsApp();
