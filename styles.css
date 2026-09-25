@@ -654,3 +654,7 @@ figure.gal{margin:0}
 .up .what b{display:block;color:var(--ink);font-size:16px}
 .up .what small{color:var(--muted);font-size:13.5px}
 @media(max-width:600px){.up{grid-template-columns:1fr auto}.up .when{grid-column:1/-1}}
+
+/* static timetable (same layout as the old #schedList) */
+.sched-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.sched-row .who a{white-space:nowrap}

@@ -8,7 +8,7 @@ where id = 1;
 
 -- Opening hours (shown on Visit, in the footer and the FAQ)
 update site_settings
-set opening_hours = 'Sun–Thu 10:30am–7pm · Fri 10:30am–4pm · Closed Saturdays'
+set opening_hours = 'Sun–Thu 10:30am–9pm · Fri 10:30am–5:30pm · Closed Saturdays'
 where id = 1;
 
 -- Graphic Design (10+) and Videography (12+) are running

@@ -13,12 +13,17 @@ it. Never invent testimonials, student names, statistics, awards or events.
 Key facts (check the files — they win if these ever differ):
 - Location: 38-2, Jalan 28/70A, Desa Sri Hartamas, KL — upstairs, above Savor.
   A short drive from Mont Kiara.
-- Hours: Sun–Thu 10:30am–7pm, Fri 10:30am–4pm, closed Saturdays (Sabbath).
+- Hours: Sun–Thu 10:30am–9pm, Fri 10:30am–5:30pm, closed Saturdays (Sabbath).
+- Timetable: children's art Mon–Fri 3–5pm; adult art weekday mornings from 10:30am
+  and Mon–Thu 7–9pm; art for all ages Sun 10:30am–12:30pm; photography Sun
+  10:30am–12:30pm and Thu 7–9pm; videography Tue 7–9pm; workshops every Sunday
+  3–5pm. Music lessons are arranged one-to-one or in groups with teachers.
 - Trial: any class RM50, credited in full to the first month.
 - Founder Sabrina Hew teaches voice; Cheong Chui Yen teaches art; Alden teaches
   photography; Zimin teaches videography & film.
-- Mont Kiara Orchestra: every Friday 3pm, open to musicians of any school,
+- Mont Kiara Orchestra: every Friday 4–5:30pm, open to musicians of any school,
   2–4 performances a month.
+- Don't name which teacher takes a particular class time.
 
 General facts from research (child development, how-to tips) are fine, but keep
 claims modest and never give medical or legal advice.
