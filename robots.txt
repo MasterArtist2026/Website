@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
 Disallow: /admin.html
+Disallow: /publish.html
 
 Sitemap: https://masterartist.co/sitemap.xml
