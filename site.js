@@ -20,6 +20,7 @@ let waDigits = '60102779426';
    to Google Ads account AW-18457946758, so a conversion is counted whenever one
    of the events below is sent (the event names come from each Ads conversion's
    "Tag setup" snippet). Set one to '' to switch that conversion off. */
+const GOOGLE_ADS_ID = 'AW-18457946758';
 const GOOGLE_ADS_EVENTS = {
   trial_form: 'close_convert_lead',   // Ads conversion: Trial form sent
   whatsapp:   'qualify_lead',         // Ads conversion: WhatsApp click
@@ -155,18 +156,20 @@ function rotator(items, dotHost, dotClass, interval, hoverHost, slide) {
 function adsLead(source, where) {
   const name = GOOGLE_ADS_EVENTS[source];
   if (!name || !window.gtag) return;
-  try { gtag('event', name, { link_location: where }); } catch {}
+  // send_to routes the hit straight to the Ads account (the page also runs
+  // gtag('config', GOOGLE_ADS_ID)); beacon transport survives a tab switch/unload.
+  try { gtag('event', name, { send_to: GOOGLE_ADS_ID, link_location: where, transport_type: 'beacon' }); } catch {}
 }
 
 function track(kind, detail) {
   const where = detail.where || '';
   if (kind === 'trial') {
     try { window.fbq && fbq('track', 'Lead', { content_name: detail.programme || 'Trial class' }); } catch {}
-    try { window.gtag && gtag('event', 'generate_lead', { programme: detail.programme || '', link_location: where }); } catch {}
+    try { window.gtag && gtag('event', 'generate_lead', { programme: detail.programme || '', link_location: where, transport_type: 'beacon' }); } catch {}
     adsLead('trial_form', where);
   } else if (kind === 'whatsapp') {
     try { window.fbq && fbq('track', 'Contact', { content_name: where }); } catch {}
-    try { window.gtag && gtag('event', 'whatsapp_click', { link_location: where, page: location.pathname }); } catch {}
+    try { window.gtag && gtag('event', 'whatsapp_click', { link_location: where, page: location.pathname, transport_type: 'beacon' }); } catch {}
     adsLead('whatsapp', where);
   }
 }

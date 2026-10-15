@@ -7,7 +7,7 @@ site's header, footer and trial form), and adds the posts to sitemap.xml.
 Search engines and AI crawlers can then read each post without running
 JavaScript. Run from the repository root:  python3 tools/build_blog.py
 """
-import html, json, pathlib, re, sys, urllib.request
+import html, json, pathlib, re, subprocess, sys, urllib.request
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SITE = 'https://masterartist.co'
@@ -71,8 +71,20 @@ def build(template, p, others):
     desc = p.get('seo_description') or p.get('excerpt') or ''
     body = bleach.clean(p.get('body_html') or '', tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS,
                         protocols=['http', 'https', 'mailto', 'tel'], strip=True)
-    body = re.sub(r'<a (href="https?://(?!masterartist\.co)[^"]*")', r'<a \1 target="_blank" rel="noopener"', body)
-    cover = f'<img class="cover" src="{esc(abs_url(p.get("cover_image")))}" alt="{esc(p.get("cover_alt"))}">' if p.get('cover_image') else ''
+    # External links open in a new tab. Collapse a repeated target/rel pair first:
+    # an earlier build (or the source HTML) may already include one, and adding
+    # it again produces duplicate attributes, which is invalid HTML.
+    body = re.sub(
+        r'(<a\b[^>]*?href="https?://(?!masterartist\.co)[^"]*")(?:\s+target="_blank"\s+rel="noopener")+',
+        r'\1 target="_blank" rel="noopener"',
+        body,
+    )
+    body = re.sub(
+        r'<a (href="https?://(?!masterartist\.co)[^"]*")(?!\s+target=)',
+        r'<a \1 target="_blank" rel="noopener"',
+        body,
+    )
+    cover = f'<img loading="lazy" class="cover" src="{esc(abs_url(p.get("cover_image")))}" alt="{esc(p.get("cover_alt"))}">' if p.get('cover_image') else ''
     meta = ''.join(f'<span>{esc(x)}</span>' for x in [fmt_date(p.get('published_at')), p.get('author') or 'Master Artist', *(p.get('tags') or [])[:3]] if x)
     schema = {
         '@context': 'https://schema.org', '@type': 'BlogPosting', 'headline': title, 'description': desc,
@@ -114,6 +126,8 @@ def build(template, p, others):
     more = ''.join(card(o) for o in others[:3])
     doc = doc.replace('<section id="morePosts" class="alt" hidden>', '<section id="morePosts" class="alt"' + ('' if more else ' hidden') + '>', 1)
     doc = doc.replace('<div class="blog-grid" id="moreGrid"></div>', f'<div class="blog-grid">{more}</div>', 1)
+    # post.html itself is noindex (it is only a JS template); built posts must be indexable
+    doc = re.sub(r'<meta name="robots" content="noindex[^"]*">\n?', '', doc, 1)
     # the DOMPurify loader is only needed by the dynamic post page
     doc = re.sub(r'<script src="https://cdn\.jsdelivr\.net/npm/dompurify[^>]*></script>\n?', '', doc)
     return doc
@@ -126,7 +140,26 @@ def update_sitemap(posts):
     entries = ''.join(f'\n  <url>\n    <loc>{SITE}/blog/{esc(p["slug"])}.html</loc>\n    <lastmod>{(p.get("updated_at") or p.get("published_at") or "")[:10]}</lastmod>\n'
                       f'    <changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>' for p in posts)
     xml = xml.replace('\n</urlset>', entries + '\n</urlset>')
-    path.write_text(xml)
+    path.write_text(refresh_page_lastmod(xml))
+
+
+def refresh_page_lastmod(xml):
+    """Sets <lastmod> on the non-blog pages to the date of the last git commit that touched each file."""
+    def fix(m):
+        block, loc = m.group(0), m.group(1)
+        rel = loc[len(SITE) + 1:] or 'index.html'
+        if rel.startswith('blog/'):
+            return block
+        try:
+            day = subprocess.run(['git', 'log', '-1', '--format=%cs', '--', rel], cwd=ROOT,
+                                 capture_output=True, text=True, timeout=30).stdout.strip()
+        except Exception:
+            day = ''
+        if not day:
+            return block
+        block = re.sub(r'\s*<lastmod>[^<]*</lastmod>', '', block)
+        return block.replace('</loc>', f'</loc>\n    <lastmod>{day}</lastmod>', 1)
+    return re.sub(r'<url>\s*<loc>([^<]+)</loc>.*?</url>', fix, xml, flags=re.S)
 
 
 def main():
