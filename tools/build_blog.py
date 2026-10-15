@@ -7,7 +7,7 @@ site's header, footer and trial form), and adds the posts to sitemap.xml.
 Search engines and AI crawlers can then read each post without running
 JavaScript. Run from the repository root:  python3 tools/build_blog.py
 """
-import html, json, pathlib, re, sys, urllib.request
+import html, json, pathlib, re, subprocess, sys, urllib.request
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SITE = 'https://masterartist.co'
@@ -114,6 +114,8 @@ def build(template, p, others):
     more = ''.join(card(o) for o in others[:3])
     doc = doc.replace('<section id="morePosts" class="alt" hidden>', '<section id="morePosts" class="alt"' + ('' if more else ' hidden') + '>', 1)
     doc = doc.replace('<div class="blog-grid" id="moreGrid"></div>', f'<div class="blog-grid">{more}</div>', 1)
+    # post.html itself is noindex (it is only a JS template); built posts must be indexable
+    doc = re.sub(r'<meta name="robots" content="noindex[^"]*">\n?', '', doc, 1)
     # the DOMPurify loader is only needed by the dynamic post page
     doc = re.sub(r'<script src="https://cdn\.jsdelivr\.net/npm/dompurify[^>]*></script>\n?', '', doc)
     return doc
@@ -126,7 +128,26 @@ def update_sitemap(posts):
     entries = ''.join(f'\n  <url>\n    <loc>{SITE}/blog/{esc(p["slug"])}.html</loc>\n    <lastmod>{(p.get("updated_at") or p.get("published_at") or "")[:10]}</lastmod>\n'
                       f'    <changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>' for p in posts)
     xml = xml.replace('\n</urlset>', entries + '\n</urlset>')
-    path.write_text(xml)
+    path.write_text(refresh_page_lastmod(xml))
+
+
+def refresh_page_lastmod(xml):
+    """Sets <lastmod> on the non-blog pages to the date of the last git commit that touched each file."""
+    def fix(m):
+        block, loc = m.group(0), m.group(1)
+        rel = loc[len(SITE) + 1:] or 'index.html'
+        if rel.startswith('blog/'):
+            return block
+        try:
+            day = subprocess.run(['git', 'log', '-1', '--format=%cs', '--', rel], cwd=ROOT,
+                                 capture_output=True, text=True, timeout=30).stdout.strip()
+        except Exception:
+            day = ''
+        if not day:
+            return block
+        block = re.sub(r'\s*<lastmod>[^<]*</lastmod>', '', block)
+        return block.replace('</loc>', f'</loc>\n    <lastmod>{day}</lastmod>', 1)
+    return re.sub(r'<url>\s*<loc>([^<]+)</loc>.*?</url>', fix, xml, flags=re.S)
 
 
 def main():
