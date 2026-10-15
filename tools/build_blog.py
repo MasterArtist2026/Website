@@ -71,8 +71,20 @@ def build(template, p, others):
     desc = p.get('seo_description') or p.get('excerpt') or ''
     body = bleach.clean(p.get('body_html') or '', tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS,
                         protocols=['http', 'https', 'mailto', 'tel'], strip=True)
-    body = re.sub(r'<a (href="https?://(?!masterartist\.co)[^"]*")', r'<a \1 target="_blank" rel="noopener"', body)
-    cover = f'<img class="cover" src="{esc(abs_url(p.get("cover_image")))}" alt="{esc(p.get("cover_alt"))}">' if p.get('cover_image') else ''
+    # External links open in a new tab. Collapse a repeated target/rel pair first:
+    # an earlier build (or the source HTML) may already include one, and adding
+    # it again produces duplicate attributes, which is invalid HTML.
+    body = re.sub(
+        r'(<a\b[^>]*?href="https?://(?!masterartist\.co)[^"]*")(?:\s+target="_blank"\s+rel="noopener")+',
+        r'\1 target="_blank" rel="noopener"',
+        body,
+    )
+    body = re.sub(
+        r'<a (href="https?://(?!masterartist\.co)[^"]*")(?!\s+target=)',
+        r'<a \1 target="_blank" rel="noopener"',
+        body,
+    )
+    cover = f'<img loading="lazy" class="cover" src="{esc(abs_url(p.get("cover_image")))}" alt="{esc(p.get("cover_alt"))}">' if p.get('cover_image') else ''
     meta = ''.join(f'<span>{esc(x)}</span>' for x in [fmt_date(p.get('published_at')), p.get('author') or 'Master Artist', *(p.get('tags') or [])[:3]] if x)
     schema = {
         '@context': 'https://schema.org', '@type': 'BlogPosting', 'headline': title, 'description': desc,
