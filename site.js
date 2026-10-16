@@ -18,15 +18,12 @@ const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Satur
 let waDigits = '60102779426';
 
 /* Google Ads conversions. GA4 (G-2X9E7MWMWM) is linked to AW-18457946758.
-   send_to must be the full label from Google Ads → Goals → Conversions →
-   Tag setup (AW-18457946758/xxxxxxxx). The two values below are placeholders:
-   replace PLACEHOLDER_GENERATE_LEAD and PLACEHOLDER_WHATSAPP_CLICK before
-   expecting Ads to record these conversions. Set a label to '' to switch it
-   off. Earlier snippets used the event names close_convert_lead and
-   qualify_lead with send_to set to the account id only; those were not labels. */
+   send_to is the full label from Google Ads → Goals → Conversions → Tag setup.
+   The trial-form conversion is the RM50 trial (value 50, currency MYR).
+   Set a label to '' to switch that conversion off. */
 const GOOGLE_ADS_LABELS = {
-  trial_form: 'AW-18457946758/PLACEHOLDER_GENERATE_LEAD',
-  whatsapp:   'AW-18457946758/PLACEHOLDER_WHATSAPP_CLICK',
+  trial_form: 'AW-18457946758/YaQtCP7vkp8dEIbVt-FE',
+  whatsapp:   'AW-18457946758/3h9QCIHwkp8dEIbVt-FE',
 };
 
 /* First-touch campaign details, kept for 90 days. Captured once per browser. */
@@ -194,8 +191,13 @@ function adsLead(source, where) {
   const label = GOOGLE_ADS_LABELS[source];
   if (!label || !window.gtag) return;
   // beacon transport survives a tab switch or unload, same as before.
+  const payload = { send_to: label, link_location: where, transport_type: 'beacon' };
+  if (source === 'trial_form') {
+    payload.value = 50;
+    payload.currency = 'MYR';
+  }
   try {
-    gtag('event', 'conversion', { send_to: label, link_location: where, transport_type: 'beacon' });
+    gtag('event', 'conversion', payload);
   } catch { /* a blocked tag must not break the page */ }
 }
 
@@ -203,7 +205,7 @@ function track(kind, detail) {
   const where = detail.where || '';
   if (kind === 'trial') {
     try { window.fbq && fbq('track', 'Lead', { content_name: detail.programme || 'Trial class' }); } catch {}
-    try { window.gtag && gtag('event', 'generate_lead', { programme: detail.programme || '', link_location: where, transport_type: 'beacon' }); } catch {}
+    try { window.gtag && gtag('event', 'generate_lead', { programme: detail.programme || '', link_location: where, value: 50, currency: 'MYR', transport_type: 'beacon' }); } catch {}
     adsLead('trial_form', where);
   } else if (kind === 'whatsapp') {
     try { window.fbq && fbq('track', 'Contact', { content_name: where }); } catch {}

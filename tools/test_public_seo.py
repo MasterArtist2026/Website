@@ -56,9 +56,11 @@ def main():
         errors.append('trial_leads policies must be insert-only')
 
     js = (ROOT / 'site.js').read_text()
-    for needle in ('PLACEHOLDER_GENERATE_LEAD', 'PLACEHOLDER_WHATSAPP_CLICK', "gtag('event', 'whatsapp_click'", "gtag('event', 'generate_lead'", "returning: 'minimal'", 'trial_leads'):
+    for needle in ('AW-18457946758/YaQtCP7vkp8dEIbVt-FE', 'AW-18457946758/3h9QCIHwkp8dEIbVt-FE', "gtag('event', 'whatsapp_click'", "gtag('event', 'generate_lead'", 'value: 50', "currency: 'MYR'", "returning: 'minimal'", 'trial_leads'):
         if needle not in js:
             errors.append(f'site.js missing {needle}')
+    if 'PLACEHOLDER_' in js:
+        errors.append('site.js still has a placeholder Ads label')
     if 'close_convert_lead' in js.split('function adsLead')[1]:
         errors.append('adsLead still sends close_convert_lead')
 
