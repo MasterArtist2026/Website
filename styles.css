@@ -542,15 +542,22 @@ footer a:hover{color:var(--gold)}
 .trial-form textarea{min-height:76px;resize:vertical}
 .trial-form input:focus,.trial-form select:focus,.trial-form textarea:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(59,28,90,.12)}
 .trial-form .btn{width:100%}
+.trial-form .lead-contact{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .trial-form .fine{font-size:12.5px;color:var(--muted);text-align:center}
-.trial-form .ok{display:none;background:var(--lavender-pale);color:var(--purple);border-radius:10px;padding:10px 12px;font-size:14px;text-align:center}
+.trial-form .ok,.trial-form .err{display:none;border-radius:10px;padding:10px 12px;font-size:14px;text-align:center}
+.trial-form .ok{background:var(--lavender-pale);color:var(--purple)}
+.trial-form .err{background:#fde8e4;color:#8a2a1a}
+.trial-form .err a{font-weight:600;text-decoration:underline;color:inherit}
 .trial-form.sent .ok{display:block}
+.trial-form.failed .err{display:block}
+.trial-form.sent .err{display:none}
+.trial-form button:disabled{opacity:.7}
 .cta-card.with-form{grid-template-columns:1fr 1.05fr;align-items:start}
 .cta-card .perks{list-style:none;display:grid;gap:8px;margin-top:18px}
 .cta-card .perks li{padding-left:26px;position:relative;font-size:15.5px;color:var(--purple-deep);font-weight:500}
 .cta-card .perks li::before{content:"✓";position:absolute;left:0;top:2px;width:18px;height:18px;border-radius:50%;background:var(--purple);color:var(--gold);font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center}
 @media(max-width:960px){.cta-card.with-form{grid-template-columns:1fr}}
-@media(max-width:600px){.trial-form{grid-template-columns:1fr;padding:16px}}
+@media(max-width:600px){.trial-form,.trial-form .lead-contact{grid-template-columns:1fr}.trial-form{padding:16px}}
 
 /* ---------- footer contact ---------- */
 .f-contact{list-style:none;font-size:14.5px}
