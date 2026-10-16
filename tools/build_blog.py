@@ -162,9 +162,54 @@ def refresh_page_lastmod(xml):
     return re.sub(r'<url>\s*<loc>([^<]+)</loc>.*?</url>', fix, xml, flags=re.S)
 
 
+LOCAL_DIR = ROOT / 'content' / 'blog'
+
+
+def load_local_posts():
+    """Drafts that live in the repo, in the same fields blog_public returns."""
+    posts = []
+    if not LOCAL_DIR.is_dir():
+        return posts
+    for path in sorted(LOCAL_DIR.glob('*.json')):
+        if path.name == 'manifest.json':
+            continue
+        post = json.loads(path.read_text())
+        if re.fullmatch(r'[a-z0-9]+(-[a-z0-9]+)*', post.get('slug') or ''):
+            posts.append(post)
+    posts.sort(key=lambda p: p.get('published_at') or '', reverse=True)
+    return posts
+
+
+def write_manifest(posts):
+    LOCAL_DIR.mkdir(parents=True, exist_ok=True)
+    manifest = [{
+        'slug': p['slug'],
+        'title': p['title'],
+        'excerpt': p.get('excerpt') or '',
+        'cover_image': p.get('cover_image') or '',
+        'cover_alt': p.get('cover_alt') or '',
+        'tags': p.get('tags') or [],
+        'published_at': p.get('published_at'),
+    } for p in posts]
+    (LOCAL_DIR / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n')
+
+
+def merge_posts(remote, local):
+    """Published Supabase rows win on a slug clash; local drafts fill the gaps."""
+    by_slug = {}
+    for post in remote:
+        by_slug[post['slug']] = post
+    for post in local:
+        by_slug.setdefault(post['slug'], post)
+    return sorted(by_slug.values(), key=lambda p: p.get('published_at') or '', reverse=True)
+
+
 def main():
     template = (ROOT / 'post.html').read_text()
-    posts = [p for p in fetch_posts() if re.fullmatch(r'[a-z0-9]+(-[a-z0-9]+)*', p.get('slug') or '')]
+    remote = [p for p in fetch_posts() if re.fullmatch(r'[a-z0-9]+(-[a-z0-9]+)*', p.get('slug') or '')]
+    local = load_local_posts()
+    write_manifest(local)
+    posts = merge_posts(remote, local)
     out_dir = ROOT / 'blog'
     out_dir.mkdir(exist_ok=True)
     keep = set()

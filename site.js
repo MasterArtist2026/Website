@@ -3,6 +3,7 @@
    element exists on the page, and only the Supabase views that page needs are
    fetched. All reads use public, read-only views, so the anon key is safe here. */
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
+import { firstTouch, refCode, withRef } from './attribution.mjs';
 
 const SUPABASE_URL  = 'https://fudaosneozobacdalncv.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1ZGFvc25lb3pvYmFjZGFsbmN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4OTIwNDUsImV4cCI6MjEwMjQ2ODA0NX0.0PKbkncE8goPg-iJlAUacNUa3MjWJSj1ZLeqTpkqPZ0';
@@ -16,14 +17,37 @@ const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Satur
 /* WhatsApp number used until site_settings loads (and if it never does). */
 let waDigits = '60102779426';
 
-/* Google Ads conversion tracking. The Google tag (GA4 G-2X9E7MWMWM) is linked
-   to Google Ads account AW-18457946758, so a conversion is counted whenever one
-   of the events below is sent (the event names come from each Ads conversion's
-   "Tag setup" snippet). Set one to '' to switch that conversion off. */
-const GOOGLE_ADS_ID = 'AW-18457946758';
-const GOOGLE_ADS_EVENTS = {
-  trial_form: 'close_convert_lead',   // Ads conversion: Trial form sent
-  whatsapp:   'qualify_lead',         // Ads conversion: WhatsApp click
+/* Google Ads conversions. GA4 (G-2X9E7MWMWM) is linked to AW-18457946758.
+   send_to is the full label from Google Ads → Goals → Conversions → Tag setup.
+   The trial-form conversion is the RM50 trial (value 50, currency MYR).
+   Set a label to '' to switch that conversion off. */
+const GOOGLE_ADS_LABELS = {
+  trial_form: 'AW-18457946758/YaQtCP7vkp8dEIbVt-FE',
+  whatsapp:   'AW-18457946758/3h9QCIHwkp8dEIbVt-FE',
+};
+
+/* First-touch campaign details, kept for 90 days. Captured once per browser. */
+const ATTR_KEY = 'ma_first_touch';
+function currentTouch() {
+  let stored = null;
+  try { stored = JSON.parse(localStorage.getItem(ATTR_KEY) || 'null'); }
+  catch { stored = null; }
+  const { touch, wrote } = firstTouch({
+    stored,
+    now: Date.now(),
+    search: location.search,
+    landing: location.href.split('#')[0],
+    referrer: document.referrer || '',
+  });
+  if (wrote) {
+    try { localStorage.setItem(ATTR_KEY, JSON.stringify(touch)); } catch { /* private mode */ }
+  }
+  return touch;
+}
+const touch = currentTouch();
+const blank = v => {
+  const s = String(v ?? '').trim();
+  return s ? s : null;
 };
 
 /* Google reviews come from the "google-reviews" Supabase Edge Function
@@ -42,12 +66,22 @@ async function q(builder) {
 }
 
 function waLink(text) {
-  return 'https://wa.me/' + waDigits + (text ? '?text=' + encodeURIComponent(text) : '');
+  return 'https://wa.me/' + waDigits + '?text=' + encodeURIComponent(withRef(text, touch));
 }
 
 function applyWhatsApp() {
   document.querySelectorAll('[data-wa]').forEach(a => {
     a.href = waLink(a.dataset.waText || '');
+    a.target = '_blank';
+    a.rel = 'noopener';
+  });
+  // Plain wa.me links (privacy, terms) get the same ref prefix.
+  document.querySelectorAll('a[href*="wa.me/"]').forEach(a => {
+    if (a.hasAttribute('data-wa')) return;
+    let existing = '';
+    try { existing = new URL(a.href, location.href).searchParams.get('text') || ''; }
+    catch { existing = ''; }
+    a.href = waLink(existing);
     a.target = '_blank';
     a.rel = 'noopener';
   });
@@ -154,18 +188,24 @@ function rotator(items, dotHost, dotClass, interval, hoverHost, slide) {
 // WhatsApp opens in a new tab, so this page stays open and the event always
 // has time to send — no delayed-navigation helper is needed.
 function adsLead(source, where) {
-  const name = GOOGLE_ADS_EVENTS[source];
-  if (!name || !window.gtag) return;
-  // send_to routes the hit straight to the Ads account (the page also runs
-  // gtag('config', GOOGLE_ADS_ID)); beacon transport survives a tab switch/unload.
-  try { gtag('event', name, { send_to: GOOGLE_ADS_ID, link_location: where, transport_type: 'beacon' }); } catch {}
+  const label = GOOGLE_ADS_LABELS[source];
+  if (!label || !window.gtag) return;
+  // beacon transport survives a tab switch or unload, same as before.
+  const payload = { send_to: label, link_location: where, transport_type: 'beacon' };
+  if (source === 'trial_form') {
+    payload.value = 50;
+    payload.currency = 'MYR';
+  }
+  try {
+    gtag('event', 'conversion', payload);
+  } catch { /* a blocked tag must not break the page */ }
 }
 
 function track(kind, detail) {
   const where = detail.where || '';
   if (kind === 'trial') {
     try { window.fbq && fbq('track', 'Lead', { content_name: detail.programme || 'Trial class' }); } catch {}
-    try { window.gtag && gtag('event', 'generate_lead', { programme: detail.programme || '', link_location: where, transport_type: 'beacon' }); } catch {}
+    try { window.gtag && gtag('event', 'generate_lead', { programme: detail.programme || '', link_location: where, value: 50, currency: 'MYR', transport_type: 'beacon' }); } catch {}
     adsLead('trial_form', where);
   } else if (kind === 'whatsapp') {
     try { window.fbq && fbq('track', 'Contact', { content_name: where }); } catch {}
@@ -189,30 +229,141 @@ document.addEventListener('click', e => {
 }, true);
 
 /* -------------------------------------------------------------- trial form
-   Nothing is stored by the website: the form composes a WhatsApp message and
-   opens it, so the family sends it themselves. It also fires a Lead event for
-   Meta and Google so ad conversions can be measured. */
+   The form inserts a row into public.trial_leads. generate_lead and the Ads
+   conversion fire only after that insert succeeds. WhatsApp then opens so the
+   family can send the same details. A failed save does not count as a lead. */
+const PROGRAMME_SLUGS = {
+  'Voice with Sabrina Hew': 'voice',
+  'Group Voice': 'group-voice',
+  'Piano & Instruments': 'piano',
+  'Mont Kiara Orchestra': 'orchestra',
+  'Art — Young Kids (4–8)': 'art-young-kids',
+  'Art — Older Kids (9–15)': 'art-older-kids',
+  'Graphic Design (10+)': 'graphic-design',
+  'Photography': 'photography',
+  'Videography & Film': 'videography',
+  'Adult Art (mornings)': 'adult-art',
+  'Adult Voice & Piano (mornings)': 'adult-voice-piano',
+  'Baking workshop': 'baking-workshop',
+  'Painting workshop': 'painting-workshop',
+  'Craft workshop': 'craft-workshop',
+  'Not sure yet': 'not-sure',
+};
+
+function programmeSlug(label) {
+  if (PROGRAMME_SLUGS[label]) return PROGRAMME_SLUGS[label];
+  const slug = String(label || '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
+  return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug) ? slug : null;
+}
+
+function formNote(form, kind, html) {
+  let el = form.querySelector('.' + kind);
+  if (!el) {
+    el = document.createElement('p');
+    el.className = 'full ' + kind;
+    const fine = form.querySelector('.fine');
+    if (fine) fine.before(el); else form.appendChild(el);
+  }
+  el.innerHTML = html;
+  return el;
+}
+
+function addContactFields(form, n) {
+  if (form.querySelector('[name="phone"]')) return;
+  const nameField = form.querySelector('[name="name"]');
+  const host = nameField ? nameField.closest('div') : null;
+  const block = document.createElement('div');
+  block.className = 'full lead-contact';
+  block.innerHTML =
+    '<div><label for="tf-phone-' + n + '">Phone / WhatsApp</label>' +
+    '<input id="tf-phone-' + n + '" name="phone" type="tel" inputmode="tel" autocomplete="tel" required maxlength="40"></div>' +
+    '<div><label for="tf-email-' + n + '">Email <span style="font-weight:400;color:var(--muted)">(optional)</span></label>' +
+    '<input id="tf-email-' + n + '" name="email" type="email" autocomplete="email" maxlength="320"></div>';
+  if (host) host.insertAdjacentElement('afterend', block);
+  else form.prepend(block);
+}
+
 (function initTrialForms() {
   const params = new URLSearchParams(location.search);
-  document.querySelectorAll('form.trial-form').forEach(form => {
+  document.querySelectorAll('form.trial-form').forEach((form, n) => {
+    addContactFields(form, n);
     const pick = params.get('programme');
     const sel = form.querySelector('[name=programme]');
     if (sel && pick && [...sel.options].some(o => o.value === pick)) sel.value = pick;
-    form.addEventListener('submit', e => {
+    form.addEventListener('submit', async e => {
       e.preventDefault();
+      if (form.dataset.sending === '1' || form.classList.contains('sent')) return;
       const f = Object.fromEntries(new FormData(form));
+      const name = String(f.name || '').trim();
+      const phone = String(f.phone || '').trim();
+      const email = String(f.email || '').trim();
+      const phoneDigits = phone.replace(/\D/g, '');
+      if (name.length < 1 || name.length > 120) {
+        form.classList.add('failed');
+        formNote(form, 'err', 'Please add your name.');
+        return;
+      }
+      if (phoneDigits.length < 8 || phoneDigits.length > 15 || !/^[0-9+(). -]+$/.test(phone)) {
+        form.classList.add('failed');
+        formNote(form, 'err', 'Please add a phone number we can WhatsApp.');
+        return;
+      }
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        form.classList.add('failed');
+        formNote(form, 'err', 'Please check the email address, or leave it blank.');
+        return;
+      }
+      const note = [];
+      if (f.day && f.day !== 'Any day') note.push('Preferred day: ' + f.day);
+      if (f.message && String(f.message).trim()) note.push(String(f.message).trim());
+      const programme = f.programme || '';
+      const row = {
+        parent_name: name,
+        phone,
+        email: blank(email),
+        child_age: blank(f.age),
+        programme_slug: programmeSlug(programme),
+        message: blank(note.join('\n\n')),
+        ref_code: refCode(touch),
+        utm_source: blank(touch.utm_source),
+        utm_medium: blank(touch.utm_medium),
+        utm_campaign: blank(touch.utm_campaign),
+        utm_term: blank(touch.utm_term),
+        utm_content: blank(touch.utm_content),
+        gclid: blank(touch.gclid),
+        fbclid: blank(touch.fbclid),
+        landing_page: blank(touch.landing_page),
+        referrer: blank(touch.referrer),
+      };
       const lines = [
         "Hi Master Artist! I'd like to book a RM50 trial class.",
         '',
-        'Name: ' + (f.name || '-'),
+        'Name: ' + name,
+        'Phone: ' + phone,
         "Student's age: " + (f.age || '-'),
-        'Programme: ' + (f.programme || '-'),
+        'Programme: ' + (programme || '-'),
         'Preferred day: ' + (f.day || '-'),
       ];
-      if (f.message && f.message.trim()) lines.push('', f.message.trim());
-      track('trial', { programme: f.programme, where: placeOf(form) });
+      if (email) lines.push('Email: ' + email);
+      if (f.message && String(f.message).trim()) lines.push('', String(f.message).trim());
+      const btn = form.querySelector('[type=submit]');
+      const label = btn ? btn.textContent : '';
+      form.dataset.sending = '1';
+      form.classList.remove('failed');
+      if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+      const { error } = await sb.from('trial_leads').insert(row, { returning: 'minimal' });
+      form.dataset.sending = '';
+      if (error) {
+        console.warn('[site] trial lead', error.message);
+        if (btn) { btn.disabled = false; btn.textContent = label; }
+        form.classList.add('failed');
+        formNote(form, 'err', 'We could not save your enquiry just now. <a href="' + esc(waLink(lines.join('\n'))) + '" target="_blank" rel="noopener">Message us on WhatsApp</a> and we will take it from there.');
+        return;
+      }
+      track('trial', { programme, where: placeOf(form) });
       window.open(waLink(lines.join('\n')), '_blank', 'noopener');
       form.classList.add('sent');
+      if (btn) btn.textContent = 'Sent';
     });
   });
   // "Book this class" buttons pre-select the programme in the nearest form
@@ -477,6 +628,22 @@ function postCard(p) {
   </a>`;
 }
 
+function mergePosts(local, remote) {
+  const remoteList = Array.isArray(remote) ? remote : [];
+  const seen = new Set(remoteList.map(p => p.slug));
+  const extra = (Array.isArray(local) ? local : []).filter(p => p && p.slug && !seen.has(p.slug));
+  return [...remoteList, ...extra].sort((a, b) => String(b.published_at || '').localeCompare(String(a.published_at || '')));
+}
+
+async function localBlogPosts() {
+  try {
+    const res = await fetch('/content/blog/manifest.json');
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch { return []; }
+}
+
 function renderBlogList(rows) {
   const grid = $('blogGrid');
   if (!grid) return;
@@ -717,6 +884,7 @@ async function boot() {
     const limit = $('blogGrid') ? parseInt($('blogGrid').dataset.limit || '60', 10) : 4;
     jobs.posts = q(sb.from('blog_public').select('slug,title,excerpt,cover_image,cover_alt,tags,published_at').order('published_at', { ascending: false }).limit(limit));
   }
+  if ($('blogGrid') || $('moreGrid') || $('post')) jobs.localPosts = localBlogPosts();
   if ($('post')) {
     const slug = new URLSearchParams(location.search).get('slug') || '';
     jobs.post = slug ? q(sb.from('blog_public').select('*').eq('slug', slug).maybeSingle()) : Promise.resolve(null);
@@ -734,8 +902,9 @@ async function boot() {
   renderTeachers(d.teachers);
   renderTestimonials(d.testimonials);
   renderGoogleReviews();
-  if ($('blogGrid')) renderBlogList(d.posts);
-  if ($('post')) renderPost(d.post, d.posts);
+  const posts = mergePosts(d.localPosts, d.posts);
+  if ($('blogGrid')) renderBlogList(posts);
+  if ($('post')) renderPost(d.post, posts);
 }
 
 boot();
