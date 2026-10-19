@@ -3,6 +3,37 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+/* Drop generate_lead hits unless the trial form has just saved a row.
+   GA4 create-event rule 16134847184 copies every page_view whose
+   page_location contains Masterartist.co into generate_lead. */
+(function(){
+  function leadUrl(url){ return /(?:^|[?&#])en=generate_lead(?:&|$)/.test(String(url||'')); }
+  function blocked(url){ return leadUrl(url) && !(window.__allowGenerateLead > 0); }
+  if (navigator.sendBeacon) {
+    var beacon = navigator.sendBeacon.bind(navigator);
+    navigator.sendBeacon = function(url, data){ if (blocked(url)) return true; return beacon(url, data); };
+  }
+  if (window.fetch) {
+    var origFetch = window.fetch.bind(window);
+    window.fetch = function(input, init){
+      var url = typeof input === 'string' ? input : (input && input.url) || '';
+      if (blocked(url)) return Promise.resolve(new Response('', {status:204}));
+      return origFetch(input, init);
+    };
+  }
+  var desc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+  if (desc && desc.set) {
+    Object.defineProperty(HTMLImageElement.prototype, 'src', {
+      configurable: true, enumerable: desc.enumerable, get: desc.get,
+      set: function(value){ if (!blocked(value)) desc.set.call(this, value); }
+    });
+  }
+  var xo = XMLHttpRequest.prototype.open, xs = XMLHttpRequest.prototype.send;
+  XMLHttpRequest.prototype.open = function(method, url){ this.__leadUrl = url; return xo.apply(this, arguments); };
+  XMLHttpRequest.prototype.send = function(body){ if (blocked(this.__leadUrl)) return; return xs.apply(this, arguments); };
+})();
+</script>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-2X9E7MWMWM"></script>
 <script>
@@ -283,6 +314,6 @@ src="https://www.facebook.com/tr?id=1104757255303373&ev=PageView&noscript=1"
   <span class="lightbox-count"></span>
 </div>
 
-<script type="module" src="/site.js?v=7c4e9a31"></script>
+<script type="module" src="/site.js?v=c3a91e72"></script>
 </body>
 </html>

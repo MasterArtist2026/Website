@@ -56,9 +56,11 @@ def main():
         errors.append('trial_leads policies must be insert-only')
 
     js = (ROOT / 'site.js').read_text()
-    for needle in ('AW-18457946758/YaQtCP7vkp8dEIbVt-FE', 'AW-18457946758/3h9QCIHwkp8dEIbVt-FE', "gtag('event', 'whatsapp_click'", "gtag('event', 'generate_lead'", 'value: 50', "currency: 'MYR'", "returning: 'minimal'", 'trial_leads'):
+    for needle in ('AW-18457946758/YaQtCP7vkp8dEIbVt-FE', 'AW-18457946758/3h9QCIHwkp8dEIbVt-FE', "gtag('event', 'whatsapp_click'", "gtag('event', 'generate_lead'", 'value: 50', "currency: 'MYR'", "Prefer: 'return=minimal'", 'insertTrialLead', 'allowLeadHit', 'trial_leads'):
         if needle not in js:
             errors.append(f'site.js missing {needle}')
+    if ".from('trial_leads')" in js or '.select()' in js.split('function insertTrialLead')[1].split('function formNote')[0]:
+        errors.append('trial insert must not use supabase-js select/returning')
     if 'PLACEHOLDER_' in js:
         errors.append('site.js still has a placeholder Ads label')
     if 'close_convert_lead' in js.split('function adsLead')[1]:
