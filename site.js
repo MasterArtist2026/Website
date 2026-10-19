@@ -201,9 +201,19 @@ function adsLead(source, where) {
   } catch { /* a blocked tag must not break the page */ }
 }
 
+// The Google tag copies every page_view on this domain into generate_lead.
+// The head snippet drops those hits unless a save has just opened this window.
+function allowLeadHit() {
+  window.__allowGenerateLead = (window.__allowGenerateLead || 0) + 1;
+  setTimeout(() => {
+    window.__allowGenerateLead = Math.max(0, (window.__allowGenerateLead || 1) - 1);
+  }, 2000);
+}
+
 function track(kind, detail) {
   const where = detail.where || '';
   if (kind === 'trial') {
+    allowLeadHit();
     try { window.fbq && fbq('track', 'Lead', { content_name: detail.programme || 'Trial class' }); } catch {}
     try { window.gtag && gtag('event', 'generate_lead', { programme: detail.programme || '', link_location: where, value: 50, currency: 'MYR', transport_type: 'beacon' }); } catch {}
     adsLead('trial_form', where);
@@ -254,6 +264,29 @@ function programmeSlug(label) {
   if (PROGRAMME_SLUGS[label]) return PROGRAMME_SLUGS[label];
   const slug = String(label || '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
   return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug) ? slug : null;
+}
+
+// anon can INSERT these columns only. id, created_at and status stay off the
+// payload so Postgres fills them. Prefer: return=minimal, because asking
+// PostgREST to return the row needs SELECT and anon does not have it.
+async function insertTrialLead(row) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/trial_leads', {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_ANON,
+      Authorization: 'Bearer ' + SUPABASE_ANON,
+      'Content-Type': 'application/json',
+      Prefer: 'return=minimal',
+    },
+    body: JSON.stringify(row),
+  });
+  if (res.status === 201 || res.status === 204) return { ok: true };
+  let message = 'HTTP ' + res.status;
+  try {
+    const body = await res.json();
+    if (body && body.message) message = body.message;
+  } catch { /* empty body */ }
+  return { ok: false, message };
 }
 
 function formNote(form, kind, html) {
@@ -351,10 +384,12 @@ function addContactFields(form, n) {
       form.dataset.sending = '1';
       form.classList.remove('failed');
       if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
-      const { error } = await sb.from('trial_leads').insert(row, { returning: 'minimal' });
+      let saved = { ok: false, message: 'The save did not finish.' };
+      try { saved = await insertTrialLead(row); }
+      catch (err) { saved = { ok: false, message: err && err.message }; }
       form.dataset.sending = '';
-      if (error) {
-        console.warn('[site] trial lead', error.message);
+      if (!saved.ok) {
+        console.warn('[site] trial lead', saved.message);
         if (btn) { btn.disabled = false; btn.textContent = label; }
         form.classList.add('failed');
         formNote(form, 'err', 'We could not save your enquiry just now. <a href="' + esc(waLink(lines.join('\n'))) + '" target="_blank" rel="noopener">Message us on WhatsApp</a> and we will take it from there.');
