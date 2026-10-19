@@ -708,6 +708,50 @@ figure.gal{margin:0}
 .cal-weekly p{font-size:14px;color:var(--muted);margin-bottom:4px}
 .cal-weekly a{color:var(--purple);font-weight:600}
 @media(max-width:960px){.cal-wrap{grid-template-columns:1fr}}
+/* ---------- studio sessions ---------- */
+.ss-band{margin-bottom:28px}
+.ss-band h3{font-size:20px;margin-bottom:10px}
+.ss-list{display:grid;gap:10px}
+.ss-row{display:grid;grid-template-columns:minmax(190px,250px) 1fr auto;gap:16px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:14px 18px}
+.ss-row .when{font-weight:700;color:var(--gold-deep);font-size:14.5px}
+.ss-row .what b{display:block;color:var(--ink);font-size:16px}
+.ss-row .what b a:hover{color:var(--purple)}
+.ss-row .what small{color:var(--muted);font-size:13.5px}
+.ss-row .actions{display:flex;align-items:center;gap:12px}
+.ss-seats{font-size:13px;font-weight:700;color:var(--gold-deep);white-space:nowrap}
+.ss-seats.is-full{color:#8a2a1a}
+.book-layout{display:grid;grid-template-columns:1.15fr .85fr;gap:28px;align-items:start}
+.book-form{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;display:grid;grid-template-columns:1fr 1fr;gap:12px;box-shadow:var(--shadow)}
+.book-form h2{grid-column:1/-1;font-size:28px}
+.book-form .full,.book-form .child-fields{grid-column:1/-1}
+.book-form .child-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.book-form .child-fields[hidden]{display:none}
+.book-form label{display:block;font-size:13px;font-weight:600;color:var(--purple);margin-bottom:5px}
+.book-form input{width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--bg);border:1px solid rgba(59,28,90,.18);border-radius:10px;padding:11px 12px}
+.book-form input:focus{outline:none;border-color:var(--purple);box-shadow:0 0 0 3px rgba(59,28,90,.12)}
+.book-form .check{display:flex;gap:10px;align-items:flex-start;font-weight:500;color:var(--ink)}
+.book-form .check input{width:auto;margin-top:4px}
+.book-form .btn{grid-column:1/-1}
+.book-form .err{background:#fde8e4;color:#8a2a1a;border-radius:10px;padding:10px 12px}
+.fine{font-size:13.5px;color:var(--muted)}
+.facts .fine{padding:0 12px 8px}
+.confirm-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow);max-width:760px}
+.confirm-card h2{font-size:clamp(28px,4vw,40px);margin:8px 0 10px}
+.lede-tight{font-size:17px;margin-bottom:16px}
+.confirm-dl{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px;margin:0 0 18px}
+.confirm-dl div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding:8px 0}
+.confirm-dl dt{color:var(--muted)}
+.confirm-dl dd{font-weight:600;text-align:right}
+.voucher{background:var(--gold-pale);border-radius:var(--radius-sm);padding:16px 18px;margin-bottom:16px}
+.voucher span{display:block;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-deep)}
+.voucher b{display:block;font-size:28px;letter-spacing:.04em;color:var(--purple);margin:4px 0}
+.voucher small{color:var(--ink)}
+.format-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+@media(max-width:800px){
+  .ss-row,.book-layout,.confirm-dl{grid-template-columns:1fr}
+  .ss-row .actions{flex-wrap:wrap}
+  .book-form{grid-template-columns:1fr;padding:16px}
+}
 @media(max-width:600px){
   .cal{padding:10px}
   .cal-cell{min-height:52px;padding:4px}

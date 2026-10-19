@@ -106,6 +106,11 @@ a{color:var(--purple)}
 .hint{background:var(--lav-pale);border-left:2px solid var(--gold);padding:13px 16px;
   font-size:13px;color:var(--muted);margin-bottom:22px}
 .hint b{color:var(--purple)}
+.roster-wrap{overflow-x:auto}
+.roster{width:100%;border-collapse:collapse;font-size:13px}
+.roster th,.roster td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top}
+.roster th{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-deep);font-weight:500}
+.ss-tools{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
 
 .card{background:#fff;border:1px solid var(--line);margin-bottom:16px}
 .card-h{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--line);
@@ -281,6 +286,7 @@ const SECTIONS = [
   { id:'programmes',   key:'programmes',   label:'Programmes',          ready:true },
   { id:'classes',      key:'classes',      label:'Class Schedule',      ready:true },
   { id:'events',       key:'events',       label:'Events Calendar',     ready:true },
+  { id:'studio-sessions', key:'studio_sessions', label:'Studio Sessions', ready:true },
   { id:'fees',         key:'fees',         label:'Fees & Policies',     ready:true },
   { id:'gallery',      key:'gallery',      label:'Gallery',             ready:true },
   { id:'teachers',     key:'teachers',     label:'Teachers',            ready:true },
@@ -429,6 +435,7 @@ async function boot(){
   // Links from the blog agent's review email: admin.html#blog/<slug>
   const hm = location.hash.match(/^#blog(?:\/([a-z0-9-]+))?$/);
   if (hm && canRead('blog')) { current = 'blog'; blogOpenSlug = hm[1] || null; }
+  if (location.hash === '#studio-sessions' && canRead('studio_sessions')) current = 'studio-sessions';
 
   $('authScreen').style.display='none';
   $('appScreen').classList.add('on');
@@ -1403,6 +1410,255 @@ window.addInvite = async () => {
   busy(false);
   if (error) { toast('Could not add: ' + error.message); return; }
   toast('Invited — they get access automatically when they sign in with that email'); await render();
+};
+
+/* ---------- studio sessions ---------- */
+let studioFilter = 'upcoming';
+let studioEdit = null;
+let studioRoster = null;
+const STUDIO_ROOMS = ['L2 front room', 'L2 back room', 'L2 recording studio', 'L1 kitchen', 'L1 front room', 'Music room'];
+
+function klParts(iso) {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Kuala_Lumpur', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(new Date(iso));
+  const g = type => parts.find(part => part.type === type).value;
+  return { date: g('year') + '-' + g('month') + '-' + g('day'), time: g('hour') + ':' + g('minute') };
+}
+function klStamp(date, time) { return date + 'T' + time + ':00+08:00'; }
+function klDow(date) { return new Date(date + 'T12:00:00+08:00').getDay(); }
+
+views['studio-sessions'] = async function() {
+  busy(true, 'Loading…');
+  const [{ data: formats, error: fe }, { data: sessions, error: se }] = await Promise.all([
+    sb.from('workshop_formats').select('*').order('sort_order'),
+    sb.from('workshop_sessions').select('*, workshop_formats(name, slug, unit, min_pax, duration_minutes)').order('starts_at'),
+  ]);
+  busy(false);
+  if (fe || se) {
+    $('view').innerHTML = `<div class="msg err">${esc((fe || se).message)}</div>
+      <div class="hint">If the table is missing, apply <b>supabase/migrations/20261019170000_studio_sessions.sql</b> and then <b>20261019170100_studio_sessions_seed.sql</b> in the Supabase SQL editor. Do that after review — the website deploy does not run them.</div>`;
+    return;
+  }
+  const w = canWrite('studio_sessions');
+  const now = Date.now();
+  const upcoming = (sessions || []).filter(s => new Date(s.ends_at).getTime() >= now);
+  const past = (sessions || []).filter(s => new Date(s.ends_at).getTime() < now).reverse();
+  const shown = studioFilter === 'upcoming' ? upcoming : past;
+  const fmtName = s => s.workshop_formats?.name || 'Session';
+  let html = `<div class="hint"><b>Studio Sessions.</b> Seeded dates are drafts — they stay off the website until you publish them.
+    Prepaid, non-refundable. Free reschedule within 24 hours of booking, then RM10 a person.
+    A session needs 3 people (the catalogue minimum). Under 3 paid people at 48 hours, reschedule it or refund, and the instructor is paid RM50.
+    Public-holiday sessions add 10% at checkout. Card payment stays off until the Stripe keys are set; until then the site reserves on WhatsApp.</div>
+    <div class="blog-tabs">
+      <button class="${studioFilter === 'upcoming' ? 'on' : ''}" onclick="studioTab('upcoming')">Upcoming (${upcoming.length})</button>
+      <button class="${studioFilter === 'past' ? 'on' : ''}" onclick="studioTab('past')">Past (${past.length})</button>
+    </div>
+    <div class="ss-tools">${w ? '<button class="btn sm" onclick="studioAdd()">+ Add session</button>' : ''}</div>`;
+
+  if (studioEdit === 'new' || (studioEdit && (sessions || []).some(s => s.id === studioEdit))) {
+    const editing = studioEdit === 'new' ? null : (sessions || []).find(s => s.id === studioEdit);
+    const start = editing ? klParts(editing.starts_at) : { date: nextSunday(), time: '15:00' };
+    const end = editing ? klParts(editing.ends_at) : { time: '17:30' };
+    const formatId = editing?.format_id || (formats[0] && formats[0].id) || '';
+    html += `<div class="card"><div class="card-h"><span class="grip">${editing ? 'Edit session' : 'New session'}</span>
+      <button class="btn sm" onclick="studioClose()">Close</button></div><div class="card-b">
+      <div class="row">
+        <div class="f"><label>Format</label><select id="ssFormat" ${w ? '' : 'disabled'}>
+          ${(formats || []).map(f => `<option value="${f.id}" ${f.id === formatId ? 'selected' : ''}>${esc(f.name)} · RM${f.price_myr} · cap ${f.capacity}</option>`).join('')}
+        </select></div>
+        <div class="f"><label>Status</label><select id="ssStatus" ${w ? '' : 'disabled'}>
+          ${['draft','published','cancelled','completed'].map(st => `<option ${st === (editing?.status || 'draft') ? 'selected' : ''}>${st}</option>`).join('')}
+        </select></div>
+      </div>
+      <div class="row">
+        <div class="f"><label>Date</label><input id="ssDate" type="date" value="${esc(start.date)}" ${w ? '' : 'disabled'}></div>
+        <div class="f"><label>Starts</label><input id="ssStart" type="time" value="${esc(start.time)}" ${w ? '' : 'disabled'}></div>
+        <div class="f"><label>Ends</label><input id="ssEnd" type="time" value="${esc(end.time)}" ${w ? '' : 'disabled'}></div>
+      </div>
+      <div class="row">
+        <div class="f"><label>Room</label><input id="ssRoom" list="ssRooms" value="${esc(editing?.room || (formats.find(f => f.id === formatId) || {}).room || '')}" ${w ? '' : 'disabled'}>
+          <datalist id="ssRooms">${STUDIO_ROOMS.map(r => `<option value="${esc(r)}"></option>`).join('')}</datalist></div>
+        <div class="f"><label>Capacity</label><input id="ssCap" type="number" min="1" max="30" value="${esc(editing?.capacity ?? (formats.find(f => f.id === formatId) || {}).capacity ?? 8)}" ${w ? '' : 'disabled'}></div>
+        <div class="f"><label>Price RM</label><input id="ssPrice" type="number" min="0" step="0.01" value="${esc(editing?.price_myr ?? (formats.find(f => f.id === formatId) || {}).price_myr ?? 0)}" ${w ? '' : 'disabled'}></div>
+      </div>
+      <div class="row">
+        <div class="f"><label>Promo label</label><input id="ssPromo" value="${esc(editing?.promo_label || '')}" placeholder="Optional" ${w ? '' : 'disabled'}></div>
+        <div class="f check"><input id="ssHoliday" type="checkbox" ${editing?.public_holiday ? 'checked' : ''} ${w ? '' : 'disabled'}><label>Public holiday (+10% at checkout)</label></div>
+      </div>
+      <div class="row"><div class="f" style="grid-column:1/-1"><label>Notes</label>
+        <textarea id="ssNotes" ${w ? '' : 'disabled'}>${esc(editing?.notes || '')}</textarea></div></div>
+      ${w ? `<button class="btn sm" onclick="studioSave('${editing ? editing.id : ''}')">Save</button>` : ''}
+    </div></div>`;
+  }
+
+  if (!shown.length) html += `<div class="empty">${studioFilter === 'upcoming' ? 'No upcoming sessions.' : 'No past sessions.'}</div>`;
+  html += `<div class="roster-wrap"><table class="roster"><thead><tr>
+    <th>When</th><th>Format</th><th>Room</th><th>Price</th><th>Cap</th><th>Status</th><th></th>
+  </tr></thead><tbody>`;
+  shown.forEach(s => {
+    const when = klParts(s.starts_at);
+    const sat = klDow(when.date) === 6;
+    html += `<tr>
+      <td>${esc(when.date)} ${esc(when.time)}${sat ? ' · Saturday' : ''}</td>
+      <td>${esc(fmtName(s))}</td>
+      <td>${esc(s.room)}</td>
+      <td>RM${esc(s.price_myr)}${s.public_holiday ? ' +10%' : ''}</td>
+      <td>${esc(s.capacity)}</td>
+      <td><span class="pill ${s.status === 'published' ? 'live' : s.status === 'cancelled' ? 'exp' : 'off'}">${esc(s.status)}</span></td>
+      <td>${w ? `<button class="btn sm" onclick="studioOpenEdit('${s.id}')">Edit</button>
+        <button class="btn sm" onclick="studioOpenRoster('${s.id}')">Roster</button>
+        ${s.status === 'published'
+          ? `<button class="btn sm" onclick="studioStatus('${s.id}','draft')">Unpublish</button>`
+          : s.status === 'cancelled' ? '' : `<button class="btn sm" onclick="studioStatus('${s.id}','published')">Publish</button>`}
+        ${s.status === 'cancelled' ? '' : `<button class="btn sm" onclick="studioStatus('${s.id}','cancelled')">Cancel</button>`}` : `<button class="btn sm" onclick="studioOpenRoster('${s.id}')">Roster</button>`}
+      </td></tr>`;
+  });
+  html += `</tbody></table></div>`;
+
+  if (studioRoster) {
+    const session = (sessions || []).find(s => s.id === studioRoster);
+    html += await studioRosterHtml(session, w);
+  }
+  $('view').innerHTML = html;
+};
+
+async function studioRosterHtml(session, w) {
+  if (!session) return '';
+  const { data, error } = await sb.from('bookings').select('*').eq('session_id', session.id).order('created_at');
+  if (error) return `<div class="msg err">${esc(error.message)}</div>`;
+  const rows = data || [];
+  const active = b => b.status === 'paid' || (b.status === 'pending' && (!b.hold_expires_at || new Date(b.hold_expires_at).getTime() > Date.now()));
+  const paidPeople = rows.filter(b => b.status === 'paid').reduce((sum, b) => sum + Number(b.people || 0), 0);
+  const held = rows.filter(active).reduce((sum, b) => sum + Number(b.qty || 0), 0);
+  const min = session.workshop_formats?.min_pax || 3;
+  const soon = new Date(session.starts_at).getTime() - Date.now() < 48 * 3600 * 1000;
+  const warn = session.status === 'published' && soon && paidPeople < min
+    ? `<div class="msg err">Under the minimum of ${min} paid people, and the session is inside 48 hours. Reschedule it or refund. The instructor is paid RM50.</div>` : '';
+  const others = [];
+  const { data: alts } = await sb.from('workshop_sessions').select('id, starts_at, room, status').eq('format_id', session.format_id).neq('id', session.id).order('starts_at');
+  (alts || []).forEach(alt => {
+    if (alt.status === 'cancelled' || alt.status === 'completed') return;
+    if (new Date(alt.starts_at).getTime() < Date.now() - 3600 * 1000) return;
+    const when = klParts(alt.starts_at);
+    others.push(`<option value="${alt.id}">${esc(when.date)} ${esc(when.time)} · ${esc(alt.room)} · ${esc(alt.status)}</option>`);
+  });
+  let html = `<div class="card"><div class="card-h"><span class="grip">Roster · ${esc(session.workshop_formats?.name || '')} · ${held} held / ${esc(session.capacity)} · ${paidPeople} paid people</span>
+    <button class="btn sm" onclick="studioExport()">Export CSV</button>
+    <button class="btn sm" onclick="studioClose()">Close</button></div><div class="card-b">${warn}
+    <div class="roster-wrap"><table class="roster" id="rosterTable"><thead><tr>
+      <th>Booking</th><th>Name</th><th>Phone</th><th>Email</th><th>Qty</th><th>Child</th><th>Amount</th><th>Status</th><th>Voucher</th><th>Attended</th><th></th>
+    </tr></thead><tbody>`;
+  if (!rows.length) html += `<tr><td colspan="11">No bookings yet.</td></tr>`;
+  rows.forEach(b => {
+    const move = (b.status === 'paid' || b.status === 'pending') && w && others.length
+      ? `<select id="move-${b.id}">${others.join('')}</select> <button class="btn sm" onclick="studioMove('${b.id}')">Move</button>` : '';
+    html += `<tr>
+      <td>${esc(b.public_code)}</td>
+      <td>${esc(b.booker_name)}</td>
+      <td>${esc(b.phone)}</td>
+      <td>${esc(b.email)}</td>
+      <td>${esc(b.qty)} · ${esc(b.people)} pax</td>
+      <td>${esc(b.child_name || '')}${b.child_age ? ' (' + esc(b.child_age) + ')' : ''}</td>
+      <td>RM${esc(b.amount_myr)}</td>
+      <td><span class="pill ${b.status === 'paid' ? 'live' : b.status === 'pending' ? 'exp' : 'off'}">${esc(b.status)}</span>${b.needs_refund ? ' refund' : ''}</td>
+      <td>${esc(b.voucher_code || '')}</td>
+      <td><input type="checkbox" ${b.attended ? 'checked' : ''} ${w ? '' : 'disabled'} onchange="studioAttended('${b.id}', this.checked)"></td>
+      <td>${w && b.status === 'pending' ? `<button class="btn sm" onclick="studioBookingStatus('${b.id}','paid')">Mark paid</button>` : ''}
+        ${w && (b.status === 'pending' || b.status === 'paid') ? `<button class="btn sm" onclick="studioBookingStatus('${b.id}','cancelled')">Cancel</button>` : ''}
+        ${move}</td>
+    </tr>`;
+  });
+  html += `</tbody></table></div></div></div>`;
+  window.__studioRosterRows = rows;
+  window.__studioRosterSession = session;
+  return html;
+}
+
+window.studioTab = async filter => { studioFilter = filter; await render(); };
+window.studioAdd = async () => { studioEdit = 'new'; studioRoster = null; await render(); };
+window.studioOpenEdit = async id => { studioEdit = id; studioRoster = null; await render(); };
+window.studioOpenRoster = async id => { studioRoster = id; studioEdit = null; await render(); };
+window.studioClose = async () => { studioEdit = null; studioRoster = null; await render(); };
+window.studioStatus = async (id, status) => {
+  if (status === 'cancelled' && !confirm('Cancel this session? Existing bookings stay on the roster so you can reschedule them.')) return;
+  busy(true);
+  const { error } = await sb.from('workshop_sessions').update({ status }).eq('id', id);
+  busy(false);
+  if (error) { toast('Could not update: ' + error.message); return; }
+  toast(status === 'published' ? 'Published — it is on the website' : 'Saved');
+  await render();
+};
+window.studioSave = async id => {
+  const date = $('ssDate').value, start = $('ssStart').value, end = $('ssEnd').value;
+  if (!date || !start || !end || !$('ssFormat').value || !$('ssRoom').value) { toast('Fill in the format, date, times and room.'); return; }
+  if (end <= start) { toast('The end time must be after the start time.'); return; }
+  const dow = klDow(date);
+  const lateFriday = dow === 5 && start >= '12:30';
+  if ((dow === 6 || lateFriday) && !confirm(dow === 6
+    ? 'This date is a Saturday — the studio is closed. Save it anyway?'
+    : 'No workshops Friday after 12:30 — L1 is prepared for church. Save it anyway?')) return;
+  const row = {
+    format_id: $('ssFormat').value,
+    starts_at: klStamp(date, start),
+    ends_at: klStamp(date, end),
+    room: $('ssRoom').value.trim(),
+    capacity: Number($('ssCap').value),
+    price_myr: Number($('ssPrice').value),
+    public_holiday: $('ssHoliday').checked,
+    promo_label: $('ssPromo').value.trim() || null,
+    notes: $('ssNotes').value.trim() || null,
+    status: $('ssStatus').value,
+  };
+  busy(true);
+  const { error } = id
+    ? await sb.from('workshop_sessions').update(row).eq('id', id)
+    : await sb.from('workshop_sessions').insert(row);
+  busy(false);
+  if (error) { toast('Could not save: ' + error.message); return; }
+  toast('Saved');
+  studioEdit = null;
+  await render();
+};
+window.studioAttended = async (id, attended) => {
+  const { error } = await sb.from('bookings').update({ attended }).eq('id', id);
+  if (error) toast('Could not update attendance: ' + error.message);
+  else toast(attended ? 'Marked attended' : 'Attendance cleared');
+};
+window.studioBookingStatus = async (id, status) => {
+  if (status === 'cancelled' && !confirm('Cancel this booking and release the seat?')) return;
+  busy(true);
+  const { error } = await sb.from('bookings').update({ status }).eq('id', id);
+  busy(false);
+  if (error) { toast('Could not update: ' + error.message); return; }
+  toast(status === 'paid' ? 'Marked paid — the voucher is on the roster' : 'Booking cancelled');
+  await render();
+};
+window.studioMove = async id => {
+  const sessionId = $('move-' + id).value;
+  busy(true);
+  const { data, error } = await sb.rpc('reschedule_studio_booking', { p_booking: id, p_session: sessionId });
+  busy(false);
+  if (error) { toast('Could not reschedule: ' + error.message); return; }
+  const fee = Number(data?.reschedule_fee_myr || 0);
+  toast(fee > 0 ? 'Moved. Reschedule fee RM' + fee + ' (RM10 a person after 24 hours).' : 'Moved. No reschedule fee — still inside 24 hours of the original booking.');
+  await render();
+};
+window.studioExport = () => {
+  const rows = window.__studioRosterRows || [];
+  const header = ['public_code','booker_name','phone','email','qty','people','child_name','child_age','amount_myr','status','payment_mode','payment_ref','voucher_code','attended','utm_source','utm_medium','utm_campaign','gclid','fbclid','ref_code','created_at'];
+  const cell = value => {
+    const text = value == null ? '' : String(value);
+    return /[",\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
+  };
+  const csv = [header.join(',')].concat(rows.map(row => header.map(key => cell(row[key])).join(','))).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = ((window.__studioRosterSession && window.__studioRosterSession.id) || 'roster') + '.csv';
+  link.click();
+  URL.revokeObjectURL(link.href);
 };
 
 /* ---------- start ---------- */

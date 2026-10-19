@@ -4,6 +4,10 @@
    fetched. All reads use public, read-only views, so the anon key is safe here. */
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 import { firstTouch, refCode, withRef } from './attribution.mjs';
+import {
+  STUDIO_WHATSAPP, formatWhen, moneyMYR, qtyLabel, reserveMessage, icsCalendar,
+  purchaseShouldFire, eventJsonLd, timeBand,
+} from './studio-booking.mjs';
 
 const SUPABASE_URL  = 'https://fudaosneozobacdalncv.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1ZGFvc25lb3pvYmFjZGFsbmN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4OTIwNDUsImV4cCI6MjEwMjQ2ODA0NX0.0PKbkncE8goPg-iJlAUacNUa3MjWJSj1ZLeqTpkqPZ0';
@@ -24,6 +28,9 @@ let waDigits = '60102779426';
 const GOOGLE_ADS_LABELS = {
   trial_form: 'AW-18457946758/YaQtCP7vkp8dEIbVt-FE',
   whatsapp:   'AW-18457946758/3h9QCIHwkp8dEIbVt-FE',
+  // Studio Sessions purchase. Paste the label from Google Ads → Goals →
+  // Conversions → Tag setup. Empty skips the Ads hit; the GA4 purchase still fires.
+  workshop_purchase: '',
 };
 
 /* First-touch campaign details, kept for 90 days. Captured once per browser. */
@@ -899,6 +906,414 @@ function drawUpcomingList(events) {
   });
 })();
 
+/* -------------------------------------------------------- studio sessions
+   Timetable, booking and confirmation. Reads the public seats view. Creating
+   a booking goes through the create-checkout Edge Function, never a direct
+   insert. Purchase tracking fires only after a paid or reserved booking. */
+const SS_BANDS = [
+  ['morning', 'Morning'],
+  ['afternoon', 'Afternoon'],
+  ['evening', 'Evening'],
+];
+const SS_AUDIENCES = [
+  ['all', 'All'],
+  ['couples', 'Couples'],
+  ['friends', 'Friends'],
+  ['women', 'Women'],
+  ['families', 'Families'],
+  ['kids', 'Kids'],
+  ['adults', 'Adults'],
+  ['teams', 'Teams'],
+  ['creators', 'Creators'],
+  ['everyone', 'Everyone'],
+];
+
+function trackPurchase(detail) {
+  const key = 'ma_purchase_' + detail.transaction_id;
+  try {
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, '1');
+  } catch { /* a blocked store must not block the page; GA4 still dedupes on transaction_id */ }
+  const item = {
+    item_id: detail.slug || '',
+    item_name: detail.format || '',
+    price: detail.value,
+    quantity: detail.quantity || 1,
+  };
+  try {
+    window.gtag && gtag('event', 'purchase', {
+      transaction_id: detail.transaction_id,
+      value: detail.value,
+      currency: 'MYR',
+      items: [item],
+      transport_type: 'beacon',
+    });
+  } catch { /* a blocked tag must not break the page */ }
+  const label = GOOGLE_ADS_LABELS.workshop_purchase;
+  if (label && window.gtag) {
+    try {
+      gtag('event', 'conversion', {
+        send_to: label,
+        value: detail.value,
+        currency: 'MYR',
+        transaction_id: detail.transaction_id,
+        transport_type: 'beacon',
+      });
+    } catch { /* a blocked tag must not break the page */ }
+  }
+  try {
+    window.fbq && fbq('track', 'Purchase', {
+      value: detail.value,
+      currency: 'MYR',
+      content_name: detail.format || '',
+      content_ids: detail.slug ? [detail.slug] : [],
+    });
+  } catch { /* a blocked pixel must not break the page */ }
+}
+
+function studioFn(name, body) {
+  return fetch(SUPABASE_URL + '/functions/v1/' + name, {
+    method: body ? 'POST' : 'GET',
+    headers: {
+      apikey: SUPABASE_ANON,
+      Authorization: 'Bearer ' + SUPABASE_ANON,
+      'Content-Type': 'application/json',
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+}
+
+function injectSessionEvents(rows) {
+  document.querySelectorAll('script[data-ss-event]').forEach(node => node.remove());
+  rows.forEach(row => {
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.dataset.ssEvent = row.id;
+    script.textContent = JSON.stringify(eventJsonLd(row));
+    document.head.appendChild(script);
+  });
+}
+
+function sessionMatches(row, audience) {
+  if (!audience || audience === 'all') return true;
+  const tags = row.audiences || [];
+  return tags.includes(audience) || tags.includes('everyone');
+}
+
+function seatsPhrase(row) {
+  const left = Number(row.seats_left);
+  if (!row.bookable) return 'Enquire';
+  if (left <= 0) return 'Full';
+  if (row.unit === 'pair') return left === 1 ? '1 pair left' : left + ' pairs left';
+  return left === 1 ? '1 seat left' : left + ' seats left';
+}
+
+function renderSessionRows(rows) {
+  if (!rows.length) {
+    return `<div class="empty"><h3>No dates in this filter yet</h3><p>New sessions appear here when the studio publishes them. <a data-wa data-wa-text="Hi Master Artist! Which Studio Sessions are coming up?">Ask on WhatsApp</a>.</p></div>`;
+  }
+  return SS_BANDS.map(([band, label]) => {
+    const items = rows.filter(row => (row.time_band || timeBand(row.starts_at)) === band);
+    if (!items.length) return '';
+    return `<div class="ss-band"><h3>${label}</h3><div class="ss-list">${items.map(row => {
+      const full = row.bookable && Number(row.seats_left) <= 0;
+      const price = moneyMYR(row.unit_price_myr) + (row.unit === 'pair' ? ' / pair' : '');
+      const action = !row.bookable
+        ? `<a class="btn btn-purple btn-sm" data-wa data-wa-text="Hi Master Artist! I'd like to enquire about a private Studio Session.">Enquire</a>`
+        : full
+          ? `<span class="btn btn-ghost-dark btn-sm" aria-disabled="true">Full</span>`
+          : `<a class="btn btn-purple btn-sm" href="/studio-sessions-book.html?session=${encodeURIComponent(row.id)}">Book</a>`;
+      return `<article class="ss-row">
+        <div class="when">${esc(formatWhen(row.starts_at, row.ends_at))}</div>
+        <div class="what"><b><a href="${esc(row.page_path || '/studio-sessions.html')}">${esc(row.name)}</a></b>
+          <small>${esc(row.room)} · ${esc(row.discipline)} · ${esc(price)}${row.public_holiday ? ' · public-holiday rate' : ''}${row.promo_label ? ' · ' + esc(row.promo_label) : ''}</small></div>
+        <div class="actions"><span class="ss-seats${full ? ' is-full' : ''}">${esc(seatsPhrase(row))}</span>${action}</div>
+      </article>`;
+    }).join('')}</div></div>`;
+  }).join('');
+}
+
+async function initStudioTimetable() {
+  const host = $('sessionTimetable') || $('formatSessions');
+  if (!host) return;
+  const slug = host.dataset.slug || '';
+  let audience = 'all';
+  let rows = [];
+  const filters = $('ssFilters');
+  const draw = () => {
+    const shown = rows.filter(row => (!slug || row.slug === slug) && sessionMatches(row, audience));
+    host.innerHTML = renderSessionRows(shown);
+    injectSessionEvents(shown);
+    applyWhatsApp();
+  };
+  if (filters) {
+    filters.innerHTML = SS_AUDIENCES.map(([id, label]) =>
+      `<button type="button" class="${id === 'all' ? 'on' : ''}" data-audience="${id}">${label}</button>`).join('');
+    filters.addEventListener('click', event => {
+      const button = event.target.closest('button[data-audience]');
+      if (!button) return;
+      audience = button.dataset.audience;
+      filters.querySelectorAll('button').forEach(item => item.classList.toggle('on', item === button));
+      draw();
+    });
+  }
+  host.innerHTML = `<p class="fine">Loading the timetable…</p>`;
+  rows = await q(sb.from('workshop_seats_left').select('*').order('starts_at')) || [];
+  draw();
+}
+
+async function initStudioBooking() {
+  const host = $('bookingFlow');
+  if (!host) return;
+  const params = new URLSearchParams(location.search);
+  const sessionId = params.get('session') || '';
+  if (!/^[0-9a-f-]{36}$/i.test(sessionId)) {
+    host.innerHTML = `<div class="empty"><h3>Choose a session first</h3><p><a href="/studio-sessions.html">Back to the timetable</a></p></div>`;
+    return;
+  }
+  host.innerHTML = `<p class="fine">Loading this session…</p>`;
+  const rows = await q(sb.from('workshop_seats_left').select('*').eq('id', sessionId).limit(1));
+  const row = rows && rows[0];
+  if (!row || !row.bookable) {
+    host.innerHTML = `<div class="empty"><h3>This session isn't on sale</h3><p><a href="/studio-sessions.html">See the timetable</a></p></div>`;
+    return;
+  }
+  let mode = 'whatsapp';
+  try {
+    const res = await studioFn('create-checkout');
+    if (res.ok) mode = (await res.json()).mode || mode;
+  } catch { /* the form still explains both paths */ }
+  const full = Number(row.seats_left) <= 0;
+  const unitWord = row.unit === 'pair' ? 'Pairs' : 'Places';
+  host.innerHTML = `<div class="book-layout">
+    <form class="book-form" id="bookForm">
+      <h2>Your <em>details</em></h2>
+      <div class="full"><label for="bookQty">${esc(unitWord)}</label>
+        <input id="bookQty" name="qty" type="number" min="1" max="${Number(row.seats_left) || 1}" value="1" required ${full ? 'disabled' : ''}></div>
+      <div class="child-fields" ${row.requires_child ? '' : 'hidden'}>
+        <label for="bookChild">Child's name</label>
+        <input id="bookChild" name="child_name" autocomplete="name" ${row.requires_child ? 'required' : ''}>
+        <label for="bookAge">Child's age</label>
+        <input id="bookAge" name="child_age" inputmode="numeric">
+      </div>
+      <div><label for="bookName">Your name</label><input id="bookName" name="name" required autocomplete="name"></div>
+      <div><label for="bookPhone">WhatsApp number</label><input id="bookPhone" name="phone" required autocomplete="tel" inputmode="tel"></div>
+      <div class="full"><label for="bookEmail">Email</label><input id="bookEmail" name="email" type="email" required autocomplete="email"></div>
+      <p class="full fine" id="bookTotal"></p>
+      <label class="full check"><input type="checkbox" name="policy" required> I understand Studio Sessions are prepaid and non-refundable. Rescheduling is free within 24 hours of booking, then RM10 a person. A session runs with at least 3 people; under 3 confirmed 48 hours before the start, the studio reschedules it or refunds me.</label>
+      <p class="full err" id="bookErr" hidden></p>
+      <button class="btn btn-gold full" type="submit" ${full ? 'disabled' : ''}>${mode === 'stripe' ? 'Continue to payment' : 'Reserve and open WhatsApp'}</button>
+      <p class="full fine">${mode === 'stripe'
+        ? 'You’ll pay in MYR by card, FPX or GrabPay. The seat is held for 15 minutes.'
+        : 'Card payment isn’t switched on yet. Reserving saves your seat for 24 hours and opens WhatsApp ' + STUDIO_WHATSAPP + ' with the booking ID filled in.'}</p>
+    </form>
+    <aside class="facts">
+      <img class="cover" src="${esc(row.image_path || '/hero-1.jpg')}" alt="">
+      <dl>
+        <div><dt>Session</dt><dd>${esc(row.name)}</dd></div>
+        <div><dt>When</dt><dd>${esc(formatWhen(row.starts_at, row.ends_at))}</dd></div>
+        <div><dt>Room</dt><dd>${esc(row.room)}</dd></div>
+        <div><dt>Price</dt><dd>${esc(moneyMYR(row.unit_price_myr))}${row.unit === 'pair' ? ' / pair' : ''}</dd></div>
+        <div><dt>Left</dt><dd>${esc(seatsPhrase(row))}</dd></div>
+      </dl>
+      <p class="fine">Taught by working artists. You’ll actually get better. Every attendee leaves with a credited RM50 academy trial voucher.</p>
+    </aside>
+  </div>`;
+  const qty = $('bookQty');
+  const total = $('bookTotal');
+  const showTotal = () => {
+    const n = Math.max(1, Number(qty.value) || 1);
+    total.textContent = qtyLabel(n, row.unit) + ' · ' + moneyMYR(Number(row.unit_price_myr) * n)
+      + (row.public_holiday ? ' (includes the 10% public-holiday rate)' : '');
+  };
+  qty.addEventListener('input', showTotal);
+  showTotal();
+  $('bookForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const err = $('bookErr');
+    err.hidden = true;
+    const data = Object.fromEntries(new FormData(form));
+    const button = form.querySelector('button[type=submit]');
+    button.disabled = true;
+    try {
+      const res = await studioFn('create-checkout', {
+        session_id: row.id,
+        qty: Number(data.qty),
+        name: data.name,
+        phone: data.phone,
+        email: data.email,
+        child_name: data.child_name || null,
+        child_age: data.child_age || null,
+        utm_source: blank(touch.utm_source),
+        utm_medium: blank(touch.utm_medium),
+        utm_campaign: blank(touch.utm_campaign),
+        utm_term: blank(touch.utm_term),
+        utm_content: blank(touch.utm_content),
+        gclid: blank(touch.gclid),
+        fbclid: blank(touch.fbclid),
+        ref_code: refCode(touch),
+        landing_page: blank(touch.landing_page),
+        referrer: blank(touch.referrer),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const copy = {
+          sold_out: 'Those last seats just went. Please pick another quantity or another date.',
+          child_required: 'Add the child’s name for this session.',
+          invalid_contact: 'Please check the name, WhatsApp number and email.',
+          invalid_qty: 'Choose a number of places within the seats left.',
+          not_published: 'This session is no longer on sale.',
+          payment_unavailable: 'Payment couldn’t be started. Nothing was charged. Message the studio on WhatsApp and quote the time of this session.',
+        };
+        err.textContent = copy[body.error] || 'The booking could not be saved. Nothing was reserved.';
+        err.hidden = false;
+        button.disabled = false;
+        return;
+      }
+      if (body.mode === 'stripe' && body.checkout_url) {
+        location.href = body.checkout_url;
+        return;
+      }
+      const message = withRef(reserveMessage({
+        public_code: body.public_code,
+        booking_id: body.booking_id,
+        format_name: body.session?.name || row.name,
+        when: formatWhen(body.session?.starts_at || row.starts_at, body.session?.ends_at || row.ends_at),
+        room: body.session?.room || row.room,
+        qty_label: qtyLabel(body.qty, body.unit || row.unit),
+        amount_label: moneyMYR(body.amount_myr),
+        name: data.name,
+        phone: data.phone,
+        email: data.email,
+        child_name: data.child_name,
+        child_age: data.child_age,
+      }), touch);
+      window.open('https://wa.me/' + (body.whatsapp || STUDIO_WHATSAPP) + '?text=' + encodeURIComponent(message), '_blank', 'noopener');
+      location.href = '/studio-sessions-confirmation.html?booking=' + encodeURIComponent(body.booking_id) + '&token=' + encodeURIComponent(body.public_token);
+    } catch {
+      err.textContent = 'The booking could not be saved. Nothing was reserved.';
+      err.hidden = false;
+      button.disabled = false;
+    }
+  });
+}
+
+function confirmationHtml(booking) {
+  const session = booking.session || {};
+  const when = session.starts_at ? formatWhen(session.starts_at, session.ends_at) : '';
+  const reserved = booking.status === 'pending' && booking.payment_mode === 'whatsapp';
+  const paid = booking.status === 'paid';
+  const heading = paid ? 'You’re booked' : reserved ? 'Seat reserved' : booking.needs_refund ? 'Payment needs a refund' : 'Confirming your booking';
+  const voucher = booking.voucher_code
+    ? `<p class="voucher"><span>Academy trial voucher</span><b>${esc(booking.voucher_code)}</b><small>RM50 credit for each of ${esc(booking.voucher_credits)} attendee${Number(booking.voucher_credits) === 1 ? '' : 's'}, toward a trial at the academy.</small></p>`
+    : paid ? '' : '<p class="fine">The RM50 academy trial voucher appears here once the booking is confirmed.</p>';
+  return `<div class="confirm-card">
+    <span class="eyebrow">Studio Sessions</span>
+    <h2>${heading}</h2>
+    <p class="lede-tight">Booking <b>${esc(booking.public_code)}</b>${when ? ' · ' + esc(when) : ''}</p>
+    <dl class="confirm-dl">
+      <div><dt>Session</dt><dd>${esc(session.name || '')}</dd></div>
+      <div><dt>Room</dt><dd>${esc(session.room || '')}</dd></div>
+      <div><dt>Name</dt><dd>${esc(booking.name || '')}</dd></div>
+      <div><dt>Places</dt><dd>${esc(qtyLabel(booking.qty, booking.unit))}</dd></div>
+      <div><dt>Amount</dt><dd>${esc(moneyMYR(booking.amount_myr))}</dd></div>
+      <div><dt>Status</dt><dd>${esc(booking.status)}</dd></div>
+      ${booking.child_name ? `<div><dt>Child</dt><dd>${esc(booking.child_name)}${booking.child_age ? ' · ' + esc(booking.child_age) : ''}</dd></div>` : ''}
+    </dl>
+    ${voucher}
+    ${booking.needs_refund ? '<p class="callout">The payment arrived after the seat hold expired and the session was already full. The studio will refund it. Quote this booking ID on WhatsApp.</p>' : ''}
+    ${reserved ? '<p class="callout">This reservation is held for 24 hours. Pay the studio on WhatsApp to confirm it. The message includes your booking ID.</p>' : ''}
+    <div class="hero-cta">
+      <button type="button" class="btn btn-gold" id="icsBtn">Add to calendar</button>
+      ${reserved ? '<button type="button" class="btn btn-purple" id="waBtn">Open WhatsApp to pay</button>' : ''}
+      <a class="btn btn-ghost-dark" href="${esc(session.page_path || '/studio-sessions.html')}">Session details</a>
+    </div>
+    <p class="fine">Prepaid and non-refundable. Free reschedule within 24 hours of booking, then RM10 a person. Arrive 15 minutes early. Taught by working artists — you’ll actually get better.</p>
+  </div>`;
+}
+
+async function initStudioConfirmation() {
+  const host = $('bookingConfirm');
+  if (!host) return;
+  const params = new URLSearchParams(location.search);
+  const bookingId = params.get('booking') || '';
+  const token = params.get('token') || '';
+  if (!/^[0-9a-f-]{36}$/i.test(bookingId) || !/^[0-9a-f-]{36}$/i.test(token)) {
+    host.innerHTML = `<div class="empty"><h3>No booking to show</h3><p><a href="/studio-sessions.html">Browse Studio Sessions</a></p></div>`;
+    return;
+  }
+  host.innerHTML = `<p class="fine">Loading your booking…</p>`;
+  let booking = null;
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const res = await studioFn('booking-receipt', { booking_id: bookingId, token });
+    if (res.ok) booking = await res.json();
+    if (!booking) break;
+    const wait = booking.payment_mode === 'stripe' && booking.status === 'pending';
+    if (!wait) break;
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  }
+  if (!booking) {
+    host.innerHTML = `<div class="empty"><h3>We couldn’t find that booking</h3><p>Open the link from your payment page again, or message the studio with the time you booked.</p></div>`;
+    return;
+  }
+  host.innerHTML = confirmationHtml(booking);
+  if (purchaseShouldFire(booking.status, booking.payment_mode)) {
+    trackPurchase({
+      transaction_id: booking.public_code,
+      value: Number(booking.amount_myr),
+      format: booking.session?.name || '',
+      slug: booking.session?.slug || '',
+      quantity: Number(booking.qty) || 1,
+    });
+  }
+  const icsBtn = $('icsBtn');
+  if (icsBtn && booking.session) {
+    icsBtn.addEventListener('click', () => {
+      const ics = icsCalendar({
+        uid: booking.public_code + '@masterartist.co',
+        starts: booking.session.starts_at,
+        ends: booking.session.ends_at,
+        summary: (booking.session.name || 'Studio Session') + ' — Master Artist',
+        location: booking.session.room + ', Master Artist, 38-2 Jalan 28/70A, Desa Sri Hartamas',
+        description: 'Booking ' + booking.public_code + '. Prepaid, non-refundable. Free reschedule within 24 hours of booking.',
+      });
+      const file = new Blob([ics], { type: 'text/calendar' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(file);
+      link.download = booking.public_code + '.ics';
+      link.click();
+      URL.revokeObjectURL(link.href);
+    });
+  }
+  const waBtn = $('waBtn');
+  if (waBtn && booking.session) {
+    waBtn.addEventListener('click', () => {
+      const message = withRef(reserveMessage({
+        public_code: booking.public_code,
+        booking_id: booking.booking_id,
+        format_name: booking.session?.name,
+        when: formatWhen(booking.session.starts_at, booking.session.ends_at),
+        room: booking.session.room,
+        qty_label: qtyLabel(booking.qty, booking.unit),
+        amount_label: moneyMYR(booking.amount_myr),
+        name: booking.name,
+        phone: booking.phone,
+        email: booking.email,
+        child_name: booking.child_name,
+        child_age: booking.child_age,
+      }), touch);
+      window.open('https://wa.me/' + STUDIO_WHATSAPP + '?text=' + encodeURIComponent(message), '_blank', 'noopener');
+    });
+  }
+}
+
+function initStudioSessions() {
+  initStudioTimetable();
+  initStudioBooking();
+  initStudioConfirmation();
+}
+
 /* =================================================================== boot */
 async function boot() {
   applyWhatsApp();
@@ -942,4 +1357,5 @@ async function boot() {
   if ($('post')) renderPost(d.post, posts);
 }
 
+initStudioSessions();
 boot();
