@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<script>
+/* Drop generate_lead hits unless the trial form has just saved a row.
+   GA4 create-event rule 16134847184 copies every page_view whose
+   page_location contains Masterartist.co into generate_lead. */
+(function(){
+  function leadUrl(url){ return /(?:^|[?&#])en=generate_lead(?:&|$)/.test(String(url||'')); }
+  function blocked(url){ return leadUrl(url) && !(window.__allowGenerateLead > 0); }
+  if (navigator.sendBeacon) {
+    var beacon = navigator.sendBeacon.bind(navigator);
+    navigator.sendBeacon = function(url, data){ if (blocked(url)) return true; return beacon(url, data); };
+  }
+  if (window.fetch) {
+    var origFetch = window.fetch.bind(window);
+    window.fetch = function(input, init){
+      var url = typeof input === 'string' ? input : (input && input.url) || '';
+      if (blocked(url)) return Promise.resolve(new Response('', {status:204}));
+      return origFetch(input, init);
+    };
+  }
+  var desc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+  if (desc && desc.set) {
+    Object.defineProperty(HTMLImageElement.prototype, 'src', {
+      configurable: true, enumerable: desc.enumerable, get: desc.get,
+      set: function(value){ if (!blocked(value)) desc.set.call(this, value); }
+    });
+  }
+  var xo = XMLHttpRequest.prototype.open, xs = XMLHttpRequest.prototype.send;
+  XMLHttpRequest.prototype.open = function(method, url){ this.__leadUrl = url; return xo.apply(this, arguments); };
+  XMLHttpRequest.prototype.send = function(body){ if (blocked(this.__leadUrl)) return; return xs.apply(this, arguments); };
+})();
+</script>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-2X9E7MWMWM"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-2X9E7MWMWM');
+  gtag('config', 'AW-18457946758');
+</script>
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1104757255303373');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1104757255303373&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
+<!-- Ahrefs Web Analytics -->
+<script src="https://analytics.ahrefs.com/analytics.js" data-key="74BEoXeejA8dZU3rDB4ESg" async></script>
+<title>Kids Art Class in Sri Hartamas | Master Artist</title>
+<meta name="description" content="A kids art class in Desa Sri Hartamas for children and a parent together. An art class for kids near Mont Kiara, taught by working artists. You’ll actually get better.">
+<link rel="canonical" href="https://masterartist.co/studio-sessions/families/">
+<meta property="og:site_name" content="Master Artist">
+<meta property="og:title" content="Kids Art Class in Sri Hartamas | Master Artist">
+<meta property="og:description" content="A kids art class in Desa Sri Hartamas for children and a parent together. An art class for kids near Mont Kiara, taught by working artists. You’ll actually get better.">
+<meta property="og:url" content="https://masterartist.co/studio-sessions/families/">
+<meta property="og:image" content="https://masterartist.co/hero-1.jpg">
+<meta property="og:image:alt" content="Kids Art Class in Sri Hartamas | Master Artist">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="en_MY">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Kids Art Class in Sri Hartamas | Master Artist">
+<meta name="twitter:description" content="A kids art class in Desa Sri Hartamas for children and a parent together. An art class for kids near Mont Kiara, taught by working artists. You’ll actually get better.">
+<meta name="twitter:image" content="https://masterartist.co/hero-1.jpg">
+<link rel="icon" type="image/svg+xml" href="/logo.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@1,9..144,400;1,9..144,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css?v=20261020ss">
+
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a href="/" class="brand">
+      <img loading="lazy" class="brand-mark" src="/logo.svg" alt="Master Artist logo">
+      <span class="brand-name">Master Artist</span>
+    </a>
+    <nav class="navlinks" aria-label="Main">
+      <a href="/about.html">About</a>
+      <a href="/#programmes">Programmes</a>
+      <a href="/gallery.html">Gallery</a>
+      <a href="/pricing.html">Pricing</a>
+      <a href="/blog.html">Blog</a>
+      <a href="/visit.html">Visit</a>
+      <a href="/studio-sessions/" class="btn btn-gold btn-sm">Studio Sessions</a>
+    </nav>
+    <div class="burger-wrap">
+      <button class="burger" id="burgerBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false">☰</button>
+      <nav class="nav-dropdown" id="navDropdown" aria-label="Mobile menu">
+        <a href="/">Home</a>
+        <a href="/about.html">About</a>
+        <a href="/#programmes">Programmes</a>
+        <a href="/gallery.html">Gallery</a>
+        <a href="/pricing.html">Pricing</a>
+        <a href="/blog.html">Blog</a>
+        <a href="/visit.html">Visit</a>
+        <a href="/studio-sessions/" class="btn btn-gold btn-sm">Studio Sessions</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<div class="page-hero"><div class="wrap">
+    <div class="crumbs"><a href="/">Home</a> / <a href="/studio-sessions/">Studio Sessions</a> / Families</div>
+    <span class="eyebrow">Studio Sessions</span>
+    <h1>A kids art class. <em>You’ll actually get better.</em></h1>
+    <p>A kids art class for children, and a parent child workshop on Sunday morning. An art class for kids near Sri Hartamas, with arts and crafts near Mont Kiara taught by working artists. Activities for kids in KL that finish in the session.</p>
+    <div class="hero-cta"><a href="/whats-on/" class="btn btn-gold">All dates</a></div>
+  </div></div>
+<section><div class="wrap"><div class="sec-head"><span class="eyebrow">Dates</span><h2>Activities for kids in KL</h2><p>Parent and child on Sunday morning, kids art on Sunday afternoon. Arts and crafts near the studio, with a real cap.</p></div><div id="audienceSessions" data-audience="families"></div></div></section>
+<a class="ss-bookbar" href="/whats-on/">Book a seat</a>
+
+<footer>
+  <div class="wrap">
+    <div class="f-grid">
+      <div>
+        <a href="/" class="brand" style="margin-bottom:14px">
+          <img class="brand-mark" src="/logo.svg" alt="Master Artist logo">
+          <span class="brand-name">Master Artist</span>
+        </a>
+        <p style="max-width:25em">Art · Music · Voice · Media Academy in Desa Sri Hartamas, Kuala Lumpur. Small classes. Real skills. Every child seen.</p>
+      </div>
+      <div>
+        <h4>Studio Sessions</h4>
+        <ul>
+          <li><a href="/studio-sessions/">Hub</a></li>
+          <li><a href="/whats-on/">What’s on</a></li>
+          <li><a href="/studio-sessions/families/">Families</a></li>
+          <li><a href="/studio-sessions/adults/">Adults</a></li>
+          <li><a href="/studio-sessions/weekday-mornings/">Weekday mornings</a></li>
+          <li><a href="/gift-vouchers/">Gift vouchers</a></li>
+          <li><a href="/faq/">FAQ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Groups</h4>
+        <ul>
+          <li><a href="/corporate/">Corporate</a></li>
+          <li><a href="/private-events/">Private events</a></li>
+          <li><a href="/workshops.html">Workshops</a></li>
+          <li><a href="/pricing.html">Academy pricing</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Visit</h4>
+        <ul class="f-contact">
+          <li id="fAddress">38-2, Jalan 28/70A, Desa Sri Hartamas, 50480 Kuala Lumpur</li>
+          <li>Above Savor restaurant</li>
+          <li id="fHours">Sun–Thu 10:30am–9pm · Fri 10:30am–5:30pm · Closed Saturdays</li>
+          <li><a data-wa id="fWhatsapp">+60 10-277 9426</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="f-bot">
+      <span>© 2026 Master Artist</span>
+      <span>
+        <a href="/privacy.html">Privacy Policy</a> &nbsp;·&nbsp;
+        <a href="/terms.html">Terms &amp; Enrolment</a> &nbsp;·&nbsp;
+        <a href="/admin.html" class="staff">Staff login</a>
+      </span>
+    </div>
+  </div>
+</footer>
+<a class="fab" aria-label="WhatsApp us" id="fabWhatsapp" data-wa>
+  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.25-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.06 2.88 1.21 3.08c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.22 1.36.19 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.7.25-1.29.17-1.41-.07-.13-.27-.2-.57-.35zM12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm0 18.15c-1.53 0-3.03-.41-4.34-1.19l-.31-.18-3.12.82.83-3.04-.2-.31a8.2 8.2 0 01-1.26-4.37c0-4.53 3.69-8.22 8.23-8.22 2.2 0 4.26.86 5.82 2.41a8.17 8.17 0 012.41 5.82c0 4.54-3.69 8.23-8.23 8.23z"/></svg>
+</a>
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" aria-label="Close">&times;</button>
+  <button class="lightbox-nav lightbox-prev" aria-label="Previous">&#8249;</button>
+  <img loading="lazy" alt="">
+  <button class="lightbox-nav lightbox-next" aria-label="Next">&#8250;</button>
+  <span class="lightbox-count"></span>
+</div>
+<script type="module" src="/site.js?v=20261020ss"></script>
+</body>
+</html>

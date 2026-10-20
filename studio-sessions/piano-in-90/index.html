@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<script>
+/* Drop generate_lead hits unless the trial form has just saved a row.
+   GA4 create-event rule 16134847184 copies every page_view whose
+   page_location contains Masterartist.co into generate_lead. */
+(function(){
+  function leadUrl(url){ return /(?:^|[?&#])en=generate_lead(?:&|$)/.test(String(url||'')); }
+  function blocked(url){ return leadUrl(url) && !(window.__allowGenerateLead > 0); }
+  if (navigator.sendBeacon) {
+    var beacon = navigator.sendBeacon.bind(navigator);
+    navigator.sendBeacon = function(url, data){ if (blocked(url)) return true; return beacon(url, data); };
+  }
+  if (window.fetch) {
+    var origFetch = window.fetch.bind(window);
+    window.fetch = function(input, init){
+      var url = typeof input === 'string' ? input : (input && input.url) || '';
+      if (blocked(url)) return Promise.resolve(new Response('', {status:204}));
+      return origFetch(input, init);
+    };
+  }
+  var desc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+  if (desc && desc.set) {
+    Object.defineProperty(HTMLImageElement.prototype, 'src', {
+      configurable: true, enumerable: desc.enumerable, get: desc.get,
+      set: function(value){ if (!blocked(value)) desc.set.call(this, value); }
+    });
+  }
+  var xo = XMLHttpRequest.prototype.open, xs = XMLHttpRequest.prototype.send;
+  XMLHttpRequest.prototype.open = function(method, url){ this.__leadUrl = url; return xo.apply(this, arguments); };
+  XMLHttpRequest.prototype.send = function(body){ if (blocked(this.__leadUrl)) return; return xs.apply(this, arguments); };
+})();
+</script>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-2X9E7MWMWM"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-2X9E7MWMWM');
+  gtag('config', 'AW-18457946758');
+</script>
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1104757255303373');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1104757255303373&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
+<!-- Ahrefs Web Analytics -->
+<script src="https://analytics.ahrefs.com/analytics.js" data-key="74BEoXeejA8dZU3rDB4ESg" async></script>
+<title>Piano Class in KL — 90 Minutes | Master Artist</title>
+<meta name="description" content="A piano class in KL for adult beginners: one short piece, two hands, in 90 minutes. Piano lessons for adults, four people, RM128 all in.">
+<link rel="canonical" href="https://masterartist.co/studio-sessions/piano-in-90/">
+<meta property="og:site_name" content="Master Artist">
+<meta property="og:title" content="Piano Class in KL — 90 Minutes | Master Artist">
+<meta property="og:description" content="A piano class in KL for adult beginners: one short piece, two hands, in 90 minutes. Piano lessons for adults, four people, RM128 all in.">
+<meta property="og:url" content="https://masterartist.co/studio-sessions/piano-in-90/">
+<meta property="og:image" content="https://masterartist.co/piano-photo.jpg">
+<meta property="og:image:alt" content="Piano Class in KL — 90 Minutes | Master Artist">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="en_MY">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Piano Class in KL — 90 Minutes | Master Artist">
+<meta name="twitter:description" content="A piano class in KL for adult beginners: one short piece, two hands, in 90 minutes. Piano lessons for adults, four people, RM128 all in.">
+<meta name="twitter:image" content="https://masterartist.co/piano-photo.jpg">
+<link rel="icon" type="image/svg+xml" href="/logo.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@1,9..144,400;1,9..144,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css?v=20261020ss">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Offer","name":"Piano in 90 Minutes","price":"128","priceCurrency":"MYR","url":"https://masterartist.co/studio-sessions/piano-in-90/","availability":"https://schema.org/InStock","description":"One all-in price. Materials included.","seller":{"@type":"EducationalOrganization","name":"Master Artist","url":"https://masterartist.co/"}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+{"@type":"ListItem","position":1,"name":"Home","item":"https://masterartist.co/"},
+{"@type":"ListItem","position":2,"name":"Studio Sessions","item":"https://masterartist.co/studio-sessions/"},
+{"@type":"ListItem","position":3,"name":"Piano in 90 Minutes","item":"https://masterartist.co/studio-sessions/piano-in-90/"}]}
+</script>
+<script type="application/ld+json">
+{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Who is this piano class for?", "acceptedAnswer": {"@type": "Answer", "text": "Adult beginners. Piano lessons for adults, and piano lessons in KL, in 90 minutes. Four keyboards, four people. RM128."}}, {"@type": "Question", "name": "Is anything extra on the day?", "acceptedAnswer": {"@type": "Answer", "text": "No. RM128 is the price for the session, materials included. Optional add-ons, if any, are chosen before you pay."}}, {"@type": "Question", "name": "Who teaches it?", "acceptedAnswer": {"@type": "Answer", "text": "A working pianist from the Master Artist faculty. The name for your date is confirmed when you book."}}]}
+</script>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a href="/" class="brand">
+      <img loading="lazy" class="brand-mark" src="/logo.svg" alt="Master Artist logo">
+      <span class="brand-name">Master Artist</span>
+    </a>
+    <nav class="navlinks" aria-label="Main">
+      <a href="/about.html">About</a>
+      <a href="/#programmes">Programmes</a>
+      <a href="/gallery.html">Gallery</a>
+      <a href="/pricing.html">Pricing</a>
+      <a href="/blog.html">Blog</a>
+      <a href="/visit.html">Visit</a>
+      <a href="/studio-sessions/" class="btn btn-gold btn-sm">Studio Sessions</a>
+    </nav>
+    <div class="burger-wrap">
+      <button class="burger" id="burgerBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false">☰</button>
+      <nav class="nav-dropdown" id="navDropdown" aria-label="Mobile menu">
+        <a href="/">Home</a>
+        <a href="/about.html">About</a>
+        <a href="/#programmes">Programmes</a>
+        <a href="/gallery.html">Gallery</a>
+        <a href="/pricing.html">Pricing</a>
+        <a href="/blog.html">Blog</a>
+        <a href="/visit.html">Visit</a>
+        <a href="/studio-sessions/" class="btn btn-gold btn-sm">Studio Sessions</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<div class="page-hero"><div class="wrap">
+    <div class="crumbs"><a href="/">Home</a> / <a href="/studio-sessions/">Studio Sessions</a> / Piano in 90 Minutes</div>
+    <span class="eyebrow">Piano · Studio Sessions</span>
+    <h1>A piano class in 90 minutes. <em>You’ll actually get better.</em></h1>
+    <p>A piano class in KL: one short piece, two hands, in ninety minutes. Piano lessons for adults, taught by a working pianist. Piano lessons in KL with four keyboards and four people. RM128, all in.</p>
+    <div class="hero-cta"><a href="#dates" class="btn btn-gold">See dates</a><a href="/whats-on/" class="btn btn-ghost-light">All dates</a></div>
+  </div></div>
+<section><div class="wrap"><div class="class-block"><div>
+  <span class="tagline">Taught by working artists</span>
+  <h2>Piano lessons for <em>adults</em></h2>
+  <p class="intro">Piano lessons KL beginners can finish in one evening, from Tuesday 29 December. One price. You’ll actually get better.</p>
+  <div class="detail-cols">
+    <div class="detail-card"><h3>What you’ll make</h3><ul class="ticks"><li>One playable short piece, two hands</li><li>A lead sheet you can take</li><li>Proof you can sit at a piano and play</li></ul></div>
+    <div class="detail-card"><h3>What you’ll learn</h3><ul class="ticks"><li>How the two hands share a job</li><li>Counting out loud without apology</li><li>What to practise in the next twenty minutes at home</li></ul></div>
+  </div>
+  <div class="thumbs"><img src="/piano-photo.jpg" alt="Piano in 90 Minutes at Master Artist" loading="lazy"></div>
+</div>
+<aside class="facts">
+  <img loading="lazy" class="cover" src="/piano-photo.jpg" alt="">
+  <dl>
+    <div><dt>Price</dt><dd>RM128</dd></div>
+    <div><dt>Included</dt><dd>Materials and teaching</dd></div>
+    <div><dt>Length</dt><dd>1.5 hours</dd></div>
+    <div><dt>Cap</dt><dd>4 people</dd></div>
+    <div><dt>Room</dt><dd>Music room</dd></div>
+  </dl>
+  <a class="btn btn-gold" href="#dates">Book a date</a>
+  <p class="fine">All-in. No hidden fee on the day.</p>
+</aside></div></div></section>
+<section class="alt" id="dates"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Next dates</span><h2>Book the piano <em>class</em></h2>
+    <p>Tuesday 8pm from 29 December. Seats left update from the studio’s list. RM128 is the price unless a published date says otherwise.</p></div>
+  <div id="formatSessions" data-slug="piano-in-90"></div>
+</div></section>
+<section><div class="wrap"><div class="detail-cols">
+  <div class="detail-card"><h3>The artist</h3><p>Taught by a working artist from the Master Artist faculty. You’ll actually get better, because the session is a class, not a backdrop. The teacher’s name for your date is confirmed when you book.</p></div>
+  <div class="detail-card"><h3>What’s included</h3><ul class="ticks"><li>A keyboard for the session</li><li>Teaching by a working pianist</li><li>A credited RM50 academy trial voucher toward adult piano</li></ul></div>
+  <div class="detail-card"><h3>The room</h3><p>Master Artist, 38-2 Jalan 28/70A, Desa Sri Hartamas, above Savor. This session uses the Music room. The room with the view is the L2 front room; other rooms are named on the date so you know where to go.</p></div>
+  <div class="detail-card"><h3>Reviews</h3><p>Reviews from Studio Sessions will sit here after the first dates. Nothing is invented in the meantime.</p></div>
+</div></div></section>
+<section class="alt"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Policies</span><h2>Before you <em>book</em></h2></div>
+  <div class="detail-cols">
+    <div class="detail-card"><h3>Payment</h3><ul class="ticks"><li>Prepaid, and non-refundable</li><li>Free reschedule within 24 hours of booking</li><li>RM10 a person after that</li><li>One all-in price. Materials are included</li></ul></div>
+    <div class="detail-card"><h3>The session</h3><ul class="ticks"><li>A session runs with at least 3 people</li><li>Under 3 confirmed 48 hours before the start, we reschedule it or refund you</li><li>Arrive 15 minutes early</li><li>Saturday is closed. No workshop Friday after 12:30</li></ul></div>
+  </div>
+  <p class="fine" style="margin-top:16px"><a href="/faq/">All the questions</a></p>
+</div></section>
+<section><div class="wrap"><div class="sec-head"><span class="eyebrow">FAQ</span><h2>Questions before you book</h2></div><div class="detail-cols"><div class="detail-card"><h3>Who is this piano class for?</h3><p>Adult beginners. Piano lessons for adults, and piano lessons in KL, in 90 minutes. Four keyboards, four people. RM128.</p></div><div class="detail-card"><h3>Is anything extra on the day?</h3><p>No. RM128 is the price for the session, materials included. Optional add-ons, if any, are chosen before you pay.</p></div><div class="detail-card"><h3>Who teaches it?</h3><p>A working pianist from the Master Artist faculty. The name for your date is confirmed when you book.</p></div></div></div></section>
+<a class="ss-bookbar" href="/whats-on/">Book a seat</a>
+
+<footer>
+  <div class="wrap">
+    <div class="f-grid">
+      <div>
+        <a href="/" class="brand" style="margin-bottom:14px">
+          <img class="brand-mark" src="/logo.svg" alt="Master Artist logo">
+          <span class="brand-name">Master Artist</span>
+        </a>
+        <p style="max-width:25em">Art · Music · Voice · Media Academy in Desa Sri Hartamas, Kuala Lumpur. Small classes. Real skills. Every child seen.</p>
+      </div>
+      <div>
+        <h4>Studio Sessions</h4>
+        <ul>
+          <li><a href="/studio-sessions/">Hub</a></li>
+          <li><a href="/whats-on/">What’s on</a></li>
+          <li><a href="/studio-sessions/families/">Families</a></li>
+          <li><a href="/studio-sessions/adults/">Adults</a></li>
+          <li><a href="/studio-sessions/weekday-mornings/">Weekday mornings</a></li>
+          <li><a href="/gift-vouchers/">Gift vouchers</a></li>
+          <li><a href="/faq/">FAQ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Groups</h4>
+        <ul>
+          <li><a href="/corporate/">Corporate</a></li>
+          <li><a href="/private-events/">Private events</a></li>
+          <li><a href="/workshops.html">Workshops</a></li>
+          <li><a href="/pricing.html">Academy pricing</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Visit</h4>
+        <ul class="f-contact">
+          <li id="fAddress">38-2, Jalan 28/70A, Desa Sri Hartamas, 50480 Kuala Lumpur</li>
+          <li>Above Savor restaurant</li>
+          <li id="fHours">Sun–Thu 10:30am–9pm · Fri 10:30am–5:30pm · Closed Saturdays</li>
+          <li><a data-wa id="fWhatsapp">+60 10-277 9426</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="f-bot">
+      <span>© 2026 Master Artist</span>
+      <span>
+        <a href="/privacy.html">Privacy Policy</a> &nbsp;·&nbsp;
+        <a href="/terms.html">Terms &amp; Enrolment</a> &nbsp;·&nbsp;
+        <a href="/admin.html" class="staff">Staff login</a>
+      </span>
+    </div>
+  </div>
+</footer>
+<a class="fab" aria-label="WhatsApp us" id="fabWhatsapp" data-wa>
+  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.25-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.06 2.88 1.21 3.08c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.22 1.36.19 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.7.25-1.29.17-1.41-.07-.13-.27-.2-.57-.35zM12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm0 18.15c-1.53 0-3.03-.41-4.34-1.19l-.31-.18-3.12.82.83-3.04-.2-.31a8.2 8.2 0 01-1.26-4.37c0-4.53 3.69-8.22 8.23-8.22 2.2 0 4.26.86 5.82 2.41a8.17 8.17 0 012.41 5.82c0 4.54-3.69 8.23-8.23 8.23z"/></svg>
+</a>
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" aria-label="Close">&times;</button>
+  <button class="lightbox-nav lightbox-prev" aria-label="Previous">&#8249;</button>
+  <img loading="lazy" alt="">
+  <button class="lightbox-nav lightbox-next" aria-label="Next">&#8250;</button>
+  <span class="lightbox-count"></span>
+</div>
+<script type="module" src="/site.js?v=20261020ss"></script>
+</body>
+</html>

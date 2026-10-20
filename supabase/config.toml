@@ -1,0 +1,21 @@
+# Edge Function gateway flags for Studio Sessions.
+# The Stripe webhook has no Supabase JWT. Deploy it with verify_jwt = false.
+# create-checkout and booking-receipt keep the default JWT check; the website
+# sends the publishable anon key, and the booking token authorises the receipt.
+
+project_id = "fudaosneozobacdalncv"
+
+[functions.create-checkout]
+verify_jwt = true
+
+[functions.booking-receipt]
+verify_jwt = true
+
+[functions.send-booking-email]
+verify_jwt = true
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.studio-enquiry]
+verify_jwt = true
