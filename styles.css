@@ -718,8 +718,22 @@ figure.gal{margin:0}
 .ss-row .what b a:hover{color:var(--purple)}
 .ss-row .what small{color:var(--muted);font-size:13.5px}
 .ss-row .actions{display:flex;align-items:center;gap:12px}
-.ss-seats{font-size:13px;font-weight:700;color:var(--gold-deep);white-space:nowrap}
-.ss-seats.is-full{color:#8a2a1a}
+.ss-badge,.ss-seats{font-size:13px;font-weight:700;color:var(--gold-deep);white-space:nowrap;background:var(--gold-pale);border-radius:999px;padding:4px 10px}
+.ss-badge.is-full,.ss-seats.is-full{color:#8a2a1a;background:#fde8e4}
+.ss-day{margin-bottom:26px}
+.ss-day h3{font-size:18px;margin-bottom:10px}
+.ss-filterbar{display:flex;flex-wrap:wrap;gap:12px;margin:0 0 22px}
+.ss-filterbar label{display:grid;gap:4px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--gold-deep)}
+.ss-filterbar select,.book-form select,.enquiry-form select{font:inherit;font-size:15px;color:var(--ink);background:var(--bg);border:1px solid rgba(59,28,90,.18);border-radius:10px;padding:11px 12px}
+.ss-hero-photo{width:100%;aspect-ratio:16/7;object-fit:cover;border-radius:var(--radius);display:block}
+.ss-bookbar{position:fixed;z-index:30;right:22px;bottom:92px;background:var(--gold);color:var(--ink);font-weight:700;text-decoration:none;border-radius:999px;padding:12px 18px;box-shadow:var(--shadow)}
+.ss-bookbar:hover{background:var(--gold-deep);color:#fff}
+.enquiry-form{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;display:grid;grid-template-columns:1fr 1fr;gap:12px;box-shadow:var(--shadow)}
+.enquiry-form h2,.enquiry-form .full,.enquiry-form .btn,.enquiry-form .err,.enquiry-form .form-note{grid-column:1/-1}
+.enquiry-form label{display:block;font-size:13px;font-weight:600;color:var(--purple);margin-bottom:5px}
+.enquiry-form input,.enquiry-form textarea{width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--bg);border:1px solid rgba(59,28,90,.18);border-radius:10px;padding:11px 12px}
+.enquiry-form .form-note{background:var(--gold-pale);border-radius:10px;padding:12px}
+.package-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
 .book-layout{display:grid;grid-template-columns:1.15fr .85fr;gap:28px;align-items:start}
 .book-form{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;display:grid;grid-template-columns:1fr 1fr;gap:12px;box-shadow:var(--shadow)}
 .book-form h2{grid-column:1/-1;font-size:28px}
@@ -748,7 +762,8 @@ figure.gal{margin:0}
 .voucher small{color:var(--ink)}
 .format-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
 @media(max-width:800px){
-  .ss-row,.book-layout,.confirm-dl{grid-template-columns:1fr}
+  .ss-row,.book-layout,.confirm-dl,.enquiry-form{grid-template-columns:1fr}
+  .ss-bookbar{left:16px;right:16px;bottom:78px;text-align:center}
   .ss-row .actions{flex-wrap:wrap}
   .book-form{grid-template-columns:1fr;padding:16px}
 }

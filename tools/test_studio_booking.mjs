@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {
-  timeBand, moneyMYR, qtyLabel, formatWhen, purchaseShouldFire, reserveMessage, icsCalendar, eventJsonLd,
+  timeBand, moneyMYR, qtyLabel, formatWhen, purchaseShouldFire, reserveMessage, icsCalendar, eventJsonLd, seatsBadge,
   STUDIO_WHATSAPP,
 } from '../studio-booking.mjs';
 
@@ -14,6 +14,11 @@ assert.equal(timeBand('2026-11-15T09:59:00Z'), 'afternoon'); // 17:59 KL
 assert.equal(timeBand('2026-11-15T10:00:00Z'), 'evening'); // 18:00 KL
 assert.equal(timeBand('2026-11-10T11:30:00Z'), 'evening'); // 19:30 KL
 assert.equal(timeBand('2026-11-12T12:00:00Z'), 'evening'); // 20:00 KL
+
+assert.equal(seatsBadge(2), '2 left');
+assert.equal(seatsBadge(1), '1 left');
+assert.equal(seatsBadge(0), 'Sold out');
+assert.equal(seatsBadge(-1), 'Sold out');
 
 assert.equal(moneyMYR(108), 'RM108');
 assert.equal(moneyMYR(107.8), 'RM107.80');

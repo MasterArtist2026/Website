@@ -25,8 +25,28 @@ Deno.serve(async (req) => {
 
   const type = event.type as string;
   const session = event.data?.object || {};
-  const bookingId = session.metadata?.booking_id || session.client_reference_id;
+  const bookingId = session.metadata?.booking_id || session.metadata?.gift_id || session.client_reference_id;
   if (!bookingId) return new Response(JSON.stringify({ ignored: true }), { status: 200 });
+
+  if (session.metadata?.kind === "gift") {
+    const giftId = session.metadata.gift_id || bookingId;
+    if (type === "checkout.session.expired" || type === "checkout.session.async_payment_failed") {
+      await admin.from("gift_vouchers").update({ status: "cancelled" }).eq("id", giftId).eq("status", "pending");
+      return new Response(JSON.stringify({ released: true }), { status: 200 });
+    }
+    const paidGift = type === "checkout.session.completed" || type === "checkout.session.async_payment_succeeded";
+    if (!paidGift) return new Response(JSON.stringify({ ignored: true }), { status: 200 });
+    if (session.payment_status && session.payment_status !== "paid") {
+      return new Response(JSON.stringify({ waiting: true }), { status: 200 });
+    }
+    const { data: gift } = await admin.from("gift_vouchers").select("id, amount_myr").eq("id", giftId).maybeSingle();
+    const giftSen = Math.round(Number(gift?.amount_myr) * 100);
+    if (!gift || Number(session.amount_total) !== giftSen) {
+      return new Response("amount mismatch", { status: 500 });
+    }
+    const settledGift = await admin.rpc("settle_gift_voucher", { p_gift: giftId, p_payment_ref: session.id || null });
+    return new Response(JSON.stringify(settledGift.data || { ok: false }), { status: settledGift.error ? 500 : 200 });
+  }
 
   if (type === "checkout.session.expired" || type === "checkout.session.async_payment_failed") {
     await admin.from("bookings")

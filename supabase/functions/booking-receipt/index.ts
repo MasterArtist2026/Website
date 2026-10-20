@@ -16,11 +16,37 @@ Deno.serve(async (req) => {
   if (!allowedOrigin(origin)) return json({ error: "origin not allowed" }, 403, origin);
   if (req.method !== "POST") return json({ error: "method not allowed" }, 405, origin);
 
-  let body: { booking_id?: string; token?: string };
+  let body: { booking_id?: string; gift_id?: string; token?: string };
   try {
     body = await req.json();
   } catch {
     return json({ error: "not_found" }, 404, origin);
+  }
+
+  if (body.gift_id) {
+    const giftId = String(body.gift_id);
+    const giftToken = String(body.token || "").toLowerCase();
+    if (!/^[0-9a-f-]{36}$/i.test(giftId) || !/^[0-9a-f-]{36}$/i.test(giftToken)) {
+      return json({ error: "not_found" }, 404, origin);
+    }
+    const adminGift = adminClient();
+    const gift = await adminGift.from("gift_vouchers").select(
+      "id, public_code, public_token, amount_myr, balance_myr, status, payment_mode, recipient_name, purchaser_name",
+    ).eq("id", giftId).maybeSingle();
+    if (gift.error || !gift.data || !sameToken(String(gift.data.public_token).toLowerCase(), giftToken)) {
+      return json({ error: "not_found" }, 404, origin);
+    }
+    return json({
+      kind: "gift",
+      gift_id: gift.data.id,
+      public_code: gift.data.public_code,
+      amount_myr: gift.data.amount_myr,
+      balance_myr: gift.data.balance_myr,
+      status: gift.data.status,
+      payment_mode: gift.data.payment_mode,
+      recipient_name: gift.data.recipient_name,
+      name: gift.data.purchaser_name,
+    }, 200, origin);
   }
 
   const bookingId = String(body.booking_id || "");
@@ -34,7 +60,8 @@ Deno.serve(async (req) => {
     id, public_code, public_token, status, payment_mode, amount_myr, currency,
     qty, people, booker_name, phone, email, child_name, child_age,
     voucher_code, voucher_credits, hold_expires_at, needs_refund, reschedule_fee_myr,
-    booked_at,
+    booked_at, gift_credit_myr,
+    booking_addons ( name, qty, amount_myr ),
     workshop_sessions (
       starts_at, ends_at, room, promo_label,
       workshop_formats ( slug, name, unit, seats_per_unit, page_path, summary )
@@ -69,6 +96,8 @@ Deno.serve(async (req) => {
     voucher_credits: data.voucher_credits,
     hold_expires_at: data.hold_expires_at,
     needs_refund: data.needs_refund,
+    gift_credit_myr: data.gift_credit_myr,
+    addons: data.booking_addons || [],
     reschedule_fee_myr: data.reschedule_fee_myr,
     booked_at: data.booked_at,
     session: session ? {

@@ -55,6 +55,13 @@ export function moneyMYR(amount) {
   return 'RM' + text;
 }
 
+/** Public seat badge. Zero is sold out; any other count is "N left". */
+export function seatsBadge(seatsLeft) {
+  const left = Number(seatsLeft);
+  if (!Number.isFinite(left) || left <= 0) return 'Sold out';
+  return left === 1 ? '1 left' : left + ' left';
+}
+
 export function qtyLabel(qty, unit) {
   const n = Number(qty) || 0;
   if (unit === 'pair') return n === 1 ? '1 pair' : n + ' pairs';
@@ -152,7 +159,7 @@ export function eventJsonLd(session) {
     eventStatus: 'https://schema.org/EventScheduled',
     eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
     image: session.image_path ? 'https://masterartist.co' + session.image_path : 'https://masterartist.co/hero-1.jpg',
-    url: 'https://masterartist.co/studio-sessions-book.html?session=' + session.id,
+    url: 'https://masterartist.co/studio-sessions/book/?session=' + session.id,
     location: {
       '@type': 'Place',
       name: session.room + ', Master Artist — the room with the view',
@@ -175,7 +182,7 @@ export function eventJsonLd(session) {
       price: Number.isFinite(price) ? price.toFixed(2) : '0.00',
       priceCurrency: 'MYR',
       availability: soldOut ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock',
-      url: 'https://masterartist.co/studio-sessions-book.html?session=' + session.id,
+      url: 'https://masterartist.co/studio-sessions/book/?session=' + session.id,
       validFrom: new Date().toISOString(),
     },
   };

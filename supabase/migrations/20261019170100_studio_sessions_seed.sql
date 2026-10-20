@@ -2,13 +2,14 @@
 -- Apply after 20261019170000_studio_sessions.sql, in the SQL editor.
 -- Every session is status = draft. Nothing appears on the website until staff publish it.
 --
--- Soft launch (10–16 Nov 2026), from the go-to-market plan:
+-- Launch 1 Nov 2026 (moved forward from 10 Nov). 1 Nov 2026 is a Sunday.
+-- Soft launch in the first week, on the same weekday slots, RM20 off:
 --   Canvas Night, Watercolour, Bake Lab and Sing Your Song once each,
 --   plus both mothers' morning slots. Prices are RM20 below the catalogue.
--- Weekly grid from 17 Nov 2026 through 31 Jan 2027, phased with the plan:
---   17 Nov: Canvas Night, Watercolour (including both Tuesday tests), Bake Lab, Sing Your Song.
---   13 Dec: first Sunday for Parent & Child and Kids Art Studio (plan: running from 8 Dec).
---   5 Jan: Piano in 90. 10 Jan: first Photo Walk Sunday.
+-- Weekly grid from 1 Nov 2026 through 31 Jan 2027, phased with the plan:
+--   1 Nov: the Sunday / Tuesday / Thursday grid (was 17 Nov).
+--   29 Nov: first Sunday for Parent & Child and Kids Art Studio (was 13 Dec; plan date moved with the launch).
+--   29 Dec: Piano in 90 (was 5 Jan). 3 Jan: first Photo Walk Sunday (was 10 Jan).
 --   Christmas and Chinese New Year overlays are a handful of extra drafts, not a weekly SKU.
 -- The catalogue lists Kids Art Studio as live in November; the plan starts it in December.
 -- These drafts follow the plan. Saturday is closed. No workshop is seeded on Friday.
@@ -30,7 +31,7 @@ insert into public.workshop_formats (
     150, 108.00, null, 'pax', 1, 8, 'L2 front room',
     'Materials about RM20 a person: canvas, acrylics, brushes, apron.',
     'Adult art programme, RM480 a month.',
-    3, date '2026-11-01', '/canvas-night.html', '/golden-shores-workshop-1.jpg',
+    3, date '2026-11-01', '/studio-sessions/canvas-night/', '/golden-shores-workshop-1.jpg',
     true, false, 1
   ),
   (
@@ -42,7 +43,7 @@ insert into public.workshop_formats (
     120, 98.00, null, 'pax', 1, 8, 'L2 front room',
     'Materials about RM15 a person: cotton paper and a card mount.',
     'Adult art programme, and a four-session Studio Pass at RM360.',
-    3, date '2026-11-01', '/watercolour-botanicals.html', '/painting-1.jpg',
+    3, date '2026-11-01', '/studio-sessions/watercolour-botanicals/', '/painting-1.jpg',
     true, false, 2
   ),
   (
@@ -54,7 +55,7 @@ insert into public.workshop_formats (
     150, 128.00, null, 'pax', 1, 6, 'L1 kitchen',
     'Materials about RM25 a person. Cap 6, set by the kitchen. Windows are 10:00–12:30 and 15:00–17:30 only.',
     'Plant-based baking programme. A 6-week course is offered at the end of every Bake Lab.',
-    3, date '2026-11-01', '/bake-lab.html', '/baking-1.jpg',
+    3, date '2026-11-01', '/studio-sessions/bake-lab/', '/baking-1.jpg',
     true, false, 3
   ),
   (
@@ -66,7 +67,7 @@ insert into public.workshop_formats (
     120, 98.00, null, 'pax', 1, 8, 'Music room',
     'No materials. Best format on the list for a team.',
     'Voice lessons, RM400–480 a month.',
-    3, date '2026-11-01', '/sing-your-song.html', '/vocal-singing.jpg',
+    3, date '2026-11-01', '/studio-sessions/sing-your-song/', '/vocal-singing.jpg',
     true, false, 4
   ),
   (
@@ -78,7 +79,7 @@ insert into public.workshop_formats (
     90, 160.00, 'RM160 per pair', 'pair', 2, 4, 'L2 back room',
     'Materials about RM20 a pair.',
     'Kids'' art, RM400–440 a month.',
-    3, date '2026-12-08', '/parent-and-child.html', '/painting-4.jpg',
+    3, date '2026-11-29', '/studio-sessions/parent-and-child/', '/painting-4.jpg',
     true, true, 5
   ),
   (
@@ -90,7 +91,7 @@ insert into public.workshop_formats (
     120, 98.00, 'RM88–98', 'pax', 1, 8, 'L1 front room',
     'Materials about RM20 a person. Staff can set the session price anywhere from RM88 to RM98.',
     'Any academy programme. Mostly a way back into the studio.',
-    3, date '2026-12-01', '/festive-overlay.html', '/craft-jars.jpg',
+    3, date '2026-12-01', '/studio-sessions/festive-overlay/', '/craft-jars.jpg',
     true, false, 6
   ),
   (
@@ -102,7 +103,7 @@ insert into public.workshop_formats (
     90, 128.00, null, 'pax', 1, 4, 'Music room',
     'No materials. Cap 4, one person to a keyboard.',
     'Adult piano, RM480 a month.',
-    3, date '2027-01-05', '/piano-in-90.html', '/piano-photo.jpg',
+    3, date '2026-12-29', '/studio-sessions/piano-in-90/', '/piano-photo.jpg',
     true, false, 7
   ),
   (
@@ -114,7 +115,7 @@ insert into public.workshop_formats (
     150, 118.00, null, 'pax', 1, 8, 'L2 recording studio',
     'No materials. The edit uses the recording studio, so the walk never takes an art room.',
     'Photography programme, RM560 a month.',
-    3, date '2027-01-05', '/photo-walk.html', '/art-photo-1.jpg',
+    3, date '2027-01-03', '/studio-sessions/photo-walk/', '/art-photo-1.jpg',
     true, false, 8
   ),
   (
@@ -126,7 +127,7 @@ insert into public.workshop_formats (
     120, 88.00, null, 'pax', 1, 8, 'L2 back room',
     'Materials are included in the session.',
     'Kids'' art, RM400–440 a month.',
-    3, date '2026-12-08', '/kids-art-studio.html', '/painting-3.jpg',
+    3, date '2026-11-29', '/studio-sessions/kids-art-studio/', '/painting-3.jpg',
     true, true, 9
   ),
   (
@@ -138,7 +139,7 @@ insert into public.workshop_formats (
     150, 1200.00, 'From RM1,200 for 10', 'pax', 1, 20, 'L1 front room',
     'RM1,200 for 10 (art, one instructor). RM1,700 for 15 (Bake Lab, two instructors above 12). RM2,400 for 20 (two formats in parallel). Extra people RM100. Lunch box RM25. Framed take-home RM30.',
     'A revenue line of its own. Not an academy trial path.',
-    10, date '2026-11-01', '/private-group.html', '/hero-1.jpg',
+    10, date '2026-11-01', '/corporate/', '/hero-1.jpg',
     false, false, 10
   )
 on conflict (slug) do nothing;
@@ -179,25 +180,26 @@ begin
 end;
 $$;
 
--- Soft launch, 10–16 Nov 2026. RM20 off the catalogue price.
+-- Soft launch, first week from Sun 1 Nov 2026. Same slots as the old 10–16 Nov week, RM20 off.
+-- 1 Nov 2026 is a Sunday, so the Sunday sessions are the first ones on the timetable.
 select pg_temp.seed_studio_session(
-  'watercolour-botanicals', timestamp '2026-11-10 10:00', timestamp '2026-11-10 12:00',
-  'L2 front room', 78, 'Mothers'' morning test. Soft launch for existing students, parents and WhatsApp contacts. Review the price before publishing.', 'Soft launch RM20 off');
-select pg_temp.seed_studio_session(
-  'bake-lab', timestamp '2026-11-12 10:00', timestamp '2026-11-12 12:30',
-  'L1 kitchen', 108, 'Mothers'' morning test. Soft launch for existing students, parents and WhatsApp contacts. Review the price before publishing.', 'Soft launch RM20 off');
-select pg_temp.seed_studio_session(
-  'sing-your-song', timestamp '2026-11-12 20:00', timestamp '2026-11-12 22:00',
-  'Music room', 78, 'Soft launch for existing students, parents and WhatsApp contacts. Review the price before publishing.', 'Soft launch RM20 off');
-select pg_temp.seed_studio_session(
-  'bake-lab', timestamp '2026-11-15 10:00', timestamp '2026-11-15 12:30',
+  'bake-lab', timestamp '2026-11-01 10:00', timestamp '2026-11-01 12:30',
   'L1 kitchen', 108, 'Soft launch for existing students, parents and WhatsApp contacts. Review the price before publishing.', 'Soft launch RM20 off');
 select pg_temp.seed_studio_session(
-  'watercolour-botanicals', timestamp '2026-11-15 10:30', timestamp '2026-11-15 12:30',
+  'watercolour-botanicals', timestamp '2026-11-01 10:30', timestamp '2026-11-01 12:30',
   'L2 front room', 78, 'Soft launch for existing students, parents and WhatsApp contacts. Review the price before publishing.', 'Soft launch RM20 off');
 select pg_temp.seed_studio_session(
-  'canvas-night', timestamp '2026-11-15 15:00', timestamp '2026-11-15 17:30',
+  'canvas-night', timestamp '2026-11-01 15:00', timestamp '2026-11-01 17:30',
   'L2 front room', 88, 'Soft launch for existing students, parents and WhatsApp contacts. Review the price before publishing.', 'Soft launch RM20 off');
+select pg_temp.seed_studio_session(
+  'watercolour-botanicals', timestamp '2026-11-03 10:00', timestamp '2026-11-03 12:00',
+  'L2 front room', 78, 'Mothers'' morning test. Soft launch for existing students, parents and WhatsApp contacts. Review the price before publishing.', 'Soft launch RM20 off');
+select pg_temp.seed_studio_session(
+  'bake-lab', timestamp '2026-11-05 10:00', timestamp '2026-11-05 12:30',
+  'L1 kitchen', 108, 'Mothers'' morning test. Soft launch for existing students, parents and WhatsApp contacts. Review the price before publishing.', 'Soft launch RM20 off');
+select pg_temp.seed_studio_session(
+  'sing-your-song', timestamp '2026-11-05 20:00', timestamp '2026-11-05 22:00',
+  'Music room', 78, 'Soft launch for existing students, parents and WhatsApp contacts. Review the price before publishing.', 'Soft launch RM20 off');
 
 do $$
 declare
@@ -205,20 +207,20 @@ declare
 begin
   for d in
     select gs::date
-    from generate_series(date '2026-11-17', date '2027-01-31', interval '1 day') as gs
+    from generate_series(date '2026-11-01', date '2027-01-31', interval '1 day') as gs
   loop
     if extract(dow from d) = 0 then
       perform pg_temp.seed_studio_session('bake-lab', d + time '10:00', d + time '12:30', 'L1 kitchen', 128, null, null);
       perform pg_temp.seed_studio_session('watercolour-botanicals', d + time '10:30', d + time '12:30', 'L2 front room', 98, null, null);
       perform pg_temp.seed_studio_session('canvas-night', d + time '15:00', d + time '17:30', 'L2 front room', 108, null, null);
       perform pg_temp.seed_studio_session('bake-lab', d + time '15:00', d + time '17:30', 'L1 kitchen', 128, null, null);
-      if d >= date '2026-12-13' then
+      if d >= date '2026-11-29' then
         perform pg_temp.seed_studio_session('parent-and-child', d + time '10:30', d + time '12:00', 'L2 back room', 160, null, null);
         perform pg_temp.seed_studio_session(
           'kids-art-studio', d + time '15:00', d + time '17:00', 'L2 back room', 88,
           'Runs while parents are in Canvas Night.', null);
       end if;
-      if d >= date '2027-01-10' then
+      if d >= date '2027-01-03' then
         perform pg_temp.seed_studio_session(
           'photo-walk', d + time '15:00', d + time '17:30', 'L2 recording studio', 118,
           'Walk around Sri Hartamas, then edit in the L2 recording studio.', null);
@@ -231,7 +233,7 @@ begin
         'watercolour-botanicals', d + time '15:30', d + time '17:30', 'L1 front room', 98,
         'Afternoon test for parents waiting at pickup. Same view as the front room.', null);
       perform pg_temp.seed_studio_session('canvas-night', d + time '19:30', d + time '22:00', 'L2 front room', 108, null, null);
-      if d >= date '2027-01-05' then
+      if d >= date '2026-12-29' then
         perform pg_temp.seed_studio_session('piano-in-90', d + time '20:00', d + time '21:30', 'Music room', 128, null, null);
       end if;
     elsif extract(dow from d) = 4 then
@@ -246,16 +248,20 @@ end;
 $$;
 
 -- Christmas overlay, then a January Chinese New Year preview. Prices sit inside RM88–98.
+select pg_temp.seed_studio_session('festive-overlay', timestamp '2026-12-06 15:00', timestamp '2026-12-06 17:00', 'L1 front room', 98, 'Christmas overlay.', null);
+select pg_temp.seed_studio_session('festive-overlay', timestamp '2026-12-08 19:30', timestamp '2026-12-08 21:30', 'L2 back room', 98, 'Christmas overlay.', null);
+select pg_temp.seed_studio_session('festive-overlay', timestamp '2026-12-10 19:30', timestamp '2026-12-10 21:30', 'L2 back room', 88, 'Christmas overlay.', null);
 select pg_temp.seed_studio_session('festive-overlay', timestamp '2026-12-13 15:00', timestamp '2026-12-13 17:00', 'L1 front room', 98, 'Christmas overlay.', null);
-select pg_temp.seed_studio_session('festive-overlay', timestamp '2026-12-15 19:30', timestamp '2026-12-15 21:30', 'L2 back room', 98, 'Christmas overlay.', null);
-select pg_temp.seed_studio_session('festive-overlay', timestamp '2026-12-17 19:30', timestamp '2026-12-17 21:30', 'L2 back room', 88, 'Christmas overlay.', null);
+select pg_temp.seed_studio_session('festive-overlay', timestamp '2026-12-15 19:30', timestamp '2026-12-15 21:30', 'L2 back room', 88, 'Christmas overlay.', null);
 select pg_temp.seed_studio_session('festive-overlay', timestamp '2026-12-20 15:00', timestamp '2026-12-20 17:00', 'L1 front room', 98, 'Christmas overlay.', null);
-select pg_temp.seed_studio_session('festive-overlay', timestamp '2026-12-22 19:30', timestamp '2026-12-22 21:30', 'L2 back room', 88, 'Christmas overlay.', null);
-select pg_temp.seed_studio_session('festive-overlay', timestamp '2026-12-27 15:00', timestamp '2026-12-27 17:00', 'L1 front room', 98, 'Christmas overlay.', null);
+select pg_temp.seed_studio_session('festive-overlay', timestamp '2027-01-10 15:00', timestamp '2027-01-10 17:00', 'L1 front room', 98, 'Chinese New Year overlay.', null);
+select pg_temp.seed_studio_session('festive-overlay', timestamp '2027-01-12 19:30', timestamp '2027-01-12 21:30', 'L2 back room', 98, 'Chinese New Year overlay.', null);
+select pg_temp.seed_studio_session('festive-overlay', timestamp '2027-01-14 19:30', timestamp '2027-01-14 21:30', 'L2 back room', 88, 'Chinese New Year overlay.', null);
 select pg_temp.seed_studio_session('festive-overlay', timestamp '2027-01-17 15:00', timestamp '2027-01-17 17:00', 'L1 front room', 98, 'Chinese New Year overlay.', null);
-select pg_temp.seed_studio_session('festive-overlay', timestamp '2027-01-19 19:30', timestamp '2027-01-19 21:30', 'L2 back room', 98, 'Chinese New Year overlay.', null);
-select pg_temp.seed_studio_session('festive-overlay', timestamp '2027-01-21 19:30', timestamp '2027-01-21 21:30', 'L2 back room', 88, 'Chinese New Year overlay.', null);
-select pg_temp.seed_studio_session('festive-overlay', timestamp '2027-01-24 15:00', timestamp '2027-01-24 17:00', 'L1 front room', 98, 'Chinese New Year overlay.', null);
+
+update public.workshop_formats set page_path = '/studio-sessions/' || slug || '/'
+where slug <> 'private-group';
+update public.workshop_formats set page_path = '/corporate/' where slug = 'private-group';
 
 -- Every row above is inserted with status draft. Publish from Admin → Studio Sessions.
 
