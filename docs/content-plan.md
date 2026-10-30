@@ -4,33 +4,34 @@ The blog agent picks the highest topic in this list that has not been written
 yet (it checks existing post titles and slugs first). Add, remove or reorder
 topics at any time — the agent reads this file fresh on every run.
 
-Each topic: **working title** — target search phrase — programme page to link.
+Each topic: **working title** — target search phrase — page to link.
 
-## Priority 1 — parents deciding (high intent)
-1. **What age should a child start piano?** — "what age to start piano lessons" — /music.html#piano
-2. **Singing lessons for kids in KL: what a first lesson looks like** — "singing lessons for kids KL" — /music.html#vocal
-3. **Does your child need to sit piano exams? Why we teach without them** — "piano lessons without exams" — /music.html#piano
-4. **How to choose an art class for your child in Mont Kiara & Hartamas** — "art classes for kids Mont Kiara" — /art.html
-5. **Is my teenager ready for a photography class?** — "photography class for teens KL" — /media.html#photography
-6. **Videography for teens: what they learn making their first short film** — "videography class for teens" — /media.html#videography
-7. **Why join a youth orchestra? Benefits of playing in an ensemble** — "youth orchestra KL join" — /orchestra.html
-8. **Group vs private singing lessons: which suits your child?** — "group singing lessons KL" — /music.html#vocal
-9. **What to expect at a RM50 trial class** — "trial music class KL" — /pricing.html
-10. **Art for adults: learning to draw and paint from scratch** — "adult art class KL" — /art.html#adults
+Two voices: workshop posts (Studio Sessions) are short and practical — what you
+make, how long, what it costs, the next date. Class posts (Academy) are for
+parents and serious adults — progress, teachers, the RM50 trial. Never mix the
+two in one post. Never "sip and paint", never "cheaper than". Piano and the
+orchestra are paused: don't write about them.
 
-## Priority 2 — helpful guides (build authority)
-11. **Best first camera for a teenager (and why a phone is fine to start)** — "best camera for teenager beginner" — /media.html#photography
-12. **5 signs your child might love graphic design** — "graphic design for kids" — /art.html#design
-13. **How music lessons help children's confidence** — "benefits of music lessons for kids" — /music.html
-14. **Screen time that builds skills: creative tech for kids** — "creative activities for teens" — /media.html
-15. **Easy focaccia recipe to bake with kids** — "baking with kids recipe" — /workshops.html
-16. **Banana bread with kids: a simple weekend bake** — "banana bread recipe kids" — /workshops.html
-17. **How to practise piano at home without tears** — "how to get kids to practise piano" — /music.html#piano
-18. **Drawing vs painting: where should young artists start?** — "drawing classes for kids" — /art.html
-19. **Food photography tips: make RM8 food look like RM50** — "food photography tips" — /media.html#photography
-20. **After-school activities near Mont Kiara: a parent's guide** — "after school activities Mont Kiara" — /
+## Priority 1 — November and December workshops (write first; each links its format page)
+1. **Glow-in-the-dark painting in KL: what it is and what you take home** — "glow in the dark painting workshop KL" — /workshops/glow-canvas/
+2. **Candle making workshop in KL: pour, scent and gift your own candles** — "candle making workshop KL" — /workshops/candle-making/
+3. **Chunky crochet for beginners: make a bag in one afternoon** — "crochet workshop KL beginner" — /workshops/crochet-bag/
+4. **Impasto painting explained: thick paint, palette knives and texture** — "impasto painting class KL" — /workshops/textured-canvas/
+5. **Watercolour for beginners: why a guided evening class works** — "watercolour class KL beginners" — /workshops/watercolour-botanicals/
+6. **Christmas gifts you make yourself: candles, cookies and canvases** — "christmas workshop KL" — /gift-vouchers/
+7. **Date night ideas in KL that aren't just dinner** — "date night ideas KL" — /workshops/textured-canvas/
+8. **Plant-based gingerbread cookies: a Christmas bake for the family** — "gingerbread cookie workshop KL" — /workshops/bake-lab/
 
-## Priority 3 — seasonal (write 3–4 weeks before)
-21. **School holiday creative workshops in KL** — "school holiday activities KL kids" — /workshops.html
-22. **Christmas and year-end performances: what our orchestra is preparing** — "christmas concert KL kids" — /orchestra.html
-23. **New year, new skill: creative classes for adults in KL** — "new hobby classes KL adults" — /art.html#adults
+## Priority 2 — parents deciding (Academy; high intent)
+9. **How to choose an art class for your child in Mont Kiara & Hartamas** — "art classes for kids Mont Kiara" — /classes/kids-art-younger/
+10. **Group vs private singing lessons: which suits your child?** — "group singing lessons KL" — /classes/voice/
+11. **What to expect at a RM50 trial class** — "trial class KL kids" — /trial/
+12. **Is my teenager ready for a photography and video club?** — "photography class for teens KL" — /classes/teen-photo-video/
+13. **Art for adults: learning to draw and paint from scratch** — "adult art class KL" — /classes/adult-art/
+14. **After-school activities near Mont Kiara: a parent's guide** — "after school activities Mont Kiara" — /classes/
+
+## Priority 3 — groups and occasions
+15. **Kids' birthday party ideas in KL: art, clay and baking** — "kids birthday party ideas KL" — /birthdays/
+16. **Team building workshops in KL that people actually enjoy** — "team building workshop KL" — /groups/
+17. **School holiday creative camps in KL** — "school holiday activities KL kids" — /holiday-camps/
+18. **New year, new skill: creative classes for adults in KL** — "new hobby classes KL adults" — /classes/adult-art/
