@@ -141,6 +141,12 @@ def expand(seed, themes, bookings, holidays, today, days):
         if closed(entry['day'], entry['time'], closures):
             skipped.append(f"{iso} {entry['time']} {fid}: closure rule")
             continue
+        room_rule = next((r for r in seed.get('rooms', []) if r['id'] == entry.get('room')), {})
+        blocked = next((b for b in room_rule.get('blocked', []) if b['day'] == entry['day']
+                        and hm_to_min(entry['time']) < hm_to_min(b['until'])), None)
+        if blocked:
+            skipped.append(f"{iso} {entry['time']} {fid}: {room_rule['name']} blocked ({blocked['reason']})")
+            continue
         sid = f"{fid}-{iso}-{entry['time'].replace(':', '')}"
         variant = entry.get('variant') if fid == entry['format'] else None
         price, pair, price_set = price_for(fmt, d, policies, variant)

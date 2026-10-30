@@ -365,12 +365,19 @@
         "15:00-17:30"
       ],
       "days": [
-        "Sun",
+        "Sun-afternoon-only",
         "Mon",
         "Tue",
         "Wed",
         "Thu",
         "Fri-morning-only"
+      ],
+      "blocked": [
+        {
+          "day": "Sun",
+          "until": "13:00",
+          "reason": "Savor needs the kitchen over Sunday lunch"
+        }
       ]
     },
     {
@@ -584,14 +591,6 @@
         "format": "textured-canvas",
         "theme": "Golden Impasto Sky",
         "room": "l2-front"
-      },
-      {
-        "date": "2026-11-29",
-        "time": "10:00",
-        "end": "12:00",
-        "format": "bake-lab",
-        "theme": "Christmas Gingerbread Cookies",
-        "room": "l1-kitchen"
       },
       {
         "date": "2026-11-29",

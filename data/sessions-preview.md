@@ -46,5 +46,4 @@ Generated 2026-10-30 — public sessions to 2026-12-11.
 - **19:30–21:30** Textured & Impasto Canvas · Golden Impasto Sky · L2 front room · RM79 · pair RM140 · Dine add-on (before) · 18 of 18 seats left
 
 ## Sunday 29 November 2026
-- **10:00–12:00** Plant-based Bake Lab · Christmas Gingerbread Cookies · L1 kitchen (Savor) · RM75 · pair RM130 · 24 of 24 seats left
 - **15:00–17:00** Plant-based Bake Lab · Christmas Gingerbread Cookies · L1 kitchen (Savor) · RM75 · pair RM130 · 24 of 24 seats left
