@@ -1,6 +1,9 @@
 {
   "name": "Master Artist",
-  "labels": {"academy": "Master Artist Academy", "studio": "Master Artist Studio Sessions"},
+  "labels": {
+    "academy": "Master Artist Academy",
+    "studio": "Master Artist Studio Sessions"
+  },
   "url": "https://masterartist.co",
   "phone": "+60 10-277 9426",
   "whatsapp": "60102779426",
@@ -18,12 +21,31 @@
     "lng": 101.6486298
   },
   "hours": [
-    {"days": "Sunday", "open": "10:00", "close": "18:00"},
-    {"days": "Monday – Thursday", "open": "10:00", "close": "22:00"},
-    {"days": "Friday", "open": "10:00", "close": "17:00", "note": "no workshops after 12:30"},
-    {"days": "Saturday", "closed": true}
+    {
+      "days": "Sunday",
+      "open": "10:00",
+      "close": "18:00"
+    },
+    {
+      "days": "Monday – Thursday",
+      "open": "10:00",
+      "close": "22:00"
+    },
+    {
+      "days": "Friday",
+      "open": "10:00",
+      "close": "17:00",
+      "note": "no workshops after 12:30"
+    },
+    {
+      "days": "Saturday",
+      "closed": true
+    }
   ],
-  "hours_notes": ["Open Monday and Tuesday.", "Closed Friday 5pm to Saturday."],
+  "hours_notes": [
+    "Open Monday and Tuesday.",
+    "Closed Friday 5pm to Saturday."
+  ],
   "google": {
     "place_id": "ChIJ_5QUWwBJzDERfwTpMdDHLPY",
     "maps_url": "https://www.google.com/maps/place/?q=place_id:ChIJ_5QUWwBJzDERfwTpMdDHLPY",
@@ -36,5 +58,7 @@
     "google_ads": "AW-18457946758",
     "ahrefs_key": "74BEoXeejA8dZU3rDB4ESg",
     "indexnow_key": "475d9c85bff5d57bf277e4d7e5d51074"
-  }
+  },
+  "terms_updated": "2026-11-01",
+  "privacy_updated": "2026-11-01"
 }

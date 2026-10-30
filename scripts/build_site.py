@@ -341,6 +341,7 @@ def footer(voice):
   <div class="cols">
     <div><h4>Visit</h4><p>{e(a['street'])}, {e(a['postcode'])} {e(a['city'])}<br>{e(a['note'].capitalize())}</p></div>
     <div><h4>Hours</h4>{HoursBlock()}</div>
+    <div><h4>Explore</h4><ul><li><a href="/workshops/">Workshops</a></li><li><a href="/classes/">Classes</a></li><li><a href="/birthdays/">Birthday parties</a></li><li><a href="/groups/">Team days</a></li><li><a href="/gift-vouchers/">Gift vouchers</a></li><li><a href="/teachers/">Teachers</a></li><li><a href="/reviews/">Reviews</a></li><li><a href="/showcase/">Showcase</a></li></ul></div>
     <div><h4>Contact</h4><ul><li>{WhatsAppButton(msg, voice, SITE['phone'], cls='')}</li><li><a href="{SITE['instagram']}">Instagram</a></li><li><a href="mailto:{SITE['email']}">{SITE['email']}</a></li></ul></div>
   </div>
   <div class="legal"><span>© {dt.date.today().year} Master Artist</span><a href="/privacy/">PDPA notice</a><a href="/terms/">Booking terms</a></div>
@@ -627,8 +628,8 @@ def build_home():
       <p>Art, voice, photo and video, and baking, in small groups with the same teacher every week. From {rm(min_cl)} a month; start with a {rm(TRIAL['price'])} trial.</p><span class="more">Classes and the trial</span></a>
     <a class="door v-studio" href="/workshops/">{photo('bake-lab')}<span class="label">{e(SITE['labels']['studio'])}</span><h3>Workshops</h3>
       <p>One evening or one Sunday: paint a canvas, bake a loaf, record a song. From {rm(min_ws)}, and you take it home.</p><span class="more">This week's workshops</span></a>
-    <a class="door v-studio" href="/groups/"><img src="/golden-shores-workshop-1.jpg" alt="A group workshop at Master Artist" loading="lazy" width="800" height="600"><span class="label">Groups</span><h3>Team days and private groups</h3>
-      <p>Art, baking or mixed team days with rooms running side by side. Packages from {rm(groups_from)}.</p><span class="more">Group packages</span></a>
+    <a class="door v-studio" href="/groups/"><img src="/golden-shores-workshop-1.jpg" alt="A group workshop at Master Artist" loading="lazy" width="800" height="600"><span class="label">Groups</span><h3>Birthdays, team days and groups</h3>
+      <p>Art, clay and baking birthday parties, and team days with rooms running side by side. Team packages from {rm(groups_from)}.</p><span class="more">Groups and birthdays</span></a>
   </div></div></section>'''
     week = week_sessions()
     strip = WeekStrip(week) if week else EMPTY_WEEK
@@ -1017,6 +1018,8 @@ def build_groups():
   <div class="sec-head"><span class="eyebrow">Packages</span><h2>Choose a <em>package</em></h2><p>Prices include materials and a teacher for each stream.</p></div>
   <div class="grid-cards">{''.join(cards)}</div>
 </div></section>
+<section class="sec tight v-studio"><div class="wrap"><div class="cta-card"><div><h2>Planning a <em>birthday?</em></h2><p>Art, clay and baking parties for kids, and canvas birthdays for teens and adults.</p></div>
+  <div class="hero-cta"><a class="btn" href="/birthdays/">Birthday parties</a></div></div></div></section>
 <section class="sec alt v-studio" id="quote"><div class="wrap listing book">
   <div class="aside">{form}</div>
   <div class="prose"><h2 style="margin-top:0">How a team day <em>works</em></h2>
@@ -1051,6 +1054,9 @@ def build_prices():
         extra_rows.append(('Studio Pass', f"{sp['sessions']} workshop seats", rm(sp['launch']), None))
     for pk in g['packages']:
         extra_rows.append((pk['name'], f"up to {pk['pax']} people" if pk.get('pax') else f"a person, from {pk['min_pax']}", rm(pk.get('price') or pk.get('per_person')), '/groups/'))
+    for pk in g.get('birthdays', {}).get('packages', []):
+        _, short, detail = birthday_price(pk)
+        extra_rows.append((pk['name'], detail, short, '/birthdays/'))
     cell = lambda n, u: f'<a href="{u}">{e(n)}</a>' if u else e(n)
     rows = ''.join(f'<tr><td>{cell(n, u)}</td><td class="muted">{e(x)}</td><td class="num">{p_}</td></tr>' for n, x, p_, u in extra_rows)
     more_table = f'<table class="price-table" style="margin-top:24px"><caption>Classes, add-ons and groups</caption><thead><tr><th>Item</th><th>Details</th><th>Price</th></tr></thead><tbody>{rows}</tbody></table>'
@@ -1111,6 +1117,228 @@ def build_gift_vouchers():
          body, voice='studio', active='/workshops/', data_attrs=' data-page="gift-vouchers"')
 
 
+# --- Birthdays ------------------------------------------------------------------
+def birthday_price(pk):
+    """(headline price html, short text for tables)."""
+    if pk.get('price_format'):
+        f = FORMATS[pk['price_format']]
+        return (f'{rm(f["price"])} <small>a person · {pk["min"]} to {pk["max"]} people</small>', f"{rm(f['price'])} a person", f"{pk['min']}–{pk['max']} people · {f['name']}")
+    return (f'{rm(pk["price"])} <small>for {pk["kids_included"]} children · extra child {rm(pk["extra_child"])} · up to {pk["max"]}</small>',
+            rm(pk['price']), f"{pk['kids_included']} children, ages {pk['ages']} · extra child {rm(pk['extra_child'])}")
+
+
+def build_birthdays():
+    b = WS['groups']['birthdays']
+    cards = []
+    for pk in b['packages']:
+        head, _, _ = birthday_price(pk)
+        q = urllib.parse.quote(pk['name'])
+        cards.append(f'''<article class="card v-studio">{photo(pk.get('price_format') or ('bake-lab' if 'bake' in pk['id'] else 'kids-art-studio'))}<div class="body">
+  <h3>{e(pk['name'])}</h3><div class="sub">{e(pk['summary'])}</div><div class="price">{head}</div>
+  <div class="meta"><b>Ages {e(pk['ages'])} · {e(length(pk))}</b><span>{e(pk['room'])}</span><span>{e(pk['when'])}</span></div>
+  <div class="actions"><a class="btn" href="?package={q}#quote" data-pick-package="{e(pk['name'])}">Ask about a date</a></div></div></article>''')
+    opts = ''.join(f'<option>{e(pk["name"])}</option>' for pk in b['packages'])
+    fields = f'''<h3>Plan a birthday</h3>
+  <div><label for="bp">Party</label><select id="bp" name="package">{opts}</select></div>
+  <div class="row"><div><label for="bn">Your name</label><input id="bn" name="name" required maxlength="120"></div>
+    <div><label for="ba">Birthday child's age <span class="muted">(or "adult")</span></label><input id="ba" name="age" required maxlength="20"></div></div>
+  <div class="row"><div><label for="bx">Guests</label><input id="bx" name="n" type="number" min="4" max="30" required></div>
+    <div><label for="bd">Preferred date</label><input id="bd" name="date" type="date" min="{START}" required></div></div>
+  <div><label for="bm">Anything else? <span class="muted">(optional)</span></label><textarea id="bm" name="notes" rows="2" maxlength="600"></textarea></div>'''
+    form = WaForm("Hi, I'd like to book a {package} for {n} guests on {date} (birthday: {age}).{notes} Name: {name}. Source: {source}.", fields,
+                  'Send on WhatsApp', fmt='birthday', done='we will check the date and reply')
+    body = hero_band('Master Artist Studio Sessions', 'Birthday parties <em>they make something at</em>',
+                     'Painting, clay or baking, with a teacher, all materials and time for cake. Everyone takes their piece home.',
+                     '<a class="btn" href="#quote">Plan a birthday</a><a class="btn ghost" href="#parties">See the parties</a>',
+                     crumbs(('/', 'Home'), ('/groups/', 'Groups'), (None, 'Birthdays')))
+    body += f'''<section class="sec v-studio" id="parties"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Parties</span><h2>Choose a <em>party</em></h2><p>Every party includes {e(b['includes'])}.</p></div>
+  <div class="grid-cards">{''.join(cards)}</div>
+</div></section>
+<section class="sec alt v-studio" id="quote"><div class="wrap listing book">
+  <div class="aside">{form}</div>
+  <div class="prose"><h2 style="margin-top:0">How it <em>works</em></h2>
+    <p class="lead">Tell us the party, the numbers and a date. We check the room and confirm on WhatsApp.</p>
+    <p>A {rm(b['deposit'])} deposit holds the date and comes off the total.</p>
+    <h2>Good to <em>know</em></h2>{Accordion([
+        ('Can we bring a cake?', 'Yes. The last 30 minutes are yours in the room for cake and candles.'),
+        ('Do parents stay?', 'Parents are welcome to stay and watch.'),
+        ('Allergies', 'Tell us about allergies when you book. Bake parties are plant-based, made in a shared kitchen where gluten and nuts may be present.'),
+        ('Saturdays', 'We are closed on Saturdays, so parties run on Sundays and weekdays.'),
+    ])}</div>
+</div></section>'''
+    page('/birthdays/', 'Kids birthday party workshops in KL · art, clay and baking · Master Artist',
+         'Art, clay and baking birthday parties for kids, teens and adults in Desa Sri Hartamas, KL, with a teacher, materials and time for cake.',
+         body, voice='studio', active='/groups/', data_attrs=' data-page="birthdays"')
+
+
+# --- About, Teachers, Reviews, Showcase, Terms, Privacy --------------------------------
+def TeacherCard(t, bio=False):
+    img = photo_file(t.get('photo'), t.get('name') or t['role'])
+    text = f'<p class="muted small" style="margin:8px 10px 0">{e(t["bio"])}</p>' if bio and t.get('bio') and t['bio'] != 'TODO' else ''
+    return f'<article class="teach">{img}<h3>{e(t.get("name") or "Joining soon")}</h3><span class="role">{e(t["role"])}</span>{text}</article>'
+
+
+def build_about():
+    a = SITE['address']
+    why = [
+        ('Taught by working artists', 'Every class is led by someone who still performs, paints, photographs, films or bakes, not just an instructor.'),
+        ('Small, personal classes', 'Art classes of eight at most, so every student is seen and you\'ll actually get better.'),
+        ('Parents welcome to watch', 'Sit in on a class any time. Nothing happens behind a closed door.'),
+        ('Real rooms, real equipment', 'A recording studio, a working kitchen, and the room with the view on the second floor.'),
+        (f'Try a class for {rm(TRIAL["price"])}', f'The trial is {TRIAL["note"]}. All materials included.'),
+        ('A showcase every term', 'Students exhibit and perform what they have made for family and friends.'),
+    ]
+    body = hero_split(e(SITE['labels']['academy']), 'Why Master Artist <em>exists</em>',
+                      'One studio, several ways in, taught by people who still practise the craft they teach.', '',
+                      f'<a class="btn" href="/trial/">Book a {rm(TRIAL["price"])} trial</a><a class="btn ghost" href="/teachers/">Meet the teachers</a>',
+                      '<img src="/teacher-sabrina-hew.jpg" alt="Sabrina Hew, founder of Master Artist" width="800" height="800" fetchpriority="high">',
+                      crumbs(('/', 'Home'), (None, 'About')))
+    body += f'''<section class="sec v-academy"><div class="wrap" style="max-width:820px"><div class="prose">
+  <p class="lead">Master Artist was started by Sabrina Hew, an international recording artist who has recorded and performed on stage in the United States. Her focus now is helping children and adults find their own voice, musically and through art.</p>
+  <p>Every class is taught by working artists, not just instructors. Classes stay small and personal, so students try a discipline, stay with it and see real progress.</p>
+  <p>It is also where friendships are built. Many students grow up together in the studio, week after week, and cheer each other on at the showcase.</p></div></div></section>
+<section class="sec alt v-academy"><div class="wrap"><div class="sec-head"><span class="eyebrow">What makes it different</span><h2>A studio built around <em>real craft</em></h2></div>
+  <div class="levels">{''.join(f'<div class="level"><h3>{e(h)}</h3><p>{e(t)}</p></div>' for h, t in why)}</div></div></section>
+<section class="sec v-academy"><div class="wrap"><div class="sec-row"><div class="sec-head"><span class="eyebrow">Teachers</span><h2>Taught by <em>working artists</em></h2></div>
+  <a class="btn ghost" href="/teachers/">All teachers</a></div>
+  <div class="teach-grid">{''.join(TeacherCard(t) for t in TEACHERS if t.get('photo') and t.get('name'))}</div></div></section>
+<section class="sec alt" id="visit"><div class="wrap visit-grid">
+  <div><span class="eyebrow">Visit</span><h2>Two floors in <em>Desa Sri Hartamas</em></h2>
+    <p class="muted">{e(a['street'])}, {e(a['postcode'])} {e(a['city'])}, {e(a['note'])}.</p>
+    <p class="muted">Upstairs: the L2 front room (the room with the view), the L2 back room and the L2 recording studio. Downstairs, at Savor: the L1 kitchen and the L1 front room, with the same view.</p>
+    <div class="hero-cta"><a class="btn ghost" href="{e(SITE['google']['maps_url'])}" target="_blank" rel="noopener">Open in Google Maps</a></div></div>
+  <div>{HoursBlock()}</div></div></section>'''
+    page('/about/', 'About Master Artist · taught by working artists in Desa Sri Hartamas, KL',
+         'Master Artist was started by recording artist Sabrina Hew: art, voice, photo, video and baking taught by working artists in Desa Sri Hartamas, KL.',
+         body, voice='academy', active='/about/', data_attrs=' data-page="about"')
+
+
+def build_teachers():
+    body = hero_band(e(SITE['labels']['academy']), 'Our <em>teachers</em>',
+                     'Every class is led by someone who still practises the craft they teach.', '',
+                     crumbs(('/', 'Home'), ('/about/', 'About'), (None, 'Teachers')))
+    body += f'''<section class="sec v-academy"><div class="wrap"><div class="teach-grid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))">
+  {''.join(TeacherCard(t, bio=True) for t in TEACHERS if t.get('name'))}</div></div></section>
+<section class="sec tight v-academy"><div class="wrap">{academy_cta()}</div></section>'''
+    page('/teachers/', 'Teachers · Master Artist, Desa Sri Hartamas KL',
+         'Meet the working artists who teach art, voice, photography, videography and baking at Master Artist in Desa Sri Hartamas, KL.',
+         body, voice='academy', active='/about/', data_attrs=' data-page="teachers"')
+
+
+def build_reviews():
+    body = hero_band('Reviews', 'What people <em>say</em>', 'Reviews from families in our weekly classes and guests at our workshops, from Google.',
+                     f'<a class="btn" href="{e(SITE["google"]["review_url"])}" target="_blank" rel="noopener">Write a review</a>',
+                     crumbs(('/', 'Home'), (None, 'Reviews')))
+    body += f'''<section class="sec"><div class="wrap"><div class="sec-head"><span class="eyebrow">Google</span><h2>Our <em>rating</em></h2></div><div data-greviews-split>{GoogleReviews(5)}</div></div></section>
+<section class="sec alt v-academy" data-voice-section hidden><div class="wrap"><div class="sec-head"><span class="eyebrow">{e(SITE['labels']['academy'])}</span><h2>Weekly <em>classes</em></h2></div><div class="reviews" data-greviews-voice="academy"></div></div></section>
+<section class="sec v-studio" data-voice-section hidden><div class="wrap"><div class="sec-head"><span class="eyebrow">{e(SITE['labels']['studio'])}</span><h2><em>Workshops</em></h2></div><div class="reviews" data-greviews-voice="studio"></div></div></section>'''
+    page('/reviews/', 'Reviews · Master Artist classes and workshops, Sri Hartamas KL',
+         'Google reviews of Master Artist weekly classes and workshops in Desa Sri Hartamas, KL.',
+         body, voice='both', active='', data_attrs=' data-page="reviews"')
+
+
+def build_showcase():
+    body = hero_split('Showcase', 'The term <em>showcase</em>',
+                      'Every 10 to 12 weeks, students exhibit and perform what they have made: paintings on the walls, songs in the studio, films on the screen. Families, friends and workshop guests are all welcome.',
+                      '', f'<a class="btn" href="/trial/">Book a {rm(TRIAL["price"])} trial</a><a class="btn ghost" href="/workshops/">Come to a workshop</a>',
+                      '<img src="/golden-shores-workshop-5.jpg" alt="A finished seascape canvas held up at the end of a session" width="1200" height="1000" fetchpriority="high">',
+                      crumbs(('/', 'Home'), (None, 'Showcase')))
+    body += f'''<section class="sec"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Made here</span><h2>Work from classes and <em>workshops</em></h2></div>
+  <div class="photo-row"><div><img src="/painting-1.jpg" alt="Watercolour work" loading="lazy" width="600" height="600"></div>
+  <div><img src="/craft-mirror.jpg" alt="A painted mirror from a craft workshop" loading="lazy" width="600" height="600"></div>
+  <div><img src="/ciabatta-workshop-3.jpg" alt="Loaves from a baking workshop" loading="lazy" width="600" height="600"></div>
+  <div><img src="/painting-3.jpg" alt="A painting in progress" loading="lazy" width="600" height="600"></div>
+  <div><img src="/craft-jars.jpg" alt="Painted jars" loading="lazy" width="600" height="600"></div>
+  <div><img src="/vocal-teaching-2.jpg" alt="A singing session in the studio" loading="lazy" width="600" height="600"></div></div>
+</div></section>
+<section class="sec alt"><div class="wrap"><div class="doors">
+  <div class="door v-academy" style="padding:24px"><span class="label" style="margin:0 0 4px">{e(SITE['labels']['academy'])}</span><h3 style="margin:0 0 8px">Show your work</h3>
+    <p style="margin:0 0 16px">Every class works towards the showcase. Students choose a piece to hang or a song to perform.</p><a class="btn" href="/classes/" style="align-self:flex-start">See the classes</a></div>
+  <div class="door v-studio" style="padding:24px"><span class="label" style="margin:0 0 4px">{e(SITE['labels']['studio'])}</span><h3 style="margin:0 0 8px">Come and see</h3>
+    <p style="margin:0 0 16px">Workshop guests are welcome at the showcase. Ask us on WhatsApp for the next date.</p>{WhatsAppButton("Hi, when is the next showcase? Source: {source}.", 'both', 'Ask for the date')}</div>
+</div></div></section>'''
+    page('/showcase/', 'The term showcase · Master Artist, Sri Hartamas KL',
+         'Every 10 to 12 weeks, Master Artist students exhibit and perform their work. Families and workshop guests are welcome.',
+         body, voice='both', active='', data_attrs=' data-page="showcase"')
+
+
+def legal_page(path, title, h1, updated, sections, desc):
+    d = dt.date.fromisoformat(updated)
+    secs = ''.join(f'<h2>{e(h)}</h2>' + ''.join(f'<p>{p_}</p>' for p_ in ps) for h, ps in sections)
+    body = hero_band('Master Artist', h1, f'Last updated {d.day} {d.strftime("%B %Y")}.', '', crumbs(('/', 'Home'), (None, title)))
+    body += f'<section class="sec"><div class="wrap" style="max-width:820px"><div class="prose legal">{secs}</div></div></section>'
+    page(path, f'{title} · Master Artist', desc, body, voice='both', data_attrs=f' data-page="{path.strip("/")}"')
+
+
+def build_terms():
+    pw = POL['pricing_window']
+    until = dt.date.fromisoformat(pw['until'])
+    contact = f'Email: <a href="mailto:{SITE["email"]}">{SITE["email"]}</a> · WhatsApp: {SITE["phone"]}'
+    b = WS['groups'].get('birthdays')
+    sections = [
+        ('Workshops (Master Artist Studio Sessions)', [
+            f"Workshop seats are {e(POL['refunds'])}. We confirm your seat on WhatsApp and send payment details there.",
+            f"Reschedules are {e(POL['reschedule'])}. Please give us {POL['cancel_notice_hours']} hours' notice of any change.",
+            f"Each session runs with a minimum of {POL['minimum_to_run']} people. If a session doesn't reach it, we will offer you another date.",
+            f"Sessions on public holidays are {int(POL['public_holiday_surcharge'] * 100)}% more, unless the page says otherwise.",
+            f"Please arrive {POL['arrive_early_min']} minutes early. Prices shown are {e(pw['name'])} prices until {until.day} {until.strftime('%B %Y')}.",
+            "Dine + workshop is a set dinner at Savor downstairs, booked with Tuesday and Thursday evening sessions."]),
+        ('Weekly classes (Master Artist Academy)', [
+            f"A trial class is {rm(TRIAL['price'])}. If you continue, the {rm(TRIAL['price'])} is {e(TRIAL['note'])}. There is no obligation to continue.",
+            "Monthly fees cover four weekly classes. All materials are included. Classes run subject to minimum numbers.",
+            f"Siblings get {int(CL['discounts']['sibling'] * 100)}% off. If you need to reschedule a class, message us on WhatsApp as early as you can and we will help you find another time."]),
+        ('Groups, birthdays and gift vouchers', [
+            "Team days and private groups are quoted and confirmed on WhatsApp and paid in advance.",
+            (f"Birthday parties need a {rm(b['deposit'])} deposit to hold the date, which comes off the total." if b else ''),
+            "Gift vouchers are paid in advance and are redeemed by booking on WhatsApp and quoting the voucher."]),
+        ('Consent, safety and photos', [
+            "When you book, you confirm that you (or, for a child, a parent or guardian) agree to take part. Baking sessions take place in a shared commercial kitchen where common allergens such as gluten and nuts may be present; please tell us about allergies when you book.",
+            "We may photograph sessions for our website and social media, only with the photo choice you make when booking. We never name children. You can withdraw consent at any time; see our <a href=\"/privacy/\">PDPA notice</a>.",
+            "Parents are welcome to observe classes. We ask everyone to treat staff, other students and the studio with respect."]),
+        ('Contact', [contact]),
+    ]
+    sections = [(h, [p_ for p_ in ps if p_]) for h, ps in sections]
+    legal_page('/terms/', 'Booking terms', 'Booking <em>terms</em>', SITE['terms_updated'], sections,
+               'Booking terms for Master Artist workshops, weekly classes, groups, birthdays and gift vouchers.')
+
+
+def build_privacy():
+    contact = f'Email: <a href="mailto:{SITE["email"]}">{SITE["email"]}</a> · WhatsApp: {SITE["phone"]}'
+    sections = [
+        ('Who we are', ['Master Artist ("we", "us") runs weekly classes (Master Artist Academy) and workshops (Master Artist Studio Sessions) from our studio in Desa Sri Hartamas, Kuala Lumpur. This notice explains what personal data we collect, why, and how it is handled, in line with Malaysia\'s Personal Data Protection Act 2010 (PDPA).']),
+        ('What we collect', [
+            'Booking and enquiry details you give us: your name, phone or WhatsApp number, email, the class or workshop you ask about, and your message.',
+            'For children: the child\'s name and age, allergies or needs, the adult collecting, and the parent or guardian\'s consent and photo choice.',
+            'For baking sessions: allergies and dietary needs, and your confirmation of the kitchen notice.',
+            'The page you arrived on and campaign details in that address (such as utm fields, gclid or fbclid), so we can see which visit led to a booking.',
+            'Enrolment and billing details for students in weekly classes, and messages you send us on WhatsApp or email.']),
+        ('Why we collect it', [
+            'To confirm bookings, arrange trial classes and run classes and workshops safely, including knowing about allergies.',
+            'To manage enrolment, billing and attendance for weekly classes, and to tell you about your classes.',
+            'To publish photographs of sessions and work, only with the photo choice made when booking.',
+            'To measure our advertising, using Google Analytics, Google Ads and the Meta pixel through Google Tag Manager. These record which pages are viewed and which buttons are pressed, not the contents of your messages.']),
+        ('Photographs of children', ['We never publish a photograph or video that identifies a child without consent from a parent or guardian, and we never publish a child\'s name. You can withdraw consent at any time by messaging us, and the photo will be taken down.']),
+        ('Who we share data with', ['We do not sell personal data. It is shared only with the service providers that run our website, data storage (Supabase), messaging (WhatsApp) and advertising measurement (Google and Meta), and only as far as needed to run the studio.']),
+        ('How long we keep it', ['We keep enquiries for as long as reasonably useful for following up, and student records for the time a student is with us plus a reasonable period afterwards for accounting. Consent records are kept for as long as the related photo is in use.']),
+        ('Your rights', ['Under the PDPA you can ask to see the personal data we hold about you or your child, ask us to correct it, or withdraw consent (including photo consent) at any time. Contact us using the details below.']),
+        ('Contact', [contact]),
+    ]
+    legal_page('/privacy/', 'PDPA notice', 'Privacy and <em>PDPA notice</em>', SITE['privacy_updated'], sections,
+               'How Master Artist collects and uses personal data under the Personal Data Protection Act 2010 (PDPA).')
+
+
+def build_static():
+    build_birthdays()
+    build_about()
+    build_teachers()
+    build_reviews()
+    build_showcase()
+    build_terms()
+    build_privacy()
+
+
 if __name__ == '__main__':
     build_styleguide()
     build_home()
@@ -1119,4 +1347,5 @@ if __name__ == '__main__':
     build_groups()
     build_prices()
     build_gift_vouchers()
-    print(f'built /, /styleguide/, /workshops/ ({len(WORKSHOP_FORMATS)} formats, {n} dated pages), /this-sunday/, /classes/ ({len(PROGS)} programmes), /trial/, /holiday-camps/, /groups/, /prices/, /gift-vouchers/')
+    build_static()
+    print(f'built /, /styleguide/, /workshops/ ({len(WORKSHOP_FORMATS)} formats, {n} dated pages), /this-sunday/, /classes/ ({len(PROGS)} programmes), /trial/, /holiday-camps/, /groups/, /prices/, /gift-vouchers/, /birthdays/, /about/, /teachers/, /reviews/, /showcase/, /terms/, /privacy/')

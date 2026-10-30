@@ -168,6 +168,20 @@
             }).join('') + '</div>';
           host.hidden = false;
         });
+        /* /reviews/: sort Google reviews into the two voices by what they mention */
+        var STUDIO = /workshop|bake|baking|focaccia|ciabatta|bread|canvas|paint(ing)? (night|session)|team|birthday|date|friends|dinner/i;
+        var ACADEMY = /class|lesson|teacher|son|daughter|child|kid|progress|term|voice|singing/i;
+        document.querySelectorAll('[data-greviews-voice]').forEach(function (list) {
+          var v = list.getAttribute('data-greviews-voice');
+          var mine = reviews.filter(function (r) { var ac = ACADEMY.test(r.text) && !STUDIO.test(r.text); return v === 'academy' ? ac : !ac; });
+          if (!mine.length) return;
+          list.innerHTML = mine.map(function (r) {
+            return '<figure class="review">' + stars(r.rating) + '<blockquote>' + esc(r.text) + '</blockquote><figcaption>' + esc(r.author || 'Google user') +
+              '<span class="src">' + esc(r.when || '') + ' · Posted on Google</span></figcaption></figure>';
+          }).join('');
+          list.closest('[data-voice-section]').hidden = false;
+        });
+        document.querySelectorAll('[data-greviews-split] .reviews').forEach(function (g) { g.remove(); });
       })
       .catch(function () {});
   }

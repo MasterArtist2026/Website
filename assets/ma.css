@@ -310,7 +310,7 @@ details.acc > div p:last-child { margin: 0; }
 
 /* ---------- footer ---------- */
 .site-foot { background: var(--purple-deep); color: rgba(198, 183, 226, .8); padding: 52px 0 90px; font-size: 15px; }
-.site-foot .cols { display: grid; gap: 36px; grid-template-columns: 1.3fr 1.2fr 1fr; margin-bottom: 32px; }
+.site-foot .cols { display: grid; gap: 36px; grid-template-columns: 1.2fr 1.2fr .8fr 1fr; margin-bottom: 32px; }
 .site-foot h4 { color: var(--gold); font-size: 14px; font-weight: 700; margin-bottom: 14px; letter-spacing: 0; }
 .site-foot ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
 .site-foot a { text-decoration: none; transition: .15s; }

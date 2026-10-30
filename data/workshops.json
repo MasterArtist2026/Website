@@ -1,5 +1,5 @@
 {
- "generated": "2026-10-30T16:32:29",
+ "generated": "2026-10-30T19:41:52",
  "currency": "MYR",
  "formats": [
   {
@@ -233,7 +233,52 @@
    "L1 front room",
    "L1 kitchen",
    "L2 recording studio"
-  ]
+  ],
+  "birthdays": {
+   "_status": "SUGGESTED prices (30 Oct 2026), confirm before launch",
+   "deposit": 200,
+   "includes": "a teacher and an assistant, all materials and aprons, 30 minutes in the room for cake (bring your own), and everything boxed to take home",
+   "packages": [
+    {
+     "id": "kids-art-party",
+     "name": "Kids Art Party",
+     "ages": "5–12",
+     "duration_min": 120,
+     "price": 890,
+     "kids_included": 10,
+     "extra_child": 69,
+     "max": 12,
+     "room": "L2 back room",
+     "when": "Sunday 12:15pm, or a weekday afternoon in the L1 front room",
+     "summary": "Every child paints a canvas or makes a clay piece on a theme the birthday child chooses."
+    },
+    {
+     "id": "kids-bake-party",
+     "name": "Kids Bake Party",
+     "ages": "6–12",
+     "duration_min": 150,
+     "price": 990,
+     "kids_included": 10,
+     "extra_child": 79,
+     "max": 12,
+     "room": "L1 kitchen",
+     "when": "Tuesday or Wednesday 3pm, or Friday 10am in the school holidays",
+     "summary": "Plant-based mini pizzas or cinnamon rolls, shaped and baked by the children, boxed to take home."
+    },
+    {
+     "id": "canvas-birthday",
+     "name": "Teen & Adult Canvas Birthday",
+     "ages": "13+",
+     "duration_min": 150,
+     "price_format": "textured-canvas",
+     "min": 8,
+     "max": 18,
+     "room": "L1 front room",
+     "when": "Sunday 3pm, or a weekday daytime",
+     "summary": "A private Textured Canvas session for the birthday group, in the room with the same view as upstairs."
+    }
+   ]
+  }
  },
  "rooms": [
   {
