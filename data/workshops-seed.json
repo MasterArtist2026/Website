@@ -451,5 +451,13 @@
   },
   "launch": {
     "first_public_sessions": "2026-11-08"
+  },
+  "gift_vouchers": {
+    "amounts": [
+      100,
+      200
+    ],
+    "any_workshop": true,
+    "note": "Spec 03-PROMPTS step 7: RM100, RM200 and any-workshop. Validity period TODO."
   }
 }

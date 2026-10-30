@@ -117,6 +117,32 @@
     });
   });
 
+  /* ---------- short WhatsApp forms (groups quote, gift vouchers): answers fill data-msg ---------- */
+  document.querySelectorAll('form.wa-form').forEach(function (form) {
+    var pick = new URLSearchParams(location.search).get('package'), sel = form.querySelector('[name=package]');
+    function choose(name) { if (sel && [].some.call(sel.options, function (o) { return o.text === name; })) sel.value = name; }
+    if (pick) choose(pick);
+    document.querySelectorAll('[data-pick-package]').forEach(function (a) {
+      a.addEventListener('click', function () { choose(a.getAttribute('data-pick-package')); });
+    });
+    form.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      if (!form.reportValidity()) return;
+      var f = new FormData(form);
+      var msg = form.getAttribute('data-msg').replace(/\{(\w+)\}/g, function (m, k) {
+        if (k === 'source') return source;
+        var v = String(f.get(k) || '').trim();
+        if (k === 'date' && v) { var d = new Date(v + 'T00:00:00'); v = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }); }
+        if (k === 'company') return v ? ' Company: ' + v + '.' : '';
+        if (k === 'notes') return v ? ' Note: ' + v : '';
+        return v;
+      });
+      track('whatsapp_click', { voice: form.getAttribute('data-voice') || 'studio', format: form.getAttribute('data-format') || '' });
+      window.open(waUrl(msg), '_blank', 'noopener');
+      form.classList.add('sent');
+    });
+  });
+
   /* ---------- Google rating and reviews (google-reviews Edge Function) ---------- */
   var SB_URL = 'https://fudaosneozobacdalncv.supabase.co';
   var SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1ZGFvc25lb3pvYmFjZGFsbmN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4OTIwNDUsImV4cCI6MjEwMjQ2ODA0NX0.0PKbkncE8goPg-iJlAUacNUa3MjWJSj1ZLeqTpkqPZ0';

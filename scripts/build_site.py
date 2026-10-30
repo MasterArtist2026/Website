@@ -978,9 +978,145 @@ def build_classes():
     build_holiday_camps()
 
 
+# --- Groups, Prices, Gift vouchers --------------------------------------------
+def WaForm(msg, fields, button, voice='studio', fmt='', done='we will reply with a quote'):
+    """A short form that opens WhatsApp with the answers filled into `msg` ({field} placeholders)."""
+    return (f'<form class="booking form wa-form v-{voice}" data-msg="{e(msg)}" data-voice="{voice}" data-format="{e(fmt)}">{fields}'
+            f'<p class="small muted">How we use your details: <a href="/privacy/">PDPA notice</a>.</p>'
+            f'<button class="btn wa block" type="submit">{WA_ICON}<span>{e(button)}</span></button>'
+            f'<div class="done" role="status"><b>Thanks.</b> Send the WhatsApp message and {e(done)}.</div></form>')
+
+
+def build_groups():
+    g = WS['groups']
+    cards = []
+    for pk in g['packages']:
+        if pk.get('price'):
+            price = f'<div class="price">{rm(pk["price"])} <small>up to {pk["pax"]} people · extra person {rm(g["extra_pax"])}</small></div>'
+        else:
+            price = f'<div class="price">{rm(pk["per_person"])} <small>a person · from {pk["min_pax"]} people</small></div>'
+        q = urllib.parse.quote(pk['name'])
+        cards.append(f'''<article class="card v-studio"><div class="body"><h3>{e(pk['name'])}</h3>{price}
+  <div class="actions"><a class="btn" href="?package={q}#quote" data-pick-package="{e(pk['name'])}">Ask for a quote</a></div></div></article>''')
+    rooms = ', '.join(g['rooms_in_parallel'][:-1]) + ' and ' + g['rooms_in_parallel'][-1]
+    opts = ''.join(f'<option>{e(pk["name"])}</option>' for pk in g['packages']) + '<option>Not sure yet</option>'
+    fields = f'''<h3>Ask for a quote</h3>
+  <div class="row"><div><label for="gn">Your name</label><input id="gn" name="name" required maxlength="120"></div>
+    <div><label for="gc">Company or group <span class="muted">(optional)</span></label><input id="gc" name="company" maxlength="120"></div></div>
+  <div><label for="gp">Package</label><select id="gp" name="package">{opts}</select></div>
+  <div class="row"><div><label for="gx">People</label><input id="gx" name="n" type="number" min="6" max="200" required></div>
+    <div><label for="gd">Preferred date</label><input id="gd" name="date" type="date" min="{START}" required></div></div>
+  <div><label for="gm">Anything else? <span class="muted">(optional)</span></label><textarea id="gm" name="notes" rows="2" maxlength="600"></textarea></div>'''
+    form = WaForm("Hi, I'd like a quote for a {package} for {n} people on {date}.{company}{notes} Name: {name}. Source: {source}.", fields, 'Send on WhatsApp', fmt='groups')
+    friday = fmt_time(g['friday_hard_stop'])
+    body = hero_band('Master Artist Studio Sessions', 'Team days and <em>private groups</em>',
+                     f'Art, baking or a mix, with up to {len(g["rooms_in_parallel"])} rooms running side by side. Taught by working artists; everyone takes something home.',
+                     '<a class="btn" href="#quote">Ask for a quote</a><a class="btn ghost" href="#packages">Packages</a>',
+                     crumbs(('/', 'Home'), (None, 'Groups')))
+    body += f'''<section class="sec v-studio" id="packages"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Packages</span><h2>Choose a <em>package</em></h2><p>Prices include materials and a teacher for each stream.</p></div>
+  <div class="grid-cards">{''.join(cards)}</div>
+</div></section>
+<section class="sec alt v-studio" id="quote"><div class="wrap listing book">
+  <div class="aside">{form}</div>
+  <div class="prose"><h2 style="margin-top:0">How a team day <em>works</em></h2>
+    <p class="lead">Pick a package, tell us your numbers and a date, and we plan the day with you on WhatsApp.</p>
+    <p>For bigger groups we run streams in parallel in the {e(rooms)}, so everyone can choose what they make.</p>
+    <p>Add the team dinner package to have dinner at Savor downstairs with an evening workshop.</p>
+    <h2>Good to <em>know</em></h2>{Accordion([
+        ('Fridays', f"Friday team days finish by {friday}; the building closes at 5pm on Fridays and all day Saturday."),
+        ('Minimum numbers', f"Team days run from {POL['minimum_to_run']} people. Each extra person over a package is {rm(g['extra_pax'])}."),
+        ('Payment', "We confirm the plan and send payment details on WhatsApp. Seats are prepaid."),
+    ])}</div>
+</div></section>'''
+    page('/groups/', 'Team building workshops in KL · art and baking team days · Master Artist',
+         f'Art, baking and mixed team days in Desa Sri Hartamas, KL, from {rm(min(pk["price"] for pk in g["packages"] if pk.get("price")))}. Rooms in parallel, dinner at Savor, quotes on WhatsApp.',
+         body, voice='studio', active='/groups/', data_attrs=' data-page="groups"')
+
+
+def build_prices():
+    camps = ''.join(f'<tr><td><a href="/holiday-camps/">{e(c["name"])}</a></td><td class="muted">Ages {e(c["ages"])} · {e(fmt_range(c["time"]))}</td><td class="num">{rm(c["price"])}</td></tr>' for c in CL['holiday_camps'])
+    camp_table = f'<table class="price-table" style="margin-top:24px"><caption>School holiday camps</caption><thead><tr><th>Camp</th><th>Details</th><th>Price</th></tr></thead><tbody>{camps}</tbody></table>'
+    ref = CL['discounts']['referral']
+    aca_notes = f'<p class="price-note">Refer a friend: you get {rm(ref["referrer_credit"])} credit, they get {rm(ref["new_student_first_month_off"])} off their first month.</p>'
+    d = WS['addons']['dine']
+    g = WS['groups']
+    sp = POL['pricing_window'].get('studio_pass')
+    extra_rows = []
+    aac = FORMATS.get('adult-art-class')
+    if aac:
+        extra_rows.append(('Adult Art Class (Thursday)', f"drop in, or {aac['pack_size']} for {rm(aac['pack_price'])}", rm(aac['price']), '/workshops/adult-art-class/'))
+    extra_rows.append((d['name'], f"Tue and Thu evenings · {rm(d['price_per_pair'])} a pair", f"+{rm(d['price_per_person'])}", None))
+    if sp:
+        extra_rows.append(('Studio Pass', f"{sp['sessions']} workshop seats", rm(sp['launch']), None))
+    for pk in g['packages']:
+        extra_rows.append((pk['name'], f"up to {pk['pax']} people" if pk.get('pax') else f"a person, from {pk['min_pax']}", rm(pk.get('price') or pk.get('per_person')), '/groups/'))
+    cell = lambda n, u: f'<a href="{u}">{e(n)}</a>' if u else e(n)
+    rows = ''.join(f'<tr><td>{cell(n, u)}</td><td class="muted">{e(x)}</td><td class="num">{p_}</td></tr>' for n, x, p_, u in extra_rows)
+    more_table = f'<table class="price-table" style="margin-top:24px"><caption>Classes, add-ons and groups</caption><thead><tr><th>Item</th><th>Details</th><th>Price</th></tr></thead><tbody>{rows}</tbody></table>'
+    body = hero_band('Prices', 'Every price, <em>in one place</em>',
+                     'Weekly classes at Master Artist Academy, and workshops at Master Artist Studio Sessions. Materials are always included.',
+                     '<a class="btn" href="#academy">Classes</a><a class="btn ghost" href="#studio">Workshops</a>',
+                     crumbs(('/', 'Home'), (None, 'Prices')))
+    body += f'''<section class="sec v-academy" id="academy"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">{e(SITE['labels']['academy'])}</span><h2>Weekly <em>classes</em></h2><p>Monthly fees for small classes, taught by working artists.</p></div>
+  {PriceTable('academy')}{aca_notes}{camp_table}
+  <p style="margin-top:24px"><a class="btn" href="/trial/">Book a {rm(TRIAL['price'])} trial</a></p>
+</div></section>
+<section class="sec alt v-studio" id="studio"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">{e(SITE['labels']['studio'])}</span><h2>One-off <em>workshops</em></h2><p>Per seat, with pair prices where two of you come together.</p></div>
+  {PriceTable('studio')}{more_table}
+  <p style="margin-top:24px"><a class="btn" href="/workshops/">See this week's workshops</a></p>
+</div></section>'''
+    page('/prices/', 'Prices · art, voice and baking classes and workshops · Master Artist KL',
+         'Monthly class fees, workshop prices, holiday camps and team day packages at Master Artist in Desa Sri Hartamas, KL.',
+         body, voice='both', active='/prices/', data_attrs=' data-page="prices"')
+
+
+def build_gift_vouchers():
+    gv = WS.get('gift_vouchers', {})
+    opts = ''.join(f'<option value="RM{a} gift voucher">{rm(a)} voucher</option>' for a in gv.get('amounts', []))
+    if gv.get('any_workshop'):
+        for f in WORKSHOP_FORMATS:
+            if f.get('price') and not f.get('price_unit') and f.get('type') != 'class':
+                opts += f'<option value="{e(f["name"])} voucher ({rm(f["price"])})">{e(f["name"])} · {rm(f["price"])}</option>'
+                if f.get('pair_price'):
+                    opts += f'<option value="{e(f["name"])} pair voucher ({rm(f["pair_price"])})">{e(f["name"])} for two · {rm(f["pair_price"])}</option>'
+            elif f.get('bundle'):
+                opts += f'<option value="{e(f["bundle"]["name"])} voucher ({rm(f["bundle"]["price"])})">{e(f["bundle"]["name"])} · {rm(f["bundle"]["price"])}</option>'
+    fields = f'''<h3>Buy a voucher</h3>
+  <div><label for="vv">Voucher</label><select id="vv" name="voucher">{opts}</select></div>
+  <div class="row"><div><label for="vf">Your name</label><input id="vf" name="name" required maxlength="120"></div>
+    <div><label for="vt">Who is it for?</label><input id="vt" name="to" required maxlength="120"></div></div>
+  <div><label for="vm">Message on the voucher <span class="muted">(optional)</span></label><textarea id="vm" name="notes" rows="2" maxlength="300"></textarea></div>'''
+    form = WaForm("Hi, I'd like to buy a {voucher} for {to}.{notes} From: {name}. Source: {source}.", fields, 'Buy on WhatsApp', fmt='gift-voucher', done='we will send payment details and your voucher')
+    amounts = ' or '.join(rm(a) for a in gv.get('amounts', []))
+    body = hero_split('Master Artist Studio Sessions', 'Give a workshop, <em>not a thing</em>',
+                      f'A {amounts} voucher, or a seat at a workshop they will love: painting, baking, singing, photo or video.',
+                      '', '<a class="btn" href="#buy">Buy a voucher</a><a class="btn ghost" href="/workshops/">See the workshops</a>',
+                      '<img src="/golden-shores-workshop-5.jpg" alt="A teacher holding up a finished seascape canvas" width="1200" height="1000" fetchpriority="high">',
+                      crumbs(('/', 'Home'), ('/workshops/', 'Workshops'), (None, 'Gift vouchers')))
+    body += f'''<section class="sec v-studio" id="buy"><div class="wrap listing book">
+  <div class="aside">{form}</div>
+  <div class="prose"><h2 style="margin-top:0">How it <em>works</em></h2>
+    <p class="lead">Choose a voucher and tell us who it is for. We confirm on WhatsApp, send payment details, and send you the voucher to pass on.</p>
+    <p>They pick a date on the workshops page and book on WhatsApp, quoting the voucher.</p>
+    <h2>Good to <em>know</em></h2>{Accordion([
+        ('Can they choose the workshop?', 'Yes. An amount voucher works for any workshop.'),
+        ('Can I give it for a team or group?', 'Yes. <a href="/groups/">See group packages</a> or ask us on WhatsApp.'),
+    ])}</div>
+</div></section>'''
+    page('/gift-vouchers/', 'Workshop gift vouchers in KL · painting and baking · Master Artist',
+         f'Gift vouchers for art, baking, singing, photo and video workshops in Desa Sri Hartamas, KL: {amounts} or a seat at a chosen workshop.',
+         body, voice='studio', active='/workshops/', data_attrs=' data-page="gift-vouchers"')
+
+
 if __name__ == '__main__':
     build_styleguide()
     build_home()
     n = build_workshops()
     build_classes()
-    print(f'built /, /styleguide/, /workshops/ ({len(WORKSHOP_FORMATS)} formats, {n} dated pages), /this-sunday/, /classes/ ({len(PROGS)} programmes), /trial/, /holiday-camps/')
+    build_groups()
+    build_prices()
+    build_gift_vouchers()
+    print(f'built /, /styleguide/, /workshops/ ({len(WORKSHOP_FORMATS)} formats, {n} dated pages), /this-sunday/, /classes/ ({len(PROGS)} programmes), /trial/, /holiday-camps/, /groups/, /prices/, /gift-vouchers/')
