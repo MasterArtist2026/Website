@@ -1,0 +1,2 @@
+# GitHub Pages: publish the website only, not the build data, scripts or docs
+exclude: [data, scripts, handoff, docs, supabase, tools, CLAUDE.md, README.md, "*.xlsx", "*.csv"]

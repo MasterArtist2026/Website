@@ -1,0 +1,263 @@
+{
+  "generated": "2026-10-28",
+  "currency": "MYR",
+  "trial": {
+    "price": 50,
+    "credited": true,
+    "note": "credited in full against the first month"
+  },
+  "programmes": [
+    {
+      "id": "kids-art-younger",
+      "voice": "academy",
+      "name": "Kids Art (ages 5–9)",
+      "discipline": "art",
+      "price_month": 400,
+      "per_session": 100,
+      "cap": 8,
+      "room": "L2 back room",
+      "slots": [
+        {
+          "day": "Mon",
+          "time": "15:00-18:00"
+        },
+        {
+          "day": "Tue",
+          "time": "15:00-18:00"
+        },
+        {
+          "day": "Wed",
+          "time": "15:00-18:00"
+        },
+        {
+          "day": "Thu",
+          "time": "15:00-18:00"
+        },
+        {
+          "day": "Fri",
+          "time": "15:00-17:00"
+        }
+      ],
+      "slot_note": "one 60-minute class a week inside these hours; exact time agreed at the trial",
+      "teacher": "CY",
+      "summary": "Drawing, colour and materials for younger children, taught in small groups by a working artist. Three levels with a certificate at each step.",
+      "term": "Monthly, with a showcase every 10–12 weeks."
+    },
+    {
+      "id": "kids-art-older",
+      "voice": "academy",
+      "name": "Kids Art (ages 10–15)",
+      "discipline": "art",
+      "price_month": 440,
+      "per_session": 110,
+      "cap": 8,
+      "room": "L2 front room",
+      "slots": [
+        {
+          "day": "Mon",
+          "time": "15:00-18:00"
+        },
+        {
+          "day": "Tue",
+          "time": "15:00-18:00"
+        },
+        {
+          "day": "Wed",
+          "time": "15:00-18:00"
+        },
+        {
+          "day": "Thu",
+          "time": "15:00-18:00"
+        },
+        {
+          "day": "Fri",
+          "time": "15:00-17:00"
+        }
+      ],
+      "slot_note": "one 60-minute class a week inside these hours",
+      "teacher": "CY",
+      "summary": "Composition, acrylic, watercolour and a portfolio by the end of the year, for older children and early teens.",
+      "term": "Monthly, with a showcase every 10–12 weeks."
+    },
+    {
+      "id": "adult-art",
+      "voice": "academy",
+      "name": "Adult Art",
+      "discipline": "art",
+      "price_month": 480,
+      "per_session": 120,
+      "cap": 8,
+      "room": "L2 front room",
+      "slots": [
+        {
+          "day": "Mon",
+          "time": "18:00-19:00"
+        },
+        {
+          "day": "Tue",
+          "time": "18:00-19:00"
+        },
+        {
+          "day": "Wed",
+          "time": "18:00-19:00"
+        },
+        {
+          "day": "Thu",
+          "time": "18:00-19:00"
+        },
+        {
+          "day": "Mon",
+          "time": "19:30-21:30"
+        }
+      ],
+      "teacher": "CY",
+      "summary": "Weekly adult class with continuity: the same teacher, your own project, visible progress. The Thursday 7–9pm Adult Art Class is the drop-in way to start.",
+      "term": "Monthly."
+    },
+    {
+      "id": "voice",
+      "voice": "academy",
+      "name": "Voice",
+      "discipline": "voice",
+      "price_month": 400,
+      "per_session": 100,
+      "group_price_month": 340,
+      "adult_price_month": 480,
+      "cap": 6,
+      "room": "L2 recording studio",
+      "slots": [
+        {
+          "day": "Mon-Thu",
+          "time": "15:00-19:00"
+        },
+        {
+          "day": "Fri",
+          "time": "15:00-17:00"
+        },
+        {
+          "day": "Sun",
+          "time": "by appointment"
+        }
+      ],
+      "teacher": "Sabrina",
+      "summary": "Technique, repertoire and performance with Sabrina; recorded in the studio so you hear your own progress. Small intake to start.",
+      "term": "Monthly."
+    },
+    {
+      "id": "teen-photo-video",
+      "voice": "academy",
+      "name": "Teen Photo & Video Club (13–17)",
+      "discipline": "photography-videography",
+      "price_month": 300,
+      "per_session": 75,
+      "sibling_or_student_price": 270,
+      "cap": 8,
+      "room": "L2 recording studio",
+      "slots": [
+        {
+          "day": "Wed",
+          "time": "15:30-17:30"
+        }
+      ],
+      "teacher": "Photographer / Videographer",
+      "summary": "Shoot and edit on your phone, post as a club, monthly screening. Bring a phone; no kit needed.",
+      "term": "Monthly."
+    },
+    {
+      "id": "photo-video-adult",
+      "voice": "academy",
+      "name": "Photography & Videography",
+      "discipline": "photography-videography",
+      "price_month": 560,
+      "per_session": 140,
+      "cap": 6,
+      "room": "L2 recording studio",
+      "slots": [
+        {
+          "day": "by arrangement",
+          "time": ""
+        }
+      ],
+      "teacher": "Photographer / Videographer",
+      "summary": "Weekly programme for adults and small-business owners.",
+      "term": "Monthly."
+    },
+    {
+      "id": "baking-course",
+      "voice": "academy",
+      "name": "Plant-based Baking Course (6 weeks)",
+      "discipline": "baking",
+      "price_course": 450,
+      "price_at_bake_lab": 420,
+      "cap": 20,
+      "min": 6,
+      "room": "L1 kitchen",
+      "slots": [
+        {
+          "day": "Mon",
+          "time": "15:00-17:30"
+        },
+        {
+          "day": "Wed",
+          "time": "15:00-17:30"
+        }
+      ],
+      "cohorts": [
+        {
+          "start": "2026-11-09",
+          "end": "2026-12-14"
+        },
+        {
+          "start": "2027-01-11",
+          "end": "2027-02-15"
+        }
+      ],
+      "teacher": "Baking instructor",
+      "summary": "Six weekly bakes from foundations to a showcase of your own choice.",
+      "term": "6-week cohort; opens when 6 are enrolled."
+    },
+    {
+      "id": "piano",
+      "voice": "academy",
+      "name": "Piano & Instruments",
+      "status": "paused",
+      "note": "Not listed until a teacher is hired."
+    }
+  ],
+  "holiday_camps": [
+    {
+      "id": "camp-kids-art",
+      "name": "Kids Art Camp (3 days)",
+      "price": 380,
+      "ages": "6–12",
+      "room": "L2 back room",
+      "time": "10:00-13:00",
+      "dates": "December school break, set by the coordinator"
+    },
+    {
+      "id": "camp-teen-photo-video",
+      "name": "Teen Photo & Video Camp (3 days)",
+      "price": 320,
+      "ages": "13–17",
+      "room": "L2 recording studio",
+      "time": "10:00-13:00",
+      "dates": "December school break"
+    }
+  ],
+  "discounts": {
+    "sibling": 0.1,
+    "referral": {
+      "referrer_credit": 100,
+      "new_student_first_month_off": 50
+    }
+  },
+  "rooms_classes_use": {
+    "L2 front room": "older kids 15:00-18:00 Mon-Thu, adults 18:00-19:00 Mon-Thu, adults Mon 19:30-21:30",
+    "L2 back room": "younger kids 15:00-18:00 Mon-Thu, 15:00-17:00 Fri",
+    "L2 recording studio": "voice and music lessons, teen club Wed 15:30-17:30"
+  },
+  "closures": {
+    "friday": "classes 15:00-17:00 only; building closes 17:00",
+    "saturday": "closed"
+  }
+}

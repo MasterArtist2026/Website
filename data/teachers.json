@@ -1,0 +1,91 @@
+{
+  "_note": "Public. TODO: bios and photos. Never name which teacher takes a particular class time.",
+  "teachers": [
+    {
+      "id": "sabrina",
+      "name": "Sabrina Hew",
+      "role": "Founder · Voice",
+      "teaches": [
+        "voice",
+        "sing-your-song"
+      ],
+      "bio": "TODO",
+      "photo": "teacher-sabrina-hew.jpg"
+    },
+    {
+      "id": "cy",
+      "name": "Cheong Chui Yen",
+      "role": "Art lead",
+      "teaches": [
+        "kids-art-younger",
+        "kids-art-older",
+        "adult-art",
+        "textured-canvas",
+        "acrylic-canvas",
+        "watercolour-botanicals",
+        "adult-art-class",
+        "parent-child-studio"
+      ],
+      "bio": "TODO",
+      "photo": "teacher-cheong-chui-yen.jpg"
+    },
+    {
+      "id": "beverly",
+      "name": "Beverly Thien",
+      "role": "Baking instructor",
+      "teaches": [
+        "bake-lab",
+        "baking-course-6wk",
+        "baking-course"
+      ],
+      "bio": "TODO",
+      "photo": null
+    },
+    {
+      "id": "ana",
+      "name": "Ana Castro",
+      "role": "Baking instructor · vegan baker from Colombia",
+      "teaches": [
+        "bake-lab",
+        "baking-course-6wk",
+        "baking-course"
+      ],
+      "bio": "TODO",
+      "photo": "focaccia-workshop-4.jpg"
+    },
+    {
+      "id": "photographer",
+      "name": "Alden",
+      "role": "Photographer",
+      "teaches": [
+        "photo-walk-edit",
+        "teen-photo-video",
+        "photo-video-adult"
+      ],
+      "bio": "TODO",
+      "photo": "teacher-alden.jpg"
+    },
+    {
+      "id": "videographer",
+      "name": "Zimin",
+      "role": "Videographer",
+      "teaches": [
+        "reels-for-your-business",
+        "teen-photo-video",
+        "photo-video-adult"
+      ],
+      "bio": "TODO",
+      "photo": "teacher-zimin.jpg"
+    },
+    {
+      "id": "art2",
+      "name": null,
+      "role": "Art instructor",
+      "teaches": [
+        "kids-art-studio"
+      ],
+      "bio": "TODO",
+      "photo": null
+    }
+  ]
+}

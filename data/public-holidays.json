@@ -1,0 +1,7 @@
+{
+  "_note": "Coordinator: public holidays in Kuala Lumpur. Workshops on these dates carry the public-holiday surcharge unless the date is listed under policies.public_holiday_surcharge_waived_dates in workshops-seed.json. TODO: add the 2027 dates from the official gazette.",
+  "holidays": [
+    {"date": "2026-11-08", "name": "Deepavali"},
+    {"date": "2026-12-25", "name": "Christmas Day"}
+  ]
+}

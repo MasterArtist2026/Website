@@ -1,0 +1,455 @@
+{
+  "generated": "2026-10-26",
+  "currency": "MYR",
+  "formats": [
+    {
+      "id": "textured-canvas",
+      "name": "Textured Canvas",
+      "discipline": "art",
+      "duration_min": 150,
+      "price": 79,
+      "pair_price": 140,
+      "cap": 18,
+      "room": "L2 front room",
+      "room_fallback": "L1 front room",
+      "audience": "adults",
+      "summary": "One acrylic canvas with texture paste and palette knives, 30x40cm, from a guided monthly theme. Beginner-friendly; take it home the same day.",
+      "upsell": "adult-art",
+      "dine_addon": true,
+      "live_from": "2026-11-08"
+    },
+    {
+      "id": "acrylic-canvas",
+      "name": "Acrylic Canvas",
+      "discipline": "art",
+      "duration_min": 150,
+      "price": 69,
+      "pair_price": 120,
+      "cap": 18,
+      "room": "L2 front room",
+      "room_fallback": "L1 front room",
+      "audience": "adults",
+      "summary": "One brush-on acrylic canvas, 30x40cm, from a guided theme. The easiest format for a first visit.",
+      "upsell": "adult-art",
+      "dine_addon": true,
+      "live_from": "2026-11-08"
+    },
+    {
+      "id": "watercolour-botanicals",
+      "name": "Watercolour Botanicals",
+      "discipline": "art",
+      "duration_min": 120,
+      "price": 69,
+      "pair_price": 120,
+      "cap": 16,
+      "room": "L2 front room",
+      "room_fallback": "L1 front room",
+      "audience": "adults",
+      "summary": "Two A5 botanical studies on cotton paper, one mounted in a card frame.",
+      "upsell": "adult-art",
+      "dine_addon": false,
+      "live_from": "2026-11-08"
+    },
+    {
+      "id": "bake-lab",
+      "name": "Plant-based Bake Lab",
+      "discipline": "baking",
+      "duration_min": 150,
+      "price": 75,
+      "price_specialty": 85,
+      "pair_price": 130,
+      "cap": 24,
+      "room": "L1 kitchen",
+      "audience": "all",
+      "summary": "One plant-based bake, boxed to take home. A familiar bread most weeks (focaccia, pizza dough, cinnamon rolls, bagels, milk bread); specialty breads and cakes at RM85.",
+      "upsell": "baking-course",
+      "dine_addon": false,
+      "live_from": "2026-11-08",
+      "cap_specialty": 20
+    },
+    {
+      "id": "sing-your-song",
+      "name": "Sing Your Song",
+      "discipline": "voice",
+      "duration_min": 120,
+      "price": 75,
+      "cap": 12,
+      "room": "L2 recording studio",
+      "audience": "adults",
+      "summary": "A recorded group performance of one song plus a short solo technique round; the recording is sent to you.",
+      "upsell": "voice",
+      "dine_addon": true,
+      "live_from": "2026-11-08"
+    },
+    {
+      "id": "reels-for-your-business",
+      "name": "Reels for Your Business",
+      "discipline": "videography",
+      "duration_min": 150,
+      "price": 89,
+      "cap": 10,
+      "room": "L2 recording studio",
+      "audience": "adults",
+      "summary": "Three short vertical videos of your product, dish or service, shot and edited on your phone, posted before you leave.",
+      "upsell": "videography",
+      "dine_addon": true,
+      "live_from": "2026-11-08"
+    },
+    {
+      "id": "photo-walk-edit",
+      "name": "Phone Photography Walk + Edit",
+      "discipline": "photography",
+      "duration_min": 150,
+      "price": 85,
+      "cap": 10,
+      "room": "L2 recording studio",
+      "audience": "adults",
+      "summary": "A six-image edited set, shot on your phone on a short walk around Sri Hartamas and edited back at the studio.",
+      "upsell": "photography",
+      "dine_addon": false,
+      "live_from": "2026-11-08"
+    },
+    {
+      "id": "kids-art-studio",
+      "name": "Kids Art Studio",
+      "discipline": "art",
+      "duration_min": 120,
+      "price": null,
+      "bundle": {
+        "name": "Family Sunday",
+        "price": 109,
+        "includes": "one adult Textured Canvas + one child Kids Art Studio, same hour",
+        "extra_child": 49
+      },
+      "cap": 12,
+      "room": "L2 back room",
+      "audience": "kids 6-12",
+      "summary": "A themed canvas or clay piece for ages 6 to 12, running next door to the adult Textured Canvas at the same hour.",
+      "upsell": "kids-art",
+      "dine_addon": false,
+      "live_from": "2026-11-08"
+    },
+    {
+      "id": "parent-child-studio",
+      "name": "Parent & Child Studio",
+      "discipline": "art",
+      "duration_min": 90,
+      "price": 99,
+      "price_unit": "per pair",
+      "cap": 8,
+      "cap_unit": "pairs",
+      "room": "L2 back room",
+      "audience": "families, kids 5-10",
+      "summary": "A shared canvas or clay piece, one per parent-and-child pair.",
+      "upsell": "kids-art",
+      "dine_addon": false,
+      "live_from": "2026-12-01"
+    },
+    {
+      "id": "adult-art-class",
+      "name": "Adult Art Class (Thursday)",
+      "discipline": "art",
+      "type": "class",
+      "duration_min": 120,
+      "price": 99,
+      "pack_price": 320,
+      "pack_size": 4,
+      "cap": 8,
+      "room": "L2 front room",
+      "audience": "adults",
+      "summary": "A guided class, not a party: same teacher, same piece carried week to week. Drop in or buy four.",
+      "upsell": "adult-art",
+      "dine_addon": true,
+      "dine_timing": "after",
+      "live_from": "2026-11-08"
+    },
+    {
+      "id": "baking-course-6wk",
+      "name": "Plant-based Baking Course (6 weeks)",
+      "discipline": "baking",
+      "type": "course",
+      "duration_min": 150,
+      "sessions": 6,
+      "price": 450,
+      "price_at_bake_lab": 420,
+      "cap": 20,
+      "min": 6,
+      "room": "L1 kitchen",
+      "audience": "adults and teens 13+",
+      "summary": "Six weekly bakes from foundations to a showcase of your own choice.",
+      "cohorts": [
+        {
+          "start": "2026-11-09",
+          "day": "Mon",
+          "time": "15:00",
+          "end": "2026-12-14"
+        },
+        {
+          "start": "2027-01-11",
+          "day": "Mon",
+          "time": "15:00",
+          "end": "2027-02-15"
+        }
+      ],
+      "live_from": "2026-11-08"
+    }
+  ],
+  "addons": {
+    "dine": {
+      "name": "Dine + workshop",
+      "price_per_person": 35,
+      "price_per_pair": 65,
+      "description": "Set dinner at Savor downstairs before (or after, for the Adult Art Class) the Tuesday or Thursday session.",
+      "applies_to": "formats with dine_addon true, Tue and Thu evenings"
+    }
+  },
+  "groups": {
+    "packages": [
+      {
+        "name": "Art team day",
+        "pax": 10,
+        "price": 1200
+      },
+      {
+        "name": "Baking team day",
+        "pax": 15,
+        "price": 1700
+      },
+      {
+        "name": "Mixed team day (two or three streams in parallel)",
+        "pax": 20,
+        "price": 2400
+      },
+      {
+        "name": "Team dinner + evening workshop",
+        "per_person": 150,
+        "min_pax": 10
+      }
+    ],
+    "extra_pax": 100,
+    "friday_hard_stop": "12:30",
+    "rooms_in_parallel": [
+      "L2 front room",
+      "L1 front room",
+      "L1 kitchen",
+      "L2 recording studio"
+    ]
+  },
+  "rooms": [
+    {
+      "id": "l2-front",
+      "name": "L2 front room",
+      "floor": "L2",
+      "use": "adult classes, adult art workshops; older kids weekday 15:00-18:00",
+      "cap": 18
+    },
+    {
+      "id": "l2-back",
+      "name": "L2 back room",
+      "floor": "L2",
+      "use": "younger kids classes, Parent & Child, Kids Art Studio",
+      "cap": 12
+    },
+    {
+      "id": "l2-studio",
+      "name": "L2 recording studio",
+      "floor": "L2",
+      "use": "music lessons, Sing Your Song, photo and video",
+      "cap": 12
+    },
+    {
+      "id": "l1-kitchen",
+      "name": "L1 kitchen (Savor)",
+      "floor": "L1",
+      "use": "all baking and culinary",
+      "cap": 24,
+      "windows": [
+        "10:00-12:30",
+        "15:00-17:30"
+      ],
+      "days": [
+        "Sun",
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri-morning-only"
+      ]
+    },
+    {
+      "id": "l1-front",
+      "name": "L1 front room (Savor)",
+      "floor": "L1",
+      "use": "adult art when a second premium room is needed; same window and view as L2 front",
+      "cap": 18,
+      "windows": [
+        "10:00-12:30",
+        "15:00-17:30"
+      ],
+      "days": [
+        "Sun",
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri-morning-only"
+      ]
+    }
+  ],
+  "weekly_schedule_template": [
+    {
+      "day": "Sun",
+      "time": "10:00",
+      "format": "bake-lab",
+      "room": "l1-kitchen"
+    },
+    {
+      "day": "Sun",
+      "time": "10:30",
+      "format": "watercolour-botanicals",
+      "room": "l2-front"
+    },
+    {
+      "day": "Sun",
+      "time": "10:30",
+      "format": "parent-child-studio",
+      "room": "l2-back",
+      "from": "2026-12-01"
+    },
+    {
+      "day": "Sun",
+      "time": "15:00",
+      "format": "textured-canvas",
+      "room": "l2-front"
+    },
+    {
+      "day": "Sun",
+      "time": "15:00",
+      "format": "kids-art-studio",
+      "room": "l2-back"
+    },
+    {
+      "day": "Sun",
+      "time": "15:00",
+      "format": "bake-lab",
+      "room": "l1-kitchen"
+    },
+    {
+      "day": "Sun",
+      "time": "15:00",
+      "format": "photo-walk-edit",
+      "room": "l2-studio",
+      "alternate_weeks_with": "reels-for-your-business"
+    },
+    {
+      "day": "Tue",
+      "time": "10:00",
+      "format": "watercolour-botanicals",
+      "room": "l2-front"
+    },
+    {
+      "day": "Tue",
+      "time": "15:30",
+      "format": "watercolour-botanicals",
+      "room": "l1-front"
+    },
+    {
+      "day": "Tue",
+      "time": "19:30",
+      "format": "textured-canvas",
+      "room": "l2-front",
+      "alternate_weeks_with": "acrylic-canvas",
+      "dine": true
+    },
+    {
+      "day": "Tue",
+      "time": "19:30",
+      "format": "reels-for-your-business",
+      "room": "l2-studio",
+      "dine": true
+    },
+    {
+      "day": "Thu",
+      "time": "10:00",
+      "format": "bake-lab",
+      "room": "l1-kitchen"
+    },
+    {
+      "day": "Thu",
+      "time": "15:00",
+      "format": "bake-lab",
+      "room": "l1-kitchen",
+      "variant": "specialty"
+    },
+    {
+      "day": "Thu",
+      "time": "19:00",
+      "format": "adult-art-class",
+      "room": "l2-front",
+      "dine": true,
+      "dine_timing": "after"
+    },
+    {
+      "day": "Thu",
+      "time": "20:00",
+      "format": "sing-your-song",
+      "room": "l2-studio",
+      "dine": true
+    },
+    {
+      "day": "Mon",
+      "time": "15:00",
+      "format": "baking-course-6wk",
+      "room": "l1-kitchen"
+    }
+  ],
+  "closures": {
+    "weekly": [
+      {
+        "day": "Fri",
+        "from": "12:30",
+        "reason": "no workshops after 12:30; classes 15:00-17:00; building closes 17:00"
+      },
+      {
+        "day": "Sat",
+        "all_day": true
+      }
+    ],
+    "no_evening_workshops": [
+      "Mon",
+      "Wed",
+      "Fri",
+      "Sun"
+    ],
+    "l1_evenings": "not available"
+  },
+  "policies": {
+    "pricing_window": {
+      "name": "Launch Season",
+      "until": "2027-04-30",
+      "floor_adult": 65,
+      "studio_pass": {
+        "launch": 260,
+        "sessions": 4,
+        "locks_launch_price_until": "2027-08-31"
+      }
+    },
+    "minimum_to_run": 6,
+    "cancel_notice_hours": 48,
+    "reschedule": "free within 24h of booking, RM10 per person after",
+    "public_holiday_surcharge": 0.1,
+    "refunds": "prepaid, non-refundable",
+    "arrive_early_min": 15,
+    "trial_voucher": {
+      "value": 50,
+      "credited": true,
+      "issued_to": "every attendee"
+    },
+    "public_holiday_surcharge_waived_dates": [
+      "2026-11-08"
+    ]
+  },
+  "launch": {
+    "first_public_sessions": "2026-11-08"
+  }
+}

@@ -1,0 +1,6 @@
+
+# Business documents from the handoff: keep local, never publish (the repo and site are public)
+handoff/
+CLAUDE.md
+*.xlsx
+data/private/
