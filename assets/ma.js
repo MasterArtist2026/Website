@@ -4,6 +4,8 @@
 (function () {
   'use strict';
   var WA = document.documentElement.getAttribute('data-wa') || '60102779426';
+  var SB_URL = 'https://fudaosneozobacdalncv.supabase.co';
+  var SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1ZGFvc25lb3pvYmFjZGFsbmN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4OTIwNDUsImV4cCI6MjEwMjQ2ODA0NX0.0PKbkncE8goPg-iJlAUacNUa3MjWJSj1ZLeqTpkqPZ0';
 
   /* ---------- UTM persistence: a later WhatsApp click still carries the source ---------- */
   var KEY = 'ma_utm';
@@ -23,15 +25,45 @@
   /* ---------- tracking: GTM dataLayer first; direct gtag/fbq until GTM tags are live ---------- */
   window.dataLayer = window.dataLayer || [];
   var META_NAMES = { whatsapp_click: 'Contact', booking_started: 'InitiateCheckout', booking_paid: 'Purchase', trial_requested: 'Lead', view_format: 'ViewContent' };
+  function cookie(n) { var m = document.cookie.match('(?:^|; )' + n + '=([^;]*)'); return m ? decodeURIComponent(m[1]) : ''; }
   function track(name, params) {
+    // event_id is shared by the browser pixel and the Conversions API so Meta counts each event once
+    var eventId = name + '.' + Date.now().toString(36) + '.' + Math.random().toString(36).slice(2, 8);
     params = Object.assign({ source: source }, params || {});
-    window.dataLayer.push(Object.assign({ event: name }, params));
-    if (document.documentElement.getAttribute('data-direct-tags') === '1') {
+    window.dataLayer.push(Object.assign({ event: name, event_id: eventId, meta_event: META_NAMES[name] || '' }, params));
+    var html = document.documentElement;
+    if (html.getAttribute('data-direct-tags') === '1') {
       try { window.gtag && gtag('event', name, params); } catch (e) {}
-      try { window.fbq && fbq('trackCustom', name, params); if (META_NAMES[name]) fbq('track', META_NAMES[name], params); } catch (e) {}
+      try { window.fbq && fbq('trackCustom', name, params); if (META_NAMES[name]) fbq('track', META_NAMES[name], params, { eventID: eventId }); } catch (e) {}
+    }
+    if (html.getAttribute('data-direct-tags') === '1' && name === 'whatsapp_click') adsConversion('whatsapp');
+    if (html.getAttribute('data-capi') === '1' && META_NAMES[name]) {
+      try {
+        fetch(SB_URL + '/functions/v1/meta-capi', {
+          method: 'POST', keepalive: true,
+          headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event_name: META_NAMES[name], event_id: eventId, event_source_url: location.href,
+                                 fbp: cookie('_fbp'), fbc: cookie('_fbc') || (utm.fbclid ? 'fb.1.' + Date.now() + '.' + utm.fbclid : ''),
+                                 custom_data: params })
+        }).catch(function () {});
+      } catch (e) {}
     }
   }
   window.maTrack = track;
+
+  /* Google Ads conversions (labels in site.json tracking.ads_labels), sent while the direct tags are on */
+  function adsConversion(kind) {
+    var label = document.documentElement.getAttribute('data-ads-' + (kind === 'trial_form' ? 'trial' : kind));
+    if (!label || !window.gtag) return;
+    var payload = { send_to: label, transport_type: 'beacon' };
+    if (kind === 'trial_form') { payload.value = 50; payload.currency = 'MYR'; }
+    try { gtag('event', 'conversion', payload); } catch (e) {}
+  }
+  // The head filter drops generate_lead hits unless a trial row has just been saved
+  function allowLeadHit() {
+    window.__allowGenerateLead = (window.__allowGenerateLead || 0) + 1;
+    setTimeout(function () { window.__allowGenerateLead = Math.max(0, (window.__allowGenerateLead || 1) - 1); }, 2000);
+  }
 
   /* ---------- WhatsApp buttons: <a data-wa-msg="..." data-voice data-format> ---------- */
   function waUrl(msg) { return 'https://wa.me/' + WA + '?text=' + encodeURIComponent(msg); }
@@ -145,8 +177,6 @@
   });
 
   /* ---------- Google rating and reviews (google-reviews Edge Function) ---------- */
-  var SB_URL = 'https://fudaosneozobacdalncv.supabase.co';
-  var SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1ZGFvc25lb3pvYmFjZGFsbmN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4OTIwNDUsImV4cCI6MjEwMjQ2ODA0NX0.0PKbkncE8goPg-iJlAUacNUa3MjWJSj1ZLeqTpkqPZ0';
   function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function stars(n) { var r = Math.round(n || 0); return '<span class="stars" aria-label="' + r + ' out of 5">' + '★★★★★'.slice(0, r) + '</span>'; }
   var gHosts = document.querySelectorAll('[data-greviews]');
@@ -225,7 +255,12 @@
       }).then(function (res) {
         form.dataset.sending = ''; btn.disabled = false; btn.textContent = label;
         if (res.status !== 201 && res.status !== 204) throw new Error('HTTP ' + res.status);
-        track('trial_requested', { voice: 'academy', programme: sel.value });
+        allowLeadHit();
+        track('trial_requested', { voice: 'academy', programme: sel.value, lead_saved: 'yes', value: 50, currency: 'MYR' });
+        if (document.documentElement.getAttribute('data-direct-tags') === '1') {
+          try { window.gtag && gtag('event', 'generate_lead', { programme: sel.value, value: 50, currency: 'MYR', transport_type: 'beacon' }); } catch (e) {}
+          adsConversion('trial_form');
+        }
         window.open(waLink, '_blank', 'noopener');
         form.classList.add('sent');
       }).catch(function () {

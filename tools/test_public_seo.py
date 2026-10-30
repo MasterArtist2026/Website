@@ -6,19 +6,26 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 SITE = 'https://masterartist.co'
 SKIP = {'admin.html', 'post.html', '404.html'}
 
+def is_redirect(path):
+    return 'http-equiv="refresh"' in path.read_text()
+
 def public_pages():
+    """Root pages and blog posts, plus the rebuilt folder pages (*/index.html); redirect stubs and the styleguide are skipped."""
     pages = []
     for path in ROOT.rglob('*.html'):
         rel = path.relative_to(ROOT).as_posix()
-        if rel.startswith('blog/') or path.name not in SKIP and path.parent == ROOT:
-            if path.name in SKIP:
-                continue
-            pages.append(rel)
+        if rel.startswith(('node_modules/', 'styleguide/', 'handoff/', 'supabase/', '.')) or path.name in SKIP:
+            continue
+        if rel.startswith('blog/') or path.parent == ROOT or path.name == 'index.html':
+            if not is_redirect(path):
+                pages.append(rel)
     return sorted(pages)
 
 def canonical_for(rel):
     if rel == 'index.html':
         return SITE + '/'
+    if rel.endswith('/index.html'):
+        return SITE + '/' + rel[:-len('index.html')]
     return SITE + '/' + rel
 
 def main():
@@ -37,7 +44,7 @@ def main():
             errors.append(f'{rel} missing canonical {want}')
         if want not in sitemap:
             errors.append(f'sitemap missing {want}')
-        if rel != 'index.html' and 'http://masterartist.co' in text:
+        if rel != 'index.html' and 'http://masterartist.co' in text and not rel.endswith('/index.html'):
             errors.append(f'{rel} has an http canonical or URL')
     # template and admin stay out of the sitemap
     for blocked in ('/admin.html', '/post.html', '/404.html'):
@@ -101,7 +108,7 @@ def main():
             errors.append(f'{page.name} canonical missing')
 
     # every JSON-LD block parses
-    for path in list(ROOT.glob('*.html')) + list((ROOT / 'blog').glob('*.html')):
+    for path in [ROOT / r for r in pages]:
         for raw in re.findall(r'<script type="application/ld\+json">(.*?)</script>', path.read_text(), re.S):
             try:
                 json.loads(raw)

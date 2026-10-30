@@ -1,0 +1,45 @@
+# Rolls the dated workshop sessions forward every night (Kuala Lumpur time), so
+# the site always shows the next six weeks, yesterday's sessions drop off and
+# /this-sunday/ moves to the coming Sunday. Also runs on demand after the
+# coordinator edits data/bookings.json or data/themes.json.
+name: Roll workshop sessions
+on:
+  schedule:
+    - cron: '5 16 * * *'   # 00:05 in Kuala Lumpur
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['data/bookings.json', 'data/themes.json', 'data/workshops-seed.json', 'data/classes-seed.json',
+             'data/site.json', 'data/teachers.json', 'data/programme-copy.json', 'data/public-holidays.json']
+permissions:
+  contents: write
+concurrency:
+  group: site-build
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Kuala_Lumpur
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Private price overlay (unannounced prices stay out of the public repo)
+        env:
+          OVERLAY: ${{ secrets.WORKSHOPS_PRIVATE_JSON }}
+        run: |
+          if [ -n "$OVERLAY" ]; then mkdir -p data/private && printf '%s' "$OVERLAY" > data/private/workshops-private.json; fi
+      - run: python3 scripts/expand_sessions.py
+      - run: python3 scripts/build_site.py
+      - name: Commit changes
+        run: |
+          rm -rf data/private
+          git add -A
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git config user.name "site-bot"
+          git config user.email "site-bot@users.noreply.github.com"
+          git commit -m "Roll workshop sessions $(date +%F)"
+          git pull --rebase
+          git push

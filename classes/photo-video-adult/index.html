@@ -1,8 +1,39 @@
 <!DOCTYPE html>
-<html lang="en-MY" data-wa="60102779426" data-direct-tags="1">
+<html lang="en-MY" data-wa="60102779426" data-direct-tags="1" data-capi="0" data-ads-trial="AW-18457946758/YaQtCP7vkp8dEIbVt-FE" data-ads-whatsapp="AW-18457946758/3h9QCIHwkp8dEIbVt-FE">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+/* Drop generate_lead hits unless the trial form has just saved a row.
+   GA4 create-event rule 16134847184 copies every page_view whose
+   page_location contains Masterartist.co into generate_lead. */
+(function(){
+  function leadUrl(url){ return /(?:^|[?&#])en=generate_lead(?:&|$)/.test(String(url||'')); }
+  function blocked(url){ return leadUrl(url) && !(window.__allowGenerateLead > 0); }
+  if (navigator.sendBeacon) {
+    var beacon = navigator.sendBeacon.bind(navigator);
+    navigator.sendBeacon = function(url, data){ if (blocked(url)) return true; return beacon(url, data); };
+  }
+  if (window.fetch) {
+    var origFetch = window.fetch.bind(window);
+    window.fetch = function(input, init){
+      var url = typeof input === 'string' ? input : (input && input.url) || '';
+      if (blocked(url)) return Promise.resolve(new Response('', {status:204}));
+      return origFetch(input, init);
+    };
+  }
+  var desc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+  if (desc && desc.set) {
+    Object.defineProperty(HTMLImageElement.prototype, 'src', {
+      configurable: true, enumerable: desc.enumerable, get: desc.get,
+      set: function(value){ if (!blocked(value)) desc.set.call(this, value); }
+    });
+  }
+  var xo = XMLHttpRequest.prototype.open, xs = XMLHttpRequest.prototype.send;
+  XMLHttpRequest.prototype.open = function(method, url){ this.__leadUrl = url; return xo.apply(this, arguments); };
+  XMLHttpRequest.prototype.send = function(body){ if (blocked(this.__leadUrl)) return; return xs.apply(this, arguments); };
+})();
+</script>
 <title>Photography &amp; Videography in Sri Hartamas, KL · RM560/month · Master Artist Academy</title>
 <meta name="description" content="Weekly programme for adults and small-business owners. RM560/month. RM50 trial, credited against the first month.">
 <link rel="canonical" href="https://masterartist.co/classes/photo-video-adult/">
@@ -13,11 +44,11 @@
 <link rel="stylesheet" href="/assets/ma.css?v=71b13bf1">
 <!-- Google Tag Manager -->
 <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-5J4LPRBN');</script>
-<!-- Direct tags: kept until the GTM container's GA4 / Meta / Ads tags are live, then removed -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-2X9E7MWMWM"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-2X9E7MWMWM');</script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-2X9E7MWMWM');gtag('config','AW-18457946758');</script>
 <script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','1104757255303373');fbq('track','PageView');</script>
 <script src="https://analytics.ahrefs.com/analytics.js" data-key="74BEoXeejA8dZU3rDB4ESg" async></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": ["LocalBusiness", "EducationalOrganization"], "@id": "https://masterartist.co/#business", "name": "Master Artist", "url": "https://masterartist.co", "telephone": "+60 10-277 9426", "email": "info@masterartist.co", "image": "https://masterartist.co/hero-1.jpg", "logo": "https://masterartist.co/logo.svg", "sameAs": ["https://www.instagram.com/masterartist_co/"], "priceRange": "RM50–RM2,400", "address": {"@type": "PostalAddress", "streetAddress": "38-2, Jalan 28/70A, Desa Sri Hartamas", "addressLocality": "Kuala Lumpur", "postalCode": "50480", "addressRegion": "Wilayah Persekutuan Kuala Lumpur", "addressCountry": "MY"}, "geo": {"@type": "GeoCoordinates", "latitude": 3.1624067, "longitude": 101.6486298}, "openingHoursSpecification": [{"@type": "OpeningHoursSpecification", "dayOfWeek": "Sunday", "opens": "10:00", "closes": "18:00"}, {"@type": "OpeningHoursSpecification", "dayOfWeek": "Monday", "opens": "10:00", "closes": "22:00"}, {"@type": "OpeningHoursSpecification", "dayOfWeek": "Tuesday", "opens": "10:00", "closes": "22:00"}, {"@type": "OpeningHoursSpecification", "dayOfWeek": "Wednesday", "opens": "10:00", "closes": "22:00"}, {"@type": "OpeningHoursSpecification", "dayOfWeek": "Thursday", "opens": "10:00", "closes": "22:00"}, {"@type": "OpeningHoursSpecification", "dayOfWeek": "Friday", "opens": "10:00", "closes": "17:00"}]}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Course", "name": "Photography & Videography", "description": "Weekly programme for adults and small-business owners.", "provider": {"@type": "Organization", "name": "Master Artist Academy", "url": "https://masterartist.co"}, "offers": {"@type": "Offer", "price": 560, "priceCurrency": "MYR", "category": "Paid"}, "hasCourseInstance": {"@type": "CourseInstance", "courseMode": "onsite", "location": {"@type": "Place", "name": "Master Artist", "address": {"@type": "PostalAddress", "streetAddress": "38-2, Jalan 28/70A, Desa Sri Hartamas", "addressLocality": "Kuala Lumpur", "postalCode": "50480", "addressRegion": "Wilayah Persekutuan Kuala Lumpur", "addressCountry": "MY"}}}}</script>
 </head>
 <body class="v-academy" data-voice="academy" data-page="programme" data-programme="photo-video-adult">
@@ -53,6 +84,6 @@
   <div class="legal"><span>© 2026 Master Artist</span><a href="/privacy/">PDPA notice</a><a href="/terms/">Booking terms</a></div>
 </div></footer>
 <a class="btn wa wa-float" href="https://wa.me/60102779426?text=Hi%2C%20I%27d%20like%20to%20book%20the%20RM50%20trial%20for%20Photography%20%26%20Videography.%20Source%3A%20site." data-wa-msg="Hi, I&#x27;d like to book the RM50 trial for Photography &amp; Videography. Source: {source}." data-voice="academy" data-format="" data-programme="photo-video-adult" data-session="" data-trial target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.2-1.8-.9-2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-.3-.2-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.5c.2-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.2 5.1 4.5 2.5 1 3 .8 3.6.7.6-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4l-.5-.3zM12 2a10 10 0 0 0-8.6 15l-1.3 4.8 4.9-1.3A10 10 0 1 0 12 2z"/></svg><span>WhatsApp</span></a>
-<script src="/assets/ma.js?v=c75a4eb5" defer></script>
+<script src="/assets/ma.js?v=9e9f2f51" defer></script>
 </body>
 </html>

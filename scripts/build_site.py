@@ -306,6 +306,7 @@ def head(title, desc, canonical, extra=''):
     t = SITE['tracking']
     return f'''<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+{LEAD_FILTER}
 <title>{e(title)}</title>
 <meta name="description" content="{e(desc)}">
 <link rel="canonical" href="{e(canonical)}">
@@ -316,12 +317,31 @@ def head(title, desc, canonical, extra=''):
 <link rel="stylesheet" href="/assets/ma.css?v={ver('assets/ma.css')}">
 <!-- Google Tag Manager -->
 <script>(function(w,d,s,l,i){{w[l]=w[l]||[];w[l].push({{'gtm.start':new Date().getTime(),event:'gtm.js'}});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);}})(window,document,'script','dataLayer','{t['gtm']}');</script>
-<!-- Direct tags: kept until the GTM container's GA4 / Meta / Ads tags are live, then removed -->
-<script async src="https://www.googletagmanager.com/gtag/js?id={t['ga4']}"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){{dataLayer.push(arguments);}}gtag('js',new Date());gtag('config','{t['ga4']}');</script>
-<script>!function(f,b,e,v,n,t,s){{if(f.fbq)return;n=f.fbq=function(){{n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)}};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','{t['meta_pixel']}');fbq('track','PageView');</script>
-<script src="https://analytics.ahrefs.com/analytics.js" data-key="{t['ahrefs_key']}" async></script>
+{DIRECT_TAGS if t.get('direct_tags', True) else ''}<script src="https://analytics.ahrefs.com/analytics.js" data-key="{t['ahrefs_key']}" async></script>
+{ld(BUSINESS)}
 {extra}'''
+
+
+# Direct GA4 + Meta tags: kept while site.json tracking.direct_tags is true, i.e. until the GTM container's
+# tags (docs/gtm-container.json) are published; then set it false so nothing is counted twice.
+_t = SITE['tracking']
+# Must run before any Google tag: GA4 rule 16134847184 copies page_views into generate_lead (kept from the old site).
+LEAD_FILTER = (ROOT / 'assets' / 'lead-filter.html').read_text().strip()
+DIRECT_TAGS = f'''<script async src="https://www.googletagmanager.com/gtag/js?id={_t['ga4']}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){{dataLayer.push(arguments);}}gtag('js',new Date());gtag('config','{_t['ga4']}');gtag('config','{_t['google_ads']}');</script>
+<script>!function(f,b,e,v,n,t,s){{if(f.fbq)return;n=f.fbq=function(){{n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)}};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','{_t['meta_pixel']}');fbq('track','PageView');</script>
+'''
+_a = SITE['address']
+BUSINESS = {'@context': 'https://schema.org', '@type': ['LocalBusiness', 'EducationalOrganization'], '@id': SITE['url'] + '/#business',
+            'name': SITE['name'], 'url': SITE['url'], 'telephone': SITE['phone'], 'email': SITE['email'], 'image': SITE['url'] + '/hero-1.jpg',
+            'logo': SITE['url'] + '/logo.svg', 'sameAs': [SITE['instagram']], 'priceRange': 'RM50–RM2,400',
+            'address': {'@type': 'PostalAddress', 'streetAddress': _a['street'], 'addressLocality': _a['city'], 'postalCode': _a['postcode'],
+                        'addressRegion': _a['region'], 'addressCountry': _a['country']},
+            'geo': {'@type': 'GeoCoordinates', 'latitude': _a['lat'], 'longitude': _a['lng']},
+            'openingHoursSpecification': [
+                {'@type': 'OpeningHoursSpecification', 'dayOfWeek': d, 'opens': h['open'], 'closes': h['close']}
+                for h in SITE['hours'] if not h.get('closed')
+                for d in {'Sunday': ['Sunday'], 'Friday': ['Friday']}.get(h['days'], ['Monday', 'Tuesday', 'Wednesday', 'Thursday'])]}
 
 
 def wa_attrs(wa, voice, label, cls='btn wa'):
@@ -359,7 +379,7 @@ def page(path, title, desc, body, voice='both', active='', data_attrs='', extra_
     canonical = SITE['url'] + path
     robots = '<meta name="robots" content="noindex">' if noindex else ''
     doc = f'''<!DOCTYPE html>
-<html lang="en-MY" data-wa="{SITE['whatsapp']}" data-direct-tags="1">
+<html lang="en-MY" data-wa="{SITE['whatsapp']}" data-direct-tags="{1 if SITE['tracking'].get('direct_tags', True) else 0}" data-capi="{1 if SITE['tracking'].get('capi') else 0}" data-ads-trial="{SITE['tracking']['ads_labels']['trial_form']}" data-ads-whatsapp="{SITE['tracking']['ads_labels']['whatsapp']}">
 <head>
 {head(title, desc, canonical, extra_head + robots)}
 </head>
@@ -374,6 +394,10 @@ def page(path, title, desc, body, voice='both', active='', data_attrs='', extra_
 </body>
 </html>
 '''
+    if not noindex:
+        depth = path.count('/') - 1
+        GENERATED.append((path, '1.0' if path == '/' else '0.8' if depth <= 1 else '0.7' if depth == 2 else '0.5',
+                          'daily' if path.startswith(('/workshops', '/this-sunday')) or path == '/' else 'monthly'))
     out = ROOT / path.strip('/') / 'index.html' if path.endswith('/') else ROOT / path.strip('/')
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(doc)
@@ -661,11 +685,9 @@ def build_home():
     <div class="hero-cta"><a class="btn ghost" href="{e(SITE['google']['maps_url'])}" target="_blank" rel="noopener">Open in Google Maps</a>{WhatsAppButton(msg, 'both')}</div></div>
   <div>{HoursBlock()}</div>
 </div></section>'''
-    org = {'@context': 'https://schema.org', '@type': 'LocalBusiness', 'name': SITE['name'], 'url': SITE['url'], 'telephone': SITE['phone'],
-           'address': place()['address'], 'geo': {'@type': 'GeoCoordinates', 'latitude': SITE['address']['lat'], 'longitude': SITE['address']['lng']}}
     page('/', 'Master Artist · Art, voice and baking classes and workshops in Sri Hartamas, KL',
          f'Weekly classes taught by working artists, and workshops in the room with the view in Desa Sri Hartamas, KL. Workshops from {rm(min_ws)}; classes from {rm(min_cl)}/month; {rm(TRIAL["price"])} trial.',
-         body + doors + this_week + made + reviews + visit, extra_head=ld(org), data_attrs=' data-page="home"')
+         body + doors + this_week + made + reviews + visit, data_attrs=' data-page="home"')
 
 
 # --- Workshops ----------------------------------------------------------------
@@ -1345,6 +1367,43 @@ def build_static():
     build_privacy()
 
 
+# --- Redirects and sitemap ------------------------------------------------------------
+REDIRECTS = {
+    'about.html': '/about/', 'art.html': '/classes/', 'gallery.html': '/showcase/', 'media.html': '/classes/teen-photo-video/',
+    'music.html': '/classes/voice/', 'orchestra.html': '/classes/voice/', 'pricing.html': '/prices/', 'privacy.html': '/privacy/',
+    'terms.html': '/terms/', 'visit.html': '/about/#visit', 'workshops.html': '/workshops/',
+}
+
+
+def build_redirects():
+    """Retired pages become redirect stubs that keep the visitor's UTM query (ads may still point at them)."""
+    for old, new in REDIRECTS.items():
+        url = SITE['url'] + new
+        (ROOT / old).write_text(f'''<!DOCTYPE html>
+<html lang="en-MY"><head><meta charset="utf-8"><title>Moved · Master Artist</title>
+<link rel="canonical" href="{url}"><meta name="robots" content="noindex">
+<script>location.replace({json.dumps(new.split('#')[0])} + location.search + ({json.dumps('#' + new.split('#')[1]) if '#' in new else 'location.hash'}));</script>
+<meta http-equiv="refresh" content="0; url={new}">
+</head><body><p>This page has moved to <a href="{new}">{url}</a>.</p></body></html>
+''')
+
+
+GENERATED = []   # (path, priority, changefreq) recorded by page()
+
+
+def build_sitemap():
+    path = ROOT / 'sitemap.xml'
+    old = path.read_text() if path.exists() else ''
+    blog = re.findall(r'\s*<url>\s*<loc>https://masterartist\.co/blog[^<]*</loc>.*?</url>', old, flags=re.S)
+    today = TODAY.isoformat()
+    rows = []
+    for p_, prio, freq in GENERATED:
+        rows.append(f'\n  <url>\n    <loc>{SITE["url"]}{p_}</loc>\n    <lastmod>{today}</lastmod>\n    <changefreq>{freq}</changefreq>\n    <priority>{prio}</priority>\n  </url>')
+    path.write_text('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+                    + ''.join(rows) + ''.join(blog) + '\n</urlset>\n')
+    return len(rows), len(blog)
+
+
 if __name__ == '__main__':
     build_styleguide()
     build_home()
@@ -1354,4 +1413,7 @@ if __name__ == '__main__':
     build_prices()
     build_gift_vouchers()
     build_static()
+    build_redirects()
+    urls, posts = build_sitemap()
+    print(f'sitemap: {urls} pages + {posts} blog posts; {len(REDIRECTS)} redirects')
     print(f'built /, /styleguide/, /workshops/ ({len(WORKSHOP_FORMATS)} formats, {n} dated pages), /this-sunday/, /classes/ ({len(PROGS)} programmes), /trial/, /holiday-camps/, /groups/, /prices/, /gift-vouchers/, /birthdays/, /about/, /teachers/, /reviews/, /showcase/, /terms/, /privacy/')
