@@ -1,0 +1,40 @@
+{
+  "name": "Master Artist",
+  "labels": {"academy": "Master Artist Academy", "studio": "Master Artist Studio Sessions"},
+  "url": "https://masterartist.co",
+  "phone": "+60 10-277 9426",
+  "whatsapp": "60102779426",
+  "whatsapp_name": "Master Artist Studio",
+  "email": "info@masterartist.co",
+  "instagram": "https://www.instagram.com/masterartist_co/",
+  "address": {
+    "street": "38-2, Jalan 28/70A, Desa Sri Hartamas",
+    "note": "upstairs, above Savor",
+    "city": "Kuala Lumpur",
+    "postcode": "50480",
+    "region": "Wilayah Persekutuan Kuala Lumpur",
+    "country": "MY",
+    "lat": 3.1624067,
+    "lng": 101.6486298
+  },
+  "hours": [
+    {"days": "Sunday", "open": "10:00", "close": "18:00"},
+    {"days": "Monday – Thursday", "open": "10:00", "close": "22:00"},
+    {"days": "Friday", "open": "10:00", "close": "17:00", "note": "no workshops after 12:30"},
+    {"days": "Saturday", "closed": true}
+  ],
+  "hours_notes": ["Open Monday and Tuesday.", "Closed Friday 5pm to Saturday."],
+  "google": {
+    "place_id": "ChIJ_5QUWwBJzDERfwTpMdDHLPY",
+    "maps_url": "https://www.google.com/maps/place/?q=place_id:ChIJ_5QUWwBJzDERfwTpMdDHLPY",
+    "review_url": "https://search.google.com/local/writereview?placeid=ChIJ_5QUWwBJzDERfwTpMdDHLPY"
+  },
+  "tracking": {
+    "gtm": "GTM-5J4LPRBN",
+    "ga4": "G-2X9E7MWMWM",
+    "meta_pixel": "1104757255303373",
+    "google_ads": "AW-18457946758",
+    "ahrefs_key": "74BEoXeejA8dZU3rDB4ESg",
+    "indexnow_key": "475d9c85bff5d57bf277e4d7e5d51074"
+  }
+}

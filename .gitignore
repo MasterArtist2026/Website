@@ -4,3 +4,4 @@ handoff/
 CLAUDE.md
 *.xlsx
 data/private/
+.claude/

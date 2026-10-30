@@ -1,0 +1,97 @@
+/* Master Artist — site behaviour (handoff 02-SITE-SPEC §3–5, §8).
+   Content is readable without this file; it adds WhatsApp pre-fill with the
+   visitor's ad source, the tracking events, and the WhatsApp booking form. */
+(function () {
+  'use strict';
+  var WA = document.documentElement.getAttribute('data-wa') || '60102779426';
+
+  /* ---------- UTM persistence: a later WhatsApp click still carries the source ---------- */
+  var KEY = 'ma_utm';
+  function readUtm() {
+    var p = new URLSearchParams(location.search), out = {};
+    ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'fbclid', 'gclid'].forEach(function (k) {
+      if (p.get(k)) out[k] = p.get(k);
+    });
+    try {
+      if (Object.keys(out).length) sessionStorage.setItem(KEY, JSON.stringify(out));
+      return JSON.parse(sessionStorage.getItem(KEY) || '{}');
+    } catch (e) { return out; }
+  }
+  var utm = readUtm();
+  var source = utm.utm_source ? utm.utm_source + (utm.utm_campaign ? '/' + utm.utm_campaign : '') : (utm.fbclid ? 'facebook' : utm.gclid ? 'google' : 'site');
+
+  /* ---------- tracking: GTM dataLayer first; direct gtag/fbq until GTM tags are live ---------- */
+  window.dataLayer = window.dataLayer || [];
+  var META_NAMES = { whatsapp_click: 'Contact', booking_started: 'InitiateCheckout', booking_paid: 'Purchase', trial_requested: 'Lead', view_format: 'ViewContent' };
+  function track(name, params) {
+    params = Object.assign({ source: source }, params || {});
+    window.dataLayer.push(Object.assign({ event: name }, params));
+    if (document.documentElement.getAttribute('data-direct-tags') === '1') {
+      try { window.gtag && gtag('event', name, params); } catch (e) {}
+      try { window.fbq && fbq('trackCustom', name, params); if (META_NAMES[name]) fbq('track', META_NAMES[name], params); } catch (e) {}
+    }
+  }
+  window.maTrack = track;
+
+  /* ---------- WhatsApp buttons: <a data-wa-msg="..." data-voice data-format> ---------- */
+  function waUrl(msg) { return 'https://wa.me/' + WA + '?text=' + encodeURIComponent(msg); }
+  function withSource(msg) { return msg.replace(/\{source\}/g, source); }
+  document.querySelectorAll('[data-wa-msg]').forEach(function (a) {
+    a.href = waUrl(withSource(a.getAttribute('data-wa-msg')));
+    a.target = '_blank'; a.rel = 'noopener';
+  });
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href*="wa.me/"]');
+    if (!a) return;
+    track(a.hasAttribute('data-trial') ? 'trial_requested' : 'whatsapp_click', {
+      voice: a.getAttribute('data-voice') || document.body.getAttribute('data-voice') || 'both',
+      format: a.getAttribute('data-format') || document.body.getAttribute('data-format') || '',
+      programme: a.getAttribute('data-programme') || '',
+      session_id: a.getAttribute('data-session') || ''
+    });
+  }, true);
+
+  /* ---------- page view events ---------- */
+  var b = document.body;
+  if (b.getAttribute('data-page') === 'format') track('view_format', { voice: 'studio', format: b.getAttribute('data-format') });
+
+  /* ---------- booking embed (WhatsApp fallback until a payment tool is chosen) ---------- */
+  document.querySelectorAll('form.booking').forEach(function (form) {
+    var d = form.dataset;
+    track('booking_started', { voice: 'studio', format: d.format, session_id: d.session });
+    var price = Number(d.price || 0), pair = Number(d.pair || 0), dine = Number(d.dine || 0), dinePair = Number(d.dinePair || 0);
+    function total() {
+      var f = new FormData(form), qty = Math.max(1, Number(f.get('qty') || 1));
+      var isPair = f.get('ticket') === 'pair', people = isPair ? qty * 2 : qty;
+      var sum = isPair ? pair * qty : price * qty;
+      if (f.get('dine') === 'yes') sum += isPair ? dinePair * qty : dine * qty;
+      var out = form.querySelector('[data-total]');
+      if (out) out.textContent = 'RM' + sum.toLocaleString('en-MY');
+      return { qty: qty, isPair: isPair, people: people, sum: sum, f: f };
+    }
+    form.addEventListener('input', total);
+    total();
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (!form.reportValidity()) return;
+      var t = total(), f = t.f;
+      var lines = [
+        'Hi, I\'d like to book ' + d.name + ' on ' + d.when + '.',
+        (t.isPair ? t.qty + ' pair ticket(s)' : t.qty + ' seat(s)') + (f.get('dine') === 'yes' ? ' + Dine' : '') + ' — RM' + t.sum + '.'
+      ];
+      ['name', 'child_name', 'child_age', 'allergies', 'collector'].forEach(function (k) {
+        if (f.get(k)) lines.push(k.replace('_', ' ').replace(/^./, function (c) { return c.toUpperCase(); }) + ': ' + f.get(k));
+      });
+      if (f.get('photo')) lines.push('Photo consent: ' + f.get('photo'));
+      lines.push('Consent confirmed on the website.', 'Session: ' + d.session + '. Source: ' + source + '.');
+      track('whatsapp_click', { voice: 'studio', format: d.format, session_id: d.session, value: t.sum, currency: 'MYR' });
+      window.open(waUrl(lines.join('\n')), '_blank', 'noopener');
+      form.classList.add('sent');
+    });
+  });
+
+  /* ---------- theme toggle (styleguide) ---------- */
+  document.querySelectorAll('[data-theme-set]').forEach(function (btn) {
+    btn.addEventListener('click', function () { document.documentElement.setAttribute('data-theme', btn.getAttribute('data-theme-set')); });
+  });
+})();
