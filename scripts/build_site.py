@@ -223,10 +223,11 @@ def BookingEmbed(s):
                 f'<option value="pair">Pair · {rm(s["pair_price"])}</option></select></div>') if s.get('pair_price') else '<input type="hidden" name="ticket" value="single">'
     dine_opt = (f'<div><label for="dn">Dine at Savor {"after" if s.get("dine_timing") == "after" else "before"}</label><select id="dn" name="dine">'
                 f'<option value="no">No thanks</option><option value="yes">Yes · +{rm(dine["price_per_person"])} each ({rm(dine["price_per_pair"])} a pair)</option></select></div>') if s.get('dine') else ''
-    unit = 'Pairs' if s.get('cap_unit') == 'pairs' else 'Seats'
+    unit = 'Pairs' if s.get('cap_unit') == 'pairs' else 'Families' if s.get('bundle') else 'Seats'
+    msg_unit = {'Pairs': 'pair(s)', 'Families': 'Family Sunday ticket(s)'}.get(unit, 'seat(s)')
     when = f"{day_date(s['date'])} at {fmt_time(s['time'])}"
     return f'''<form class="booking v-studio" data-session="{e(s['id'])}" data-format="{e(s['format'])}" data-name="{e(s['name'])}" data-when="{e(when)}"
-  data-price="{s['price'] or 0}" data-pair="{s.get('pair_price') or 0}" data-dine="{dine['price_per_person']}" data-dine-pair="{dine['price_per_pair']}" data-booking="whatsapp">
+  data-price="{s['price'] or 0}" data-pair="{s.get('pair_price') or 0}" data-dine="{dine['price_per_person']}" data-dine-pair="{dine['price_per_pair']}" data-booking="whatsapp" data-unit="{msg_unit}">
   <h3>Book this session</h3>
   <div class="row">
     <div><label for="qty">{unit}</label><input id="qty" name="qty" type="number" min="1" max="{s['seats_left'] or 1}" value="1"></div>
@@ -323,33 +324,38 @@ def head(title, desc, canonical, extra=''):
 {extra}'''
 
 
-def header(active, voice):
+def wa_attrs(wa, voice, label, cls='btn wa'):
+    """The page's own WhatsApp message (spec §4) for the header, footer and floating buttons."""
+    wa = wa or {'msg': "Hi, I have a question about Master Artist. Source: {source}."}
+    return WhatsAppButton(wa['msg'], voice, label, cls=cls, fmt=wa.get('fmt', ''), programme=wa.get('programme', ''),
+                          session=wa.get('session', ''), trial=wa.get('trial', False))
+
+
+def header(active, voice, wa=None):
     links = ''.join(f'<a href="{h}"{" aria-current=page" if h == active else ""}>{l}</a>' for h, l in NAV)
-    msg = "Hi, I have a question about Master Artist. Source: {source}."
     return f'''<a class="skip" href="#main">Skip to content</a>
 <header class="site-head"><div class="wrap">
   <a class="wordmark" href="/"><img src="/logo.svg" alt="" width="30" height="30">Master Artist</a>
   <nav class="site-nav" aria-label="Main">{links}</nav>
-  <span class="head-wa">{WhatsAppButton(msg, voice)}</span>
+  <span class="head-wa">{wa_attrs(wa, voice, 'WhatsApp us')}</span>
 </div></header>'''
 
 
-def footer(voice):
+def footer(voice, wa=None):
     a = SITE['address']
-    msg = "Hi, I have a question about Master Artist. Source: {source}."
     return f'''<footer class="site-foot"><div class="wrap">
   <div class="cols">
     <div><h4>Visit</h4><p>{e(a['street'])}, {e(a['postcode'])} {e(a['city'])}<br>{e(a['note'].capitalize())}</p></div>
     <div><h4>Hours</h4>{HoursBlock()}</div>
     <div><h4>Explore</h4><ul><li><a href="/workshops/">Workshops</a></li><li><a href="/classes/">Classes</a></li><li><a href="/birthdays/">Birthday parties</a></li><li><a href="/groups/">Team days</a></li><li><a href="/gift-vouchers/">Gift vouchers</a></li><li><a href="/teachers/">Teachers</a></li><li><a href="/reviews/">Reviews</a></li><li><a href="/showcase/">Showcase</a></li></ul></div>
-    <div><h4>Contact</h4><ul><li>{WhatsAppButton(msg, voice, SITE['phone'], cls='')}</li><li><a href="{SITE['instagram']}">Instagram</a></li><li><a href="mailto:{SITE['email']}">{SITE['email']}</a></li></ul></div>
+    <div><h4>Contact</h4><ul><li>{wa_attrs(wa, voice, SITE['phone'], cls='')}</li><li><a href="{SITE['instagram']}">Instagram</a></li><li><a href="mailto:{SITE['email']}">{SITE['email']}</a></li></ul></div>
   </div>
   <div class="legal"><span>© {dt.date.today().year} Master Artist</span><a href="/privacy/">PDPA notice</a><a href="/terms/">Booking terms</a></div>
 </div></footer>
-{WhatsAppButton(msg, voice, 'WhatsApp', cls='btn wa wa-float')}'''
+{wa_attrs(wa, voice, 'WhatsApp', cls='btn wa wa-float')}'''
 
 
-def page(path, title, desc, body, voice='both', active='', data_attrs='', extra_head='', noindex=False):
+def page(path, title, desc, body, voice='both', active='', data_attrs='', extra_head='', noindex=False, wa=None):
     canonical = SITE['url'] + path
     robots = '<meta name="robots" content="noindex">' if noindex else ''
     doc = f'''<!DOCTYPE html>
@@ -359,11 +365,11 @@ def page(path, title, desc, body, voice='both', active='', data_attrs='', extra_
 </head>
 <body class="{'v-academy' if voice == 'academy' else 'v-studio' if voice == 'studio' else ''}" data-voice="{voice}"{data_attrs}>
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id={SITE['tracking']['gtm']}" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-{header(active, voice)}
+{header(active, voice, wa)}
 <main id="main">
 {body}
 </main>
-{footer(voice)}
+{footer(voice, wa)}
 <script src="/assets/ma.js?v={ver('assets/ma.js')}" defer></script>
 </body>
 </html>
@@ -689,7 +695,7 @@ def build_workshops_index():
 <section class="sec tight v-studio"><div class="wrap" style="max-width:820px"><div class="sec-head"><h2>Good to <em>know</em></h2></div>{Accordion(policy_items())}</div></section>'''
     page('/workshops/', 'Art, baking and music workshops in KL · Master Artist Studio Sessions',
          'Painting, baking, singing, photo and video workshops in Desa Sri Hartamas, KL. See this week, pick a date and book a seat.',
-         body, voice='studio', active='/workshops/', data_attrs=' data-page="workshops"')
+         body, voice='studio', active='/workshops/', data_attrs=' data-page="workshops"', wa={'msg': "Hi, I'd like to book a workshop. What's on this week? Source: {source}.", 'fmt': 'workshops'})
 
 
 def build_format(f):
@@ -733,7 +739,7 @@ def build_format(f):
 </div></section>'''
     title = f"{f['name']} workshop in KL · {money_from(f)} · Master Artist"
     page(f"/workshops/{f['id']}/", title, f"{f['summary']} {money_from(f)}, {f['room']}, Desa Sri Hartamas, KL. Pick a date and book a seat.",
-         body, voice='studio', active='/workshops/', data_attrs=f' data-page="format" data-format="{e(f["id"])}"')
+         body, voice='studio', active='/workshops/', data_attrs=f' data-page="format" data-format="{e(f["id"])}"', wa={'msg': msg, 'fmt': f['id']})
 
 
 def SoldOut(s):
@@ -799,7 +805,7 @@ def build_session_day(slots):
     title = f"{f['name']} · {day_date(s0['date'])} {t0} · {rm(s0['price'])} · Master Artist KL"
     page(url, title, f"{f['name']} on {long_date(s0['date'])} at {t0}, {s0['room']}, Desa Sri Hartamas. {rm(s0['price'])}. {f['summary']}",
          body, voice='studio', active='/workshops/', extra_head=head_ld,
-         data_attrs=f' data-page="session" data-format="{e(f["id"])}"')
+         data_attrs=f' data-page="session" data-format="{e(f["id"])}"', wa={'msg': wa_studio(s0), 'fmt': f['id'], 'session': s0['id']})
 
 
 def week_from(iso):
@@ -818,7 +824,7 @@ def build_this_sunday():
   <p style="margin-top:24px"><a class="btn ghost" href="/workshops/">All workshops</a></p></div></section>'''
     page('/this-sunday/', f'This Sunday at Master Artist · workshops with seats left',
          'Painting, baking and family workshops this Sunday in Desa Sri Hartamas, KL, with seats left.',
-         body, voice='studio', active='/workshops/', data_attrs=' data-page="this-sunday"')
+         body, voice='studio', active='/workshops/', data_attrs=' data-page="this-sunday"', wa={'msg': f"Hi, I'd like to book a session this Sunday, {title_day}. Source: {{source}}.", 'fmt': 'this-sunday'})
 
 
 def build_workshops():
@@ -859,7 +865,7 @@ def build_classes_index():
 <section class="sec alt v-academy"><div class="wrap"><div class="sec-head"><span class="eyebrow">Google reviews</span><h2>What parents and students <em>say</em></h2></div>{GoogleReviews(3)}</div></section>'''
     page('/classes/', 'Kids art classes, voice lessons and more in Sri Hartamas, KL · Master Artist Academy',
          f'Weekly art, voice, photo and video, and baking classes in Desa Sri Hartamas, KL, taught by working artists. From {rm(min_cl)}/month; {rm(TRIAL["price"])} trial.',
-         body, voice='academy', active='/classes/', data_attrs=' data-page="classes"')
+         body, voice='academy', active='/classes/', data_attrs=' data-page="classes"', wa={'msg': f"Hi, I'd like to book the {rm(TRIAL['price'])} trial. Source: {{source}}.", 'trial': True})
 
 
 def build_programme(p):
@@ -918,7 +924,7 @@ def build_programme(p):
                  'hasCourseInstance': {'@type': 'CourseInstance', 'courseMode': 'onsite', 'location': place()}}
     title = f"{p['name']} in Sri Hartamas, KL · {rm(p.get('price_month') or p.get('price_course'))}{'/month' if p.get('price_month') else ''} · Master Artist Academy"
     page(f"/classes/{p['id']}/", title, f"{p.get('summary', '')} {price_line.split(' <')[0]}. {rm(TRIAL['price'])} trial, credited against the first month.",
-         body, voice='academy', active='/classes/', extra_head=ld(course_ld), data_attrs=f' data-page="programme" data-programme="{p["id"]}"')
+         body, voice='academy', active='/classes/', extra_head=ld(course_ld), data_attrs=f' data-page="programme" data-programme="{p["id"]}"', wa={'msg': wa_trial(p), 'programme': p['id'], 'trial': True})
 
 
 def build_trial():
@@ -950,7 +956,7 @@ def build_trial():
 </div></section>'''
     page('/trial/', f'Book a {rm(TRIAL["price"])} trial class · Master Artist Academy, Sri Hartamas KL',
          f'Try one art, voice, photo and video or baking class for {rm(TRIAL["price"])}, credited in full against your first month.',
-         body, voice='academy', active='/classes/', data_attrs=' data-page="trial"')
+         body, voice='academy', active='/classes/', data_attrs=' data-page="trial"', wa={'msg': f"Hi, I'd like to book the {rm(TRIAL['price'])} trial. Source: {{source}}.", 'trial': True})
 
 
 def build_holiday_camps():
@@ -968,7 +974,7 @@ def build_holiday_camps():
 <section class="sec tight v-academy"><div class="wrap">{academy_cta()}</div></section>'''
     page('/holiday-camps/', 'School holiday art and photo camps in KL · Master Artist Academy',
          'Three-day school holiday camps in art and in photo and video for kids and teens, in Desa Sri Hartamas, KL.',
-         body, voice='academy', active='/classes/', data_attrs=' data-page="holiday-camps"')
+         body, voice='academy', active='/classes/', data_attrs=' data-page="holiday-camps"', wa={'msg': "Hi, I'd like to hear about the school holiday camps. Source: {source}.", 'programme': 'holiday-camps'})
 
 
 def build_classes():
@@ -1034,7 +1040,7 @@ def build_groups():
 </div></section>'''
     page('/groups/', 'Team building workshops in KL · art and baking team days · Master Artist',
          f'Art, baking and mixed team days in Desa Sri Hartamas, KL, from {rm(min(pk["price"] for pk in g["packages"] if pk.get("price")))}. Rooms in parallel, dinner at Savor, quotes on WhatsApp.',
-         body, voice='studio', active='/groups/', data_attrs=' data-page="groups"')
+         body, voice='studio', active='/groups/', data_attrs=' data-page="groups"', wa={'msg': "Hi, I'd like a quote for a team day or group. Source: {source}.", 'fmt': 'groups'})
 
 
 def build_prices():
@@ -1114,7 +1120,7 @@ def build_gift_vouchers():
 </div></section>'''
     page('/gift-vouchers/', 'Workshop gift vouchers in KL · painting and baking · Master Artist',
          f'Gift vouchers for art, baking, singing, photo and video workshops in Desa Sri Hartamas, KL: {amounts} or a seat at a chosen workshop.',
-         body, voice='studio', active='/workshops/', data_attrs=' data-page="gift-vouchers"')
+         body, voice='studio', active='/workshops/', data_attrs=' data-page="gift-vouchers"', wa={'msg': "Hi, I'd like to buy a gift voucher. Source: {source}.", 'fmt': 'gift-voucher'})
 
 
 # --- Birthdays ------------------------------------------------------------------
@@ -1169,7 +1175,7 @@ def build_birthdays():
 </div></section>'''
     page('/birthdays/', 'Kids birthday party workshops in KL · art, clay and baking · Master Artist',
          'Art, clay and baking birthday parties for kids, teens and adults in Desa Sri Hartamas, KL, with a teacher, materials and time for cake.',
-         body, voice='studio', active='/groups/', data_attrs=' data-page="birthdays"')
+         body, voice='studio', active='/groups/', data_attrs=' data-page="birthdays"', wa={'msg': "Hi, I'd like to plan a birthday party. Source: {source}.", 'fmt': 'birthday'})
 
 
 # --- About, Teachers, Reviews, Showcase, Terms, Privacy --------------------------------

@@ -72,7 +72,7 @@
     document.querySelectorAll('.times a').forEach(function (a) {
       if (a.getAttribute('data-slot') === pick) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current');
     });
-    startBooking(document.querySelector('#' + pick + ' form.booking'));
+    startBooking(document.querySelector('#' + pick + ' form.booking[data-session]'));
   }
   document.querySelectorAll('.times a').forEach(function (a) {
     a.addEventListener('click', function (ev) {
@@ -83,7 +83,7 @@
   });
   if (slots.length > 1) showSlot(location.hash.slice(1));
 
-  document.querySelectorAll('form.booking').forEach(function (form) {
+  document.querySelectorAll('form.booking[data-session]').forEach(function (form) {
     var d = form.dataset;
     if (slots.length < 2) startBooking(form);
     var price = Number(d.price || 0), pair = Number(d.pair || 0), dine = Number(d.dine || 0), dinePair = Number(d.dinePair || 0);
@@ -104,13 +104,14 @@
       var t = total(), f = t.f;
       var lines = [
         'Hi, I\'d like to book ' + d.name + ' on ' + d.when + '.',
-        (t.isPair ? t.qty + ' pair ticket(s)' : t.qty + ' seat(s)') + (f.get('dine') === 'yes' ? ' + Dine' : '') + ' — RM' + t.sum + '.'
+        (t.isPair ? t.qty + ' pair ticket(s)' : t.qty + ' ' + (d.unit || 'seat(s)')) + (f.get('dine') === 'yes' ? ' + Dine' : '') + ' — RM' + t.sum + '.'
       ];
-      ['name', 'child_name', 'child_age', 'allergies', 'collector'].forEach(function (k) {
-        if (f.get(k)) lines.push(k.replace('_', ' ').replace(/^./, function (c) { return c.toUpperCase(); }) + ': ' + f.get(k));
-      });
+      var LABELS = { name: 'Name', child_name: "Child's name", child_age: "Child's age", allergies: 'Allergies or needs', collector: 'Adult collecting' };
+      Object.keys(LABELS).forEach(function (k) { if (f.get(k)) lines.push(LABELS[k] + ': ' + f.get(k)); });
       if (f.get('photo')) lines.push('Photo consent: ' + f.get('photo'));
-      lines.push('Consent confirmed on the website.', 'Session: ' + d.session + '. Source: ' + source + '.');
+      var CONSENTS = { parent: 'Parent/guardian consent: given', kitchen: 'Kitchen and allergen notice: confirmed', terms: 'Participation and booking terms: agreed' };
+      Object.keys(CONSENTS).forEach(function (k) { if (f.get(k)) lines.push(CONSENTS[k]); });
+      lines.push('Session: ' + d.session + '. Source: ' + source + '.');
       track('whatsapp_click', { voice: 'studio', format: d.format, session_id: d.session, value: t.sum, currency: 'MYR' });
       window.open(waUrl(lines.join('\n')), '_blank', 'noopener');
       form.classList.add('sent');
