@@ -133,7 +133,7 @@ def SessionCard(s, link=True):
         badges.append('<span class="badge dine">Dine + workshop</span>')
     if s.get('variant') == 'specialty':
         badges.append('<span class="badge">Specialty bake</span>')
-    theme = f'<div class="sub">{e(s["theme"])}</div>' if s.get('theme') else ''
+    title, theme = (s['theme'], f'<div class="sub">{e(s["name"])}</div>') if s.get('theme') else (s['name'], '')
     if s['seats_left'] == 0 and s.get('next_session'):
         nxt = next((x for x in WS['sessions'] if x['id'] == s['next_session']), None)
         action = f'<a class="btn ghost block" href="/workshops/{nxt["format"]}/{nxt["date"]}/">Sold out — next date {day_date(nxt["date"])}</a>' if nxt else ''
@@ -142,7 +142,7 @@ def SessionCard(s, link=True):
     return f'''<article class="card v-studio">
   {photo(s['format'])}
   <div class="body">
-    <h3>{e(s['name'])}</h3>{theme}
+    <h3>{e(title)}</h3>{theme}
     <div class="meta"><b>{day_date(s['date'])} · {fmt_time(s['time'])}–{fmt_time(s['end'])}</b><span>{e(s['room'])}</span></div>
     {price}
     <div class="badges">{' '.join(badges)} {seats_html(s)}</div>
@@ -268,7 +268,7 @@ def PriceTable(voice):
         return f'<div class="v-academy"><table class="price-table"><caption>Academy · weekly classes</caption><thead><tr><th>Programme</th><th>Details</th><th>Price</th></tr></thead><tbody>{"".join(rows)}</tbody></table>{note}</div>'
     rows = []
     for f in WS['formats']:
-        if f.get('type') in ('class', 'course'):
+        if f.get('type') in ('class', 'course') or f.get('status') == 'paused':
             continue
         if f.get('bundle'):
             price, extra = rm(f['bundle']['price']), f"Family Sunday: {f['bundle']['includes']} · extra child {rm(f['bundle']['extra_child'])}"
@@ -410,7 +410,7 @@ def build_styleguide():
     week = [s for s in pub if s['date'] <= (dt.date.fromisoformat(pub[0]['date']) + dt.timedelta(days=6)).isoformat()][:6]
     sample = next(s for s in pub if s['format'] == 'textured-canvas' and s['dine'])
     bake = next(s for s in pub if s['format'] == 'bake-lab')
-    family = next(s for s in pub if s.get('bundle'))
+    family = next((s for s in pub if s.get('bundle')), None)   # Family Sunday may be paused
     sold = dict(sample, seats_left=0)
     nearly = dict(bake, seats_left=4)
     progs = [p for p in CL['programmes'] if p.get('status') != 'paused']
@@ -437,7 +437,7 @@ def build_styleguide():
   {WhatsAppButton(wa_trial(voice_p), 'academy', 'WhatsAppButton (academy trial)', programme=voice_p['id'], trial=True)}</p></section>
 
 <section class="sg-section"><h2>SessionCard</h2><div class="grid-cards">
-  {SessionCard(sample)}{SessionCard(nearly)}{SessionCard(family)}{SessionCard(sold)}</div>
+  {SessionCard(sample)}{SessionCard(nearly)}{SessionCard(family) if family else ''}{SessionCard(sold)}</div>
   <p class="small muted">Normal (with Dine) · nearly full (under 6 left) · Family Sunday bundle · sold out with next date.</p></section>
 
 <section class="sg-section"><h2>ProgrammeCard</h2><div class="grid-cards">{ProgrammeCard(kids)}{ProgrammeCard(voice_p)}{ProgrammeCard(next(p for p in progs if p['id'] == 'baking-course'))}</div></section>
@@ -451,7 +451,7 @@ def build_styleguide():
 <section class="sg-section"><h2>BookingEmbed + ConsentFields</h2><div class="sg-pair">
   <div><div class="sg-label">Adult · Textured Canvas with Dine</div>{BookingEmbed(sample)}</div>
   <div><div class="sg-label">Baking · Bake Lab</div>{BookingEmbed(bake)}</div>
-  <div><div class="sg-label">Child · Family Sunday</div>{BookingEmbed(family)}</div></div></section>
+  <div><div class="sg-label">Child consent</div>{ConsentFields('child')}</div></div></section>
 
 <section class="sg-section"><h2>PriceTable</h2><div class="sg-pair">{PriceTable('academy')}{PriceTable('studio')}</div></section>
 
@@ -469,7 +469,7 @@ TODAY = dt.date.today()
 START = max(TODAY, dt.date.fromisoformat(WS.get('launch', {}).get('first_public_sessions', TODAY.isoformat()))).isoformat()
 # Workshop sessions shown on Studio Sessions pages (the 6-week course is an Academy programme)
 PUB = [s for s in WS['sessions'] if s['public'] and s.get('type') != 'course' and s['date'] >= START]
-WORKSHOP_FORMATS = [f for f in WS['formats'] if f.get('type') != 'course']
+WORKSHOP_FORMATS = [f for f in WS['formats'] if f.get('type') != 'course' and f.get('status') != 'paused']
 POL = WS['policies']
 TRIAL = CL['trial']
 PROGS = [p for p in CL['programmes'] if p.get('status') != 'paused']
@@ -647,17 +647,25 @@ def build_home():
     body = hero_split(
         'Desa Sri Hartamas · Kuala Lumpur',
         'Classes and workshops, <em>taught by working artists</em>',
-        'Weekly classes for kids, teens and adults, and one-off workshops in the room with the view: painting, baking, singing, photo and video.',
+        'Weekly classes for kids, teens and adults, and themed workshops in the room with the view: painting, candles, crochet and baking.',
         f'<span>Workshops from <b>{rm(min_ws)}</b></span><span>Classes from <b>{rm(min_cl)}</b>/month</span><span><b>{rm(TRIAL["price"])}</b> trial class</span>',
         f'<a class="btn" href="/workshops/">See this week\'s workshops</a><a class="btn ghost" href="/trial/">Book a {rm(TRIAL["price"])} trial</a>',
         '<img src="/hero-1.jpg" alt="A painting class at Master Artist" width="1200" height="1000" fetchpriority="high">')
+    od = WS.get('launch', {}).get('open_day')
+    open_day = ''
+    if od and od['date'] >= TODAY.isoformat():
+        when = f"{long_date(od['date'])}" + (f", {fmt_range(od['time'])}" if od.get('time') else '')
+        od_msg = f"Hi, I'd like to come to the Open Day on {long_date(od['date'])}. Source: {{source}}."
+        open_day = f'''<section class="sec tight" style="padding-top:32px"><div class="wrap"><div class="cta-card"><div><h2>{e(od['name'])}, <em>{e(when)}</em></h2>
+  <p>Come up and see the rooms, meet the teachers and see the work. Everyone welcome.</p></div>
+  <div class="hero-cta">{WhatsAppButton(od_msg, 'both', 'Ask about the Open Day', cls='btn wa')}</div></div></div></section>'''
     doors = f'''<section class="sec"><div class="wrap">
   <div class="sec-head"><span class="eyebrow">Three ways in</span><h2>What are you <em>looking for?</em></h2></div>
   <div class="doors">
     <a class="door v-academy" href="/classes/">{photo('kids-art-older')}<span class="label">{e(SITE['labels']['academy'])}</span><h3>Weekly classes</h3>
       <p>Art, voice, photo and video, and baking, in small groups with the same teacher every week. From {rm(min_cl)} a month; start with a {rm(TRIAL['price'])} trial.</p><span class="more">Classes and the trial</span></a>
     <a class="door v-studio" href="/workshops/">{photo('bake-lab')}<span class="label">{e(SITE['labels']['studio'])}</span><h3>Workshops</h3>
-      <p>One evening or one Sunday: paint a canvas, bake a loaf, record a song. From {rm(min_ws)}, and you take it home.</p><span class="more">This week's workshops</span></a>
+      <p>A weeknight or a Sunday: paint a canvas, pour a candle, crochet a bag. A new theme every week, from {rm(min_ws)}, and you take it home.</p><span class="more">This week's workshops</span></a>
     <a class="door v-studio" href="/groups/"><img src="/golden-shores-workshop-1.jpg" alt="A group workshop at Master Artist" loading="lazy" width="800" height="600"><span class="label">Groups</span><h3>Birthdays, team days and groups</h3>
       <p>Art, clay and baking birthday parties, and team days with rooms running side by side. Team packages from {rm(groups_from)}.</p><span class="more">Groups and birthdays</span></a>
   </div></div></section>'''
@@ -687,7 +695,7 @@ def build_home():
 </div></section>'''
     page('/', 'Master Artist · Art, voice and baking classes and workshops in Sri Hartamas, KL',
          f'Weekly classes taught by working artists, and workshops in the room with the view in Desa Sri Hartamas, KL. Workshops from {rm(min_ws)}; classes from {rm(min_cl)}/month; {rm(TRIAL["price"])} trial.',
-         body + doors + this_week + made + reviews + visit, data_attrs=' data-page="home"')
+         body + open_day + doors + this_week + made + reviews + visit, data_attrs=' data-page="home"')
 
 
 # --- Workshops ----------------------------------------------------------------
@@ -701,7 +709,7 @@ def build_workshops_index():
     week = week_sessions()
     sunday = coming_sunday()
     body = hero_band('Master Artist Studio Sessions', 'Workshops in <em>the room with the view</em>',
-                     'Painting, baking, singing, photo and video. One evening or one Sunday, taught properly, with something to take home.',
+                     'Painting, candle making, crochet and baking, with a new theme every week. Two hours, taught properly, with something to take home.',
                      (f'<a class="btn" href="/this-sunday/">This Sunday</a>' if sunday else '') + '<a class="btn ghost" href="#formats">All workshops</a>',
                      crumbs(('/', 'Home'), (None, 'Workshops')), studio_hero_note())
     body += f'''<section class="sec v-studio"><div class="wrap">
@@ -715,8 +723,8 @@ def build_workshops_index():
 <section class="sec v-studio"><div class="wrap"><div class="cta-card"><div><h2>Bringing a <em>team?</em></h2><p>Art, baking or mixed team days, with rooms running side by side.</p></div>
   <div class="hero-cta"><a class="btn" href="/groups/">Group packages</a></div></div></div></section>
 <section class="sec tight v-studio"><div class="wrap" style="max-width:820px"><div class="sec-head"><h2>Good to <em>know</em></h2></div>{Accordion(policy_items())}</div></section>'''
-    page('/workshops/', 'Art, baking and music workshops in KL · Master Artist Studio Sessions',
-         'Painting, baking, singing, photo and video workshops in Desa Sri Hartamas, KL. See this week, pick a date and book a seat.',
+    page('/workshops/', 'Painting, candle and crochet workshops in KL · Master Artist Studio Sessions',
+         'Themed painting, candle making, crochet and baking workshops in Desa Sri Hartamas, KL. See this week, pick a date and book a seat.',
          body, voice='studio', active='/workshops/', data_attrs=' data-page="workshops"', wa={'msg': "Hi, I'd like to book a workshop. What's on this week? Source: {source}.", 'fmt': 'workshops'})
 
 
@@ -806,8 +814,8 @@ def build_session_day(slots):
         blocks.append(f'<div class="slot" id="t{s["time"].replace(":", "")}">{FactsBlock(items, price_line, "studio")}<div style="margin-top:16px">{action}</div></div>')
     theme = next((s['theme'] for s in slots if s.get('theme')), None)
     t0 = fmt_time(s0['time']) if len(slots) == 1 else ' or '.join(fmt_time(s['time']) for s in slots)
-    h1 = f"{d.strftime('%A')} {d.day} {d.strftime('%B')}, {t0}. <em>{e(f['name'])}.</em>"
-    lede = (e(theme) + '. ' if theme else '') + e(f['summary'])
+    h1 = f"{d.strftime('%A')} {d.day} {d.strftime('%B')}, {t0}. <em>{e(theme or f['name'])}.</em>"
+    lede = e(f['summary'])
     if any(s.get('dine') for s in slots):
         lede += ' Dinner at Savor downstairs is available with this session.'
     more = [x for x in week_from(s0['date']) if x['format'] != f['id']][:8]
@@ -824,7 +832,7 @@ def build_session_day(slots):
     if more:
         body += f'<section class="sec alt v-studio"><div class="wrap"><div class="sec-head"><h2>More this <em>week</em></h2></div>{WeekStrip(more)}</div></section>'
     head_ld = ''.join(ld(event_ld(s, url)) for s in slots)
-    title = f"{f['name']} · {day_date(s0['date'])} {t0} · {rm(s0['price'])} · Master Artist KL"
+    title = f"{theme + ' · ' + f['name'] if theme else f['name']} · {day_date(s0['date'])} {t0} · {rm(s0['price'])} · Master Artist KL"
     page(url, title, f"{f['name']} on {long_date(s0['date'])} at {t0}, {s0['room']}, Desa Sri Hartamas. {rm(s0['price'])}. {f['summary']}",
          body, voice='studio', active='/workshops/', extra_head=head_ld,
          data_attrs=f' data-page="session" data-format="{e(f["id"])}"', wa={'msg': wa_studio(s0), 'fmt': f['id'], 'session': s0['id']})
@@ -1075,7 +1083,7 @@ def build_prices():
     sp = POL['pricing_window'].get('studio_pass')
     extra_rows = []
     aac = FORMATS.get('adult-art-class')
-    if aac:
+    if aac and aac.get('status') != 'paused':
         extra_rows.append(('Adult Art Class (Thursday)', f"drop in, or {aac['pack_size']} for {rm(aac['pack_price'])}", rm(aac['price']), '/workshops/adult-art-class/'))
     extra_rows.append((d['name'], f"Tue and Thu evenings · {rm(d['price_per_pair'])} a pair", f"+{rm(d['price_per_person'])}", None))
     if sp:
@@ -1126,7 +1134,7 @@ def build_gift_vouchers():
     form = WaForm("Hi, I'd like to buy a {voucher} for {to}.{notes} From: {name}. Source: {source}.", fields, 'Buy on WhatsApp', fmt='gift-voucher', done='we will send payment details and your voucher')
     amounts = ' or '.join(rm(a) for a in gv.get('amounts', []))
     body = hero_split('Master Artist Studio Sessions', 'Give a workshop, <em>not a thing</em>',
-                      f'A {amounts} voucher, or a seat at a workshop they will love: painting, baking, singing, photo or video.',
+                      f'A {amounts} voucher, or a seat at a workshop they will love: painting, candle making, crochet or baking.',
                       '', '<a class="btn" href="#buy">Buy a voucher</a><a class="btn ghost" href="/workshops/">See the workshops</a>',
                       '<img src="/golden-shores-workshop-5.jpg" alt="A teacher holding up a finished seascape canvas" width="1200" height="1000" fetchpriority="high">',
                       crumbs(('/', 'Home'), ('/workshops/', 'Workshops'), (None, 'Gift vouchers')))
@@ -1141,7 +1149,7 @@ def build_gift_vouchers():
     ])}</div>
 </div></section>'''
     page('/gift-vouchers/', 'Workshop gift vouchers in KL · painting and baking · Master Artist',
-         f'Gift vouchers for art, baking, singing, photo and video workshops in Desa Sri Hartamas, KL: {amounts} or a seat at a chosen workshop.',
+         f'Gift vouchers for painting, candle making, crochet and baking workshops in Desa Sri Hartamas, KL: {amounts} or a seat at a chosen workshop.',
          body, voice='studio', active='/workshops/', data_attrs=' data-page="gift-vouchers"', wa={'msg': "Hi, I'd like to buy a gift voucher. Source: {source}.", 'fmt': 'gift-voucher'})
 
 

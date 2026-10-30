@@ -4,25 +4,25 @@
   "formats": [
     {
       "id": "textured-canvas",
-      "name": "Textured Canvas",
+      "name": "Textured & Impasto Canvas",
       "discipline": "art",
-      "duration_min": 150,
+      "duration_min": 120,
       "price": 79,
       "pair_price": 140,
       "cap": 18,
       "room": "L2 front room",
       "room_fallback": "L1 front room",
       "audience": "adults",
-      "summary": "One acrylic canvas with texture paste and palette knives, 30x40cm, from a guided monthly theme. Beginner-friendly; take it home the same day.",
+      "summary": "One canvas built up with texture paste or thick impasto paint and palette knives, from a guided theme. Beginner-friendly; take it home the same day.",
       "upsell": "adult-art",
       "dine_addon": true,
-      "live_from": "2026-11-08"
+      "live_from": "2026-11-04"
     },
     {
       "id": "acrylic-canvas",
       "name": "Acrylic Canvas",
       "discipline": "art",
-      "duration_min": 150,
+      "duration_min": 120,
       "price": 69,
       "pair_price": 120,
       "cap": 18,
@@ -32,11 +32,11 @@
       "summary": "One brush-on acrylic canvas, 30x40cm, from a guided theme. The easiest format for a first visit.",
       "upsell": "adult-art",
       "dine_addon": true,
-      "live_from": "2026-11-08"
+      "live_from": "2026-11-04"
     },
     {
       "id": "watercolour-botanicals",
-      "name": "Watercolour Botanicals",
+      "name": "Watercolour",
       "discipline": "art",
       "duration_min": 120,
       "price": 69,
@@ -45,16 +45,16 @@
       "room": "L2 front room",
       "room_fallback": "L1 front room",
       "audience": "adults",
-      "summary": "Two A5 botanical studies on cotton paper, one mounted in a card frame.",
+      "summary": "One watercolour painting on cotton paper from a guided theme: botanicals, fruit, koi. Beginner-friendly; take it home the same day.",
       "upsell": "adult-art",
-      "dine_addon": false,
-      "live_from": "2026-11-08"
+      "dine_addon": true,
+      "live_from": "2026-11-04"
     },
     {
       "id": "bake-lab",
       "name": "Plant-based Bake Lab",
       "discipline": "baking",
-      "duration_min": 150,
+      "duration_min": 120,
       "price": 75,
       "price_specialty": 85,
       "pair_price": 130,
@@ -64,7 +64,7 @@
       "summary": "One plant-based bake, boxed to take home. A familiar bread most weeks (focaccia, pizza dough, cinnamon rolls, bagels, milk bread); specialty breads and cakes at RM85.",
       "upsell": "baking-course",
       "dine_addon": false,
-      "live_from": "2026-11-08",
+      "live_from": "2026-11-04",
       "cap_specialty": 20
     },
     {
@@ -79,7 +79,8 @@
       "summary": "A recorded group performance of one song plus a short solo technique round; the recording is sent to you.",
       "upsell": "voice",
       "dine_addon": true,
-      "live_from": "2026-11-08"
+      "live_from": "2026-11-08",
+      "status": "paused"
     },
     {
       "id": "reels-for-your-business",
@@ -93,7 +94,8 @@
       "summary": "Three short vertical videos of your product, dish or service, shot and edited on your phone, posted before you leave.",
       "upsell": "videography",
       "dine_addon": true,
-      "live_from": "2026-11-08"
+      "live_from": "2026-11-08",
+      "status": "paused"
     },
     {
       "id": "photo-walk-edit",
@@ -107,7 +109,54 @@
       "summary": "A six-image edited set, shot on your phone on a short walk around Sri Hartamas and edited back at the studio.",
       "upsell": "photography",
       "dine_addon": false,
-      "live_from": "2026-11-08"
+      "live_from": "2026-11-08",
+      "status": "paused"
+    },
+    {
+      "id": "glow-canvas",
+      "name": "Glow-in-the-Dark Canvas",
+      "discipline": "art",
+      "duration_min": 120,
+      "price": 85,
+      "pair_price": 150,
+      "cap": 18,
+      "room": "L2 front room",
+      "audience": "adults",
+      "summary": "One canvas painted with glow-in-the-dark acrylics from a guided theme: it looks finished in daylight and lights up when the lights go off.",
+      "upsell": "adult-art",
+      "dine_addon": true,
+      "live_from": "2026-11-04",
+      "_price_status": "SUGGESTED, confirm"
+    },
+    {
+      "id": "candle-making",
+      "name": "Candle Making",
+      "discipline": "craft",
+      "duration_min": 120,
+      "price": 89,
+      "pair_price": 160,
+      "cap": 16,
+      "room": "L1 front room (Savor)",
+      "audience": "all",
+      "summary": "Pour, scent and decorate your own candles in gift-ready jars, from a seasonal theme. Everything boxed to take home.",
+      "dine_addon": false,
+      "live_from": "2026-11-04",
+      "_price_status": "SUGGESTED, confirm"
+    },
+    {
+      "id": "crochet-bag",
+      "name": "Chunky Crochet",
+      "discipline": "craft",
+      "duration_min": 120,
+      "price": 95,
+      "pair_price": 170,
+      "cap": 14,
+      "room": "L2 front room",
+      "audience": "adults and teens",
+      "summary": "Learn the basic stitches with chunky yarn and a big hook, and leave with your own small bag. No experience needed.",
+      "dine_addon": false,
+      "live_from": "2026-11-04",
+      "_price_status": "SUGGESTED, confirm"
     },
     {
       "id": "kids-art-studio",
@@ -127,7 +176,8 @@
       "summary": "A themed canvas or clay piece for ages 6 to 12, running next door to the adult Textured Canvas at the same hour.",
       "upsell": "kids-art",
       "dine_addon": false,
-      "live_from": "2026-11-08"
+      "live_from": "2026-11-08",
+      "status": "paused"
     },
     {
       "id": "parent-child-studio",
@@ -143,7 +193,8 @@
       "summary": "A shared canvas or clay piece, one per parent-and-child pair.",
       "upsell": "kids-art",
       "dine_addon": false,
-      "live_from": "2026-12-01"
+      "live_from": "2026-12-01",
+      "status": "paused"
     },
     {
       "id": "adult-art-class",
@@ -161,7 +212,8 @@
       "upsell": "adult-art",
       "dine_addon": true,
       "dine_timing": "after",
-      "live_from": "2026-11-08"
+      "live_from": "2026-11-08",
+      "status": "paused"
     },
     {
       "id": "baking-course-6wk",
@@ -191,7 +243,7 @@
           "end": "2027-02-15"
         }
       ],
-      "live_from": "2026-11-08"
+      "live_from": "2026-11-04"
     }
   ],
   "addons": {
@@ -343,105 +395,6 @@
   ],
   "weekly_schedule_template": [
     {
-      "day": "Sun",
-      "time": "10:00",
-      "format": "bake-lab",
-      "room": "l1-kitchen"
-    },
-    {
-      "day": "Sun",
-      "time": "10:30",
-      "format": "watercolour-botanicals",
-      "room": "l2-front"
-    },
-    {
-      "day": "Sun",
-      "time": "10:30",
-      "format": "parent-child-studio",
-      "room": "l2-back",
-      "from": "2026-12-01"
-    },
-    {
-      "day": "Sun",
-      "time": "15:00",
-      "format": "textured-canvas",
-      "room": "l2-front"
-    },
-    {
-      "day": "Sun",
-      "time": "15:00",
-      "format": "kids-art-studio",
-      "room": "l2-back"
-    },
-    {
-      "day": "Sun",
-      "time": "15:00",
-      "format": "bake-lab",
-      "room": "l1-kitchen"
-    },
-    {
-      "day": "Sun",
-      "time": "15:00",
-      "format": "photo-walk-edit",
-      "room": "l2-studio",
-      "alternate_weeks_with": "reels-for-your-business"
-    },
-    {
-      "day": "Tue",
-      "time": "10:00",
-      "format": "watercolour-botanicals",
-      "room": "l2-front"
-    },
-    {
-      "day": "Tue",
-      "time": "15:30",
-      "format": "watercolour-botanicals",
-      "room": "l1-front"
-    },
-    {
-      "day": "Tue",
-      "time": "19:30",
-      "format": "textured-canvas",
-      "room": "l2-front",
-      "alternate_weeks_with": "acrylic-canvas",
-      "dine": true
-    },
-    {
-      "day": "Tue",
-      "time": "19:30",
-      "format": "reels-for-your-business",
-      "room": "l2-studio",
-      "dine": true
-    },
-    {
-      "day": "Thu",
-      "time": "10:00",
-      "format": "bake-lab",
-      "room": "l1-kitchen"
-    },
-    {
-      "day": "Thu",
-      "time": "15:00",
-      "format": "bake-lab",
-      "room": "l1-kitchen",
-      "variant": "specialty"
-    },
-    {
-      "day": "Thu",
-      "time": "19:00",
-      "format": "adult-art-class",
-      "room": "l2-front",
-      "dine": true,
-      "dine_timing": "after"
-    },
-    {
-      "day": "Thu",
-      "time": "20:00",
-      "format": "sing-your-song",
-      "room": "l2-studio",
-      "dine": true
-    },
-    {
       "day": "Mon",
       "time": "15:00",
       "format": "baking-course-6wk",
@@ -462,7 +415,6 @@
     ],
     "no_evening_workshops": [
       "Mon",
-      "Wed",
       "Fri",
       "Sun"
     ],
@@ -495,7 +447,12 @@
     ]
   },
   "launch": {
-    "first_public_sessions": "2026-11-08"
+    "first_public_sessions": "2026-11-04",
+    "open_day": {
+      "date": "2026-11-01",
+      "name": "Open Day",
+      "time": null
+    }
   },
   "gift_vouchers": {
     "amounts": [
@@ -504,5 +461,146 @@
     ],
     "any_workshop": true,
     "note": "Spec 03-PROMPTS step 7: RM100, RM200 and any-workshop. Validity period TODO."
+  },
+  "schedule": {
+    "_note": "Dated sessions from Sabrina's schedule (Google Sheet, Nov 2026). Rooms are Claude's guesses: evenings and Sunday art in the L2 front room; candles in the L1 front room; baking in the L1 kitchen.",
+    "sessions": [
+      {
+        "date": "2026-11-04",
+        "time": "19:00",
+        "end": "21:00",
+        "format": "watercolour-botanicals",
+        "theme": "Lemon & Botanical",
+        "room": "l2-front"
+      },
+      {
+        "date": "2026-11-05",
+        "time": "19:30",
+        "end": "21:30",
+        "format": "textured-canvas",
+        "theme": "Autumn Textures",
+        "room": "l2-front"
+      },
+      {
+        "date": "2026-11-08",
+        "time": "10:00",
+        "end": "12:00",
+        "format": "acrylic-canvas",
+        "theme": "Chasing Sunsets",
+        "room": "l2-front"
+      },
+      {
+        "date": "2026-11-08",
+        "time": "15:00",
+        "end": "17:00",
+        "format": "acrylic-canvas",
+        "theme": "Chasing Sunsets",
+        "room": "l2-front"
+      },
+      {
+        "date": "2026-11-10",
+        "time": "19:00",
+        "end": "21:00",
+        "format": "watercolour-botanicals",
+        "theme": "Sweet Layers: Watercolour Cake",
+        "room": "l2-front"
+      },
+      {
+        "date": "2026-11-11",
+        "time": "19:00",
+        "end": "21:00",
+        "format": "textured-canvas",
+        "theme": "Bloom in Texture: Impasto Florals",
+        "room": "l2-front"
+      },
+      {
+        "date": "2026-11-12",
+        "time": "19:30",
+        "end": "21:30",
+        "format": "glow-canvas",
+        "theme": "Starry Night Glow",
+        "room": "l2-front"
+      },
+      {
+        "date": "2026-11-15",
+        "time": "10:00",
+        "end": "12:00",
+        "format": "candle-making",
+        "theme": "Christmas Glow: Candle Making & Gifting",
+        "room": "l1-front"
+      },
+      {
+        "date": "2026-11-15",
+        "time": "15:00",
+        "end": "17:00",
+        "format": "candle-making",
+        "theme": "Christmas Glow: Candle Making & Gifting",
+        "room": "l1-front"
+      },
+      {
+        "date": "2026-11-18",
+        "time": "19:00",
+        "end": "21:00",
+        "format": "watercolour-botanicals",
+        "theme": "Koi & Lotus",
+        "room": "l2-front"
+      },
+      {
+        "date": "2026-11-19",
+        "time": "19:30",
+        "end": "21:30",
+        "format": "glow-canvas",
+        "theme": "Glow Lagoon: Jellyfish",
+        "room": "l2-front"
+      },
+      {
+        "date": "2026-11-22",
+        "time": "10:00",
+        "end": "12:00",
+        "format": "crochet-bag",
+        "theme": "Chunky Yarn Bag",
+        "room": "l2-front"
+      },
+      {
+        "date": "2026-11-22",
+        "time": "15:00",
+        "end": "17:00",
+        "format": "crochet-bag",
+        "theme": "Chunky Yarn Bag",
+        "room": "l2-front"
+      },
+      {
+        "date": "2026-11-25",
+        "time": "19:00",
+        "end": "21:00",
+        "format": "textured-canvas",
+        "theme": "Sunny Bloom: Impasto Sunflower",
+        "room": "l2-front"
+      },
+      {
+        "date": "2026-11-26",
+        "time": "19:30",
+        "end": "21:30",
+        "format": "textured-canvas",
+        "theme": "Golden Impasto Sky",
+        "room": "l2-front"
+      },
+      {
+        "date": "2026-11-29",
+        "time": "10:00",
+        "end": "12:00",
+        "format": "bake-lab",
+        "theme": "Christmas Gingerbread Cookies",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2026-11-29",
+        "time": "15:00",
+        "end": "17:00",
+        "format": "bake-lab",
+        "theme": "Christmas Gingerbread Cookies",
+        "room": "l1-kitchen"
+      }
+    ]
   }
 }

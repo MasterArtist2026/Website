@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Expand the weekly workshop template into dated sessions.
 
-Reads  data/workshops-seed.json  (formats, weekly_schedule_template, closures,
-policies, launch), data/themes.json and data/bookings.json, and writes:
+Reads  data/workshops-seed.json  (formats, weekly_schedule_template, schedule
+(dated sessions with a theme each), closures, policies, launch), data/themes.json and data/bookings.json, and writes:
   data/workshops.json        everything the site renders from
   data/sessions-preview.md   a human-readable list to check by eye
 
@@ -111,63 +111,72 @@ def expand(seed, themes, bookings, holidays, today, days):
     end = today + dt.timedelta(days=days)
     hol = {h['date']: h['name'] for h in holidays}
 
+    def occurrences():
+        """(date, entry, format id) from the weekly template, then from the dated schedule."""
+        for entry in seed.get('weekly_schedule_template', []):
+            weekday = DAY_NAMES.index(entry['day'])
+            d = start + dt.timedelta(days=(weekday - start.weekday()) % 7)
+            week_no = 0
+            while d <= end:
+                fid = entry['format']
+                if entry.get('alternate_weeks_with') and week_no % 2 == 1:
+                    fid = entry['alternate_weeks_with']
+                week_no += 1
+                yield d, entry, fid
+                d += dt.timedelta(days=7)
+        for entry in seed.get('schedule', {}).get('sessions', []):
+            d = dt.date.fromisoformat(entry['date'])
+            if start <= d <= end:
+                yield d, dict(entry, day=DAY_NAMES[d.weekday()]), entry['format']
+
     sessions, skipped = [], []
-    for idx, entry in enumerate(seed['weekly_schedule_template']):
-        weekday = DAY_NAMES.index(entry['day'])
-        d = start + dt.timedelta(days=(weekday - start.weekday()) % 7)
-        week_no = 0
-        while d <= end:
-            fid = entry['format']
-            if entry.get('alternate_weeks_with') and week_no % 2 == 1:
-                fid = entry['alternate_weeks_with']
-            fmt = formats[fid]
-            week_no += 1
-            iso = d.isoformat()
-            live_from = dt.date.fromisoformat(max(fmt.get('live_from', iso), entry.get('from', iso)))
-            if d < live_from:
-                d += dt.timedelta(days=7)
-                continue
-            if closed(entry['day'], entry['time'], closures):
-                skipped.append(f"{iso} {entry['time']} {fid}: closure rule")
-                d += dt.timedelta(days=7)
-                continue
-            sid = f"{fid}-{iso}-{entry['time'].replace(':', '')}"
-            variant = entry.get('variant') if fid == entry['format'] else None
-            price, pair, price_set = price_for(fmt, d, policies, variant)
-            is_hol = iso in hol
-            if is_hol and iso not in waived and price:
-                price = round(price * (1 + surcharge))
-            cap = fmt.get(f'cap_{variant}', fmt.get('cap')) if variant else fmt.get('cap')
-            booked = int(bookings.get(sid, 0))
-            dine = bool(entry.get('dine')) or (fmt.get('dine_addon') and entry['day'] in ('Tue', 'Thu')
-                                                and hm_to_min(entry['time']) >= 18 * 60)
-            end_min = hm_to_min(entry['time']) + fmt.get('duration_min', 0)
-            room_id = entry.get('room')
-            room = next((r['name'] for r in seed.get('rooms', []) if r['id'] == room_id), fmt.get('room'))
-            s = {
-                'id': sid, 'format': fid, 'name': fmt['name'], 'variant': variant, 'discipline': fmt.get('discipline'),
-                'date': iso, 'day': entry['day'], 'time': entry['time'],
-                'end': f'{end_min // 60:02d}:{end_min % 60:02d}',
-                'label': f"{entry['day']} {d.day} {d.strftime('%b')} · {fmt_time(entry['time'])}",
-                'room': room, 'price': price, 'pair_price': pair, 'price_set': price_set,
-                'price_unit': fmt.get('price_unit'), 'cap': cap, 'cap_unit': fmt.get('cap_unit'),
-                'booked': booked, 'seats_left': max(0, cap - booked) if cap else None,
-                'dine': bool(dine), 'dine_timing': entry.get('dine_timing', fmt.get('dine_timing', 'before')),
-                'theme': themes.get(sid), 'public_holiday': hol.get(iso),
-                'surcharge_waived': is_hol and iso in waived,
-                'type': fmt.get('type', 'workshop'),
-            }
-            if fmt.get('bundle'):
-                s['bundle'] = fmt['bundle']
-            if fmt.get('type') == 'course':
-                # Shown only as a cohort start; other weeks are a private/corporate hold
-                starts = {c['start'] for c in fmt.get('cohorts', [])}
-                s['public'] = iso in starts
-                s['note'] = 'Cohort start (runs when 6 are enrolled)' if s['public'] else 'Private / corporate hold'
-            else:
-                s['public'] = True
-            sessions.append(s)
-            d += dt.timedelta(days=7)
+    for d, entry, fid in occurrences():
+        fmt = formats[fid]
+        iso = d.isoformat()
+        if fmt.get('status') == 'paused':
+            continue
+        live_from = dt.date.fromisoformat(max(fmt.get('live_from', iso), entry.get('from', iso)))
+        if d < live_from:
+            continue
+        if closed(entry['day'], entry['time'], closures):
+            skipped.append(f"{iso} {entry['time']} {fid}: closure rule")
+            continue
+        sid = f"{fid}-{iso}-{entry['time'].replace(':', '')}"
+        variant = entry.get('variant') if fid == entry['format'] else None
+        price, pair, price_set = price_for(fmt, d, policies, variant)
+        is_hol = iso in hol
+        if is_hol and iso not in waived and price:
+            price = round(price * (1 + surcharge))
+        cap = fmt.get(f'cap_{variant}', fmt.get('cap')) if variant else fmt.get('cap')
+        booked = int(bookings.get(sid, 0))
+        dine = bool(entry.get('dine')) or (fmt.get('dine_addon') and entry['day'] in ('Tue', 'Thu')
+                                            and hm_to_min(entry['time']) >= 18 * 60)
+        end_min = hm_to_min(entry['end']) if entry.get('end') else hm_to_min(entry['time']) + fmt.get('duration_min', 0)
+        room_id = entry.get('room')
+        room = next((r['name'] for r in seed.get('rooms', []) if r['id'] == room_id), fmt.get('room'))
+        s = {
+            'id': sid, 'format': fid, 'name': fmt['name'], 'variant': variant, 'discipline': fmt.get('discipline'),
+            'date': iso, 'day': entry['day'], 'time': entry['time'],
+            'end': f'{end_min // 60:02d}:{end_min % 60:02d}',
+            'label': f"{entry['day']} {d.day} {d.strftime('%b')} · {fmt_time(entry['time'])}",
+            'room': room, 'price': price, 'pair_price': pair, 'price_set': price_set,
+            'price_unit': fmt.get('price_unit'), 'cap': cap, 'cap_unit': fmt.get('cap_unit'),
+            'booked': booked, 'seats_left': max(0, cap - booked) if cap else None,
+            'dine': bool(dine), 'dine_timing': entry.get('dine_timing', fmt.get('dine_timing', 'before')),
+            'theme': themes.get(sid) or entry.get('theme'), 'public_holiday': hol.get(iso),
+            'surcharge_waived': is_hol and iso in waived,
+            'type': fmt.get('type', 'workshop'),
+        }
+        if fmt.get('bundle'):
+            s['bundle'] = fmt['bundle']
+        if fmt.get('type') == 'course':
+            # Shown only as a cohort start; other weeks are a private/corporate hold
+            starts = {c['start'] for c in fmt.get('cohorts', [])}
+            s['public'] = iso in starts
+            s['note'] = 'Cohort start (runs when 6 are enrolled)' if s['public'] else 'Private / corporate hold'
+        else:
+            s['public'] = True
+        sessions.append(s)
     sessions.sort(key=lambda s: (s['date'], s['time'], s['format']))
 
     # "Sold out — next date": link each session to the next public one of the same format
@@ -217,7 +226,7 @@ def main():
     holidays = load('public-holidays.json', {}).get('holidays', [])
     sessions, skipped = expand(seed, themes, bookings, holidays, today, args.days)
 
-    out = {k: v for k, v in public_seed.items() if k != 'weekly_schedule_template'}
+    out = {k: v for k, v in public_seed.items() if k not in ('weekly_schedule_template', 'schedule')}
     out['generated'] = dt.datetime.now().isoformat(timespec='seconds')
     out['window'] = {'from': today.isoformat(), 'days': args.days}
     out['sessions'] = sessions
