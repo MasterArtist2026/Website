@@ -58,12 +58,15 @@ PHOTOS = {
 }
 
 
-def photo(key, cls=''):
+def photo(key, cls='', label=None, eager=False):
+    """Owned photo, or (TODO) a type panel with the name until a real photo exists."""
     if key in PHOTOS:
         src, alt = PHOTOS[key]
         cls_attr = f' class="{cls}"' if cls else ''
-        return f'<img src="/{src}" alt="{e(alt)}" loading="lazy" width="800" height="600"{cls_attr}>'
-    return f'<div class="ph">TODO: photo — {e(key.replace("-", " "))}</div>'
+        load = 'eager" fetchpriority="high' if eager else 'lazy'
+        return f'<img src="/{src}" alt="{e(alt)}" loading="{load}" width="800" height="600"{cls_attr}>'
+    name = label or (FORMATS.get(key) or {}).get('name') or key.replace('-', ' ').capitalize()
+    return f'<div class="ph{" " + cls if cls else ""}" data-todo="photo: {e(key)}">{e(name)}</div>'
 
 
 def fmt_time(t):
@@ -142,7 +145,7 @@ def SessionCard(s, link=True):
     <h3>{e(s['name'])}</h3>{theme}
     <div class="meta"><b>{day_date(s['date'])} · {fmt_time(s['time'])}–{fmt_time(s['end'])}</b><span>{e(s['room'])}</span></div>
     {price}
-    <div>{' '.join(badges)} {seats_html(s)}</div>
+    <div class="badges">{' '.join(badges)} {seats_html(s)}</div>
     <div class="actions">{action}</div>
   </div>
 </article>'''
@@ -235,6 +238,7 @@ def BookingEmbed(s):
   <div class="total"><span>Total</span><b data-total>{rm(s['price'])}</b></div>
   <button class="btn wa block" type="submit">{WA_ICON}<span>Book on WhatsApp</span></button>
   <p class="note">We confirm your seat and send payment details on WhatsApp. Prepaid; see the policies below.</p>
+  <div class="done" role="status"><b>Thanks, we have your request.</b> Send the WhatsApp message to confirm your seat. Everyone who comes gets a {rm(WS['policies']['trial_voucher']['value'])} voucher for a trial class at Master Artist Academy.</div>
 </form>'''
 
 
@@ -307,7 +311,7 @@ def head(title, desc, canonical, extra=''):
 <link rel="icon" type="image/svg+xml" href="/logo.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Rubik:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@1,9..144,400;1,9..144,500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/ma.css?v={ver('assets/ma.css')}">
 <!-- Google Tag Manager -->
 <script>(function(w,d,s,l,i){{w[l]=w[l]||[];w[l].push({{'gtm.start':new Date().getTime(),event:'gtm.js'}});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);}})(window,document,'script','dataLayer','{t['gtm']}');</script>
@@ -385,15 +389,15 @@ def build_styleguide():
     body = f'''<div class="wrap">
 <section class="sg-section"><h1>Styleguide</h1>
   <p class="muted">Every component in both voices, rendered from the live data. Not linked from the site.</p>
-  <p><button class="btn ghost" data-theme-set="light">Light</button> <button class="btn ghost" data-theme-set="dark">Dark</button></p></section>
+</section>
 
 <section class="sg-section"><h2>Colour</h2><div class="swatches">
-  {sw('Background', '--bg')}{sw('Surface', '--surface')}{sw('Ink', '--ink')}{sw('Muted', '--muted')}{sw('Rule', '--rule')}
-  {sw('Academy', '--academy')}{sw('Academy light', '--academy-light')}{sw('Studio', '--studio')}{sw('Studio light', '--studio-light')}{sw('Highlight', '--highlight')}</div></section>
+  {sw('Purple', '--purple')}{sw('Purple deep', '--purple-deep')}{sw('Gold', '--gold')}{sw('Gold deep', '--gold-deep')}{sw('Gold pale', '--gold-pale')}
+  {sw('Lavender pale', '--lavender-pale')}{sw('Cream', '--bg')}{sw('Surface', '--surface')}{sw('Ink', '--ink')}{sw('Muted', '--muted')}</div></section>
 
 <section class="sg-section"><h2>Type</h2>
-  <h1>Heading 1 · Cormorant Garamond 44</h1><h2>Heading 2 · 32</h2><h3>Heading 3 · 24</h3><h4>Heading 4 · Rubik 18</h4>
-  <p>Body · Rubik 16/1.5. Taught by working artists · you'll actually get better · the room with the view.</p><p class="small muted">Small · 14</p></section>
+  <h1>Heading 1 · Plus Jakarta Sans <em>with a Fraunces accent</em></h1><h2>Heading 2 <em>accent</em></h2><h3>Heading 3</h3>
+  <p>Body · Plus Jakarta Sans 16/1.6. Taught by working artists · you'll actually get better · the room with the view.</p><p class="small muted">Small · 14</p></section>
 
 <section class="sg-section"><h2>Buttons</h2><div class="sg-pair">
   <div class="v-academy"><div class="sg-label">Academy</div><a class="btn" href="#">Book a RM50 trial</a> <a class="btn ghost" href="#">More</a></div>
@@ -428,6 +432,555 @@ def build_styleguide():
          data_attrs=' data-page="styleguide"')
 
 
+# ------------------------------------------------------------------ pages
+COPY = load('programme-copy.json')
+TODAY = dt.date.today()
+START = max(TODAY, dt.date.fromisoformat(WS.get('launch', {}).get('first_public_sessions', TODAY.isoformat()))).isoformat()
+# Workshop sessions shown on Studio Sessions pages (the 6-week course is an Academy programme)
+PUB = [s for s in WS['sessions'] if s['public'] and s.get('type') != 'course' and s['date'] >= START]
+WORKSHOP_FORMATS = [f for f in WS['formats'] if f.get('type') != 'course']
+POL = WS['policies']
+TRIAL = CL['trial']
+PROGS = [p for p in CL['programmes'] if p.get('status') != 'paused']
+EMPTY_WEEK = '<div class="empty">This week&rsquo;s sessions will be up shortly.</div>'
+DAY_FULL = {'Mon': 'Monday', 'Tue': 'Tuesday', 'Wed': 'Wednesday', 'Thu': 'Thursday', 'Fri': 'Friday', 'Sat': 'Saturday', 'Sun': 'Sunday'}
+
+
+def by_format(fid):
+    return [s for s in PUB if s['format'] == fid]
+
+
+def same_day(s):
+    return [x for x in PUB if x['format'] == s['format'] and x['date'] == s['date']]
+
+
+def session_url(s):
+    url = f"/workshops/{s['format']}/{s['date']}/"
+    return url + (f"#t{s['time'].replace(':', '')}" if len(same_day(s)) > 1 else '')
+
+
+def long_date(iso):
+    d = dt.date.fromisoformat(iso)
+    return f"{d.strftime('%A')} {d.day} {d.strftime('%B')}"
+
+
+def fmt_range(r):
+    """'15:00-18:00' -> '3–6pm'; free text passes through."""
+    if not re.match(r'^\d{1,2}:\d{2}-\d{1,2}:\d{2}$', r or ''):
+        return r or ''
+    a, b = r.split('-')
+    ta, tb = fmt_time(a), fmt_time(b)
+    if ta[-2:] == tb[-2:]:
+        ta = ta[:-2]
+    return f'{ta}–{tb}'
+
+
+def slot_text(p):
+    """Group a programme's slots by time: 'Mon, Tue, Wed, Thu 3–6pm · Fri 3–5pm'."""
+    groups = {}
+    for sl in p.get('slots', []):
+        groups.setdefault(sl['time'], []).append(sl['day'])
+    parts = []
+    for t, days in groups.items():
+        d = ', '.join(days)
+        if days == ['Mon', 'Tue', 'Wed', 'Thu']:
+            d = 'Mon–Thu'
+        parts.append((d + ' ' + fmt_range(t)).strip() if t else d)
+    return ' · '.join(parts)
+
+
+def money_from(fmt):
+    if fmt.get('bundle'):
+        return rm(fmt['bundle']['price'])
+    return rm(fmt['price']) + (f" {fmt['price_unit']}" if fmt.get('price_unit') else '')
+
+
+def length(fmt):
+    h, m = divmod(fmt.get('duration_min', 0), 60)
+    return f"{h}h{m:02d}" if m else f"{h} hour{'s' if h != 1 else ''}"
+
+
+def teachers_for(key):
+    return [t for t in TEACHERS if key in t.get('teaches', [])]
+
+
+def TeacherCards(key):
+    cards = []
+    for t in teachers_for(key):
+        img = photo_file(t.get('photo'), t.get('name') or t['role'])
+        cards.append(f'<article class="teach">{img}<h3>{e(t.get("name") or "Joining soon")}</h3><span class="role">{e(t["role"])}</span></article>')
+    return f'<div class="teach-grid">{"".join(cards)}</div>' if cards else ''
+
+
+def photo_file(src, label, eager=False):
+    if src:
+        load = 'eager' if eager else 'lazy'
+        return f'<img src="/{e(src)}" alt="{e(label)}" loading="{load}" width="600" height="600">'
+    return f'<div class="ph" data-todo="photo: {e(label)}">{e(label)}</div>'
+
+
+def Accordion(items):
+    return '<div class="acc-list">' + ''.join(f'<details class="acc"><summary>{e(q)}</summary><div><p>{a}</p></div></details>' for q, a in items) + '</div>'
+
+
+def policy_items():
+    pw = POL['pricing_window']
+    until = dt.date.fromisoformat(pw['until'])
+    waived = ', '.join(long_date(d) for d in POL.get('public_holiday_surcharge_waived_dates', []))
+    return [
+        ('Payment and refunds', f"Seats are {e(POL['refunds'])}. We confirm on WhatsApp and send payment details there."),
+        ('Changing your date', f"Reschedules are {e(POL['reschedule'])}. Please give us {POL['cancel_notice_hours']} hours' notice."),
+        ('Minimum numbers', f"Each session runs with a minimum of {POL['minimum_to_run']} people. If one doesn't reach it, we'll message you to move to another date."),
+        ('Arriving', f"Please arrive {POL['arrive_early_min']} minutes early. We're upstairs, above Savor, at {e(SITE['address']['street'])}."),
+        ('Public holidays', f"Public holiday sessions are {int(POL['public_holiday_surcharge'] * 100)}% more" + (f", except {waived}." if waived else '.')),
+        (f"{pw['name']} prices", f"The prices on this page are {e(pw['name'])} prices, until {until.day} {until.strftime('%B %Y')}."),
+    ]
+
+
+def GoogleReviews(count=2):
+    """Live Google rating and reviews from the google-reviews Edge Function, filled by ma.js."""
+    return (f'<div data-greviews="{count}" hidden></div>'
+            f'<p class="g-fallback"><a class="btn ghost" href="{e(SITE["google"]["maps_url"])}" target="_blank" rel="noopener">Read our Google reviews</a></p>')
+
+
+def ld(obj):
+    return '<script type="application/ld+json">' + json.dumps(obj, ensure_ascii=False).replace('</', '<\\/') + '</script>'
+
+
+def place():
+    a = SITE['address']
+    return {'@type': 'Place', 'name': SITE['name'], 'address': {'@type': 'PostalAddress', 'streetAddress': a['street'], 'addressLocality': a['city'],
+            'postalCode': a['postcode'], 'addressRegion': a['region'], 'addressCountry': a['country']}}
+
+
+def hero_split(eyebrow, h1, lede, facts, ctas, img, crumbs=''):
+    facts_html = f'<p class="hero-facts">{facts}</p>' if facts else ''
+    return f'''<section class="page-hero split-hero on-dark"><div class="wrap">
+  <div>{crumbs}<span class="eyebrow">{eyebrow}</span><h1>{h1}</h1><p>{lede}</p>{facts_html}<div class="hero-cta">{ctas}</div></div>
+  <div class="hero-photo">{img}</div>
+</div></section>'''
+
+
+def hero_band(eyebrow, h1, lede, ctas='', crumbs='', extra=''):
+    return f'''<section class="page-hero on-dark"><div class="wrap">{crumbs}<span class="eyebrow">{eyebrow}</span><h1>{h1}</h1>
+  {f'<p>{lede}</p>' if lede else ''}{f'<div class="hero-cta">{ctas}</div>' if ctas else ''}{extra}</div></section>'''
+
+
+def crumbs(*items):
+    parts = [f'<a href="{h}">{e(l)}</a>' if h else e(l) for h, l in items]
+    return '<nav class="crumbs" aria-label="Breadcrumb">' + ' / '.join(parts) + '</nav>'
+
+
+def week_sessions():
+    end = (dt.date.fromisoformat(START) + dt.timedelta(days=6)).isoformat()
+    return [s for s in PUB if s['date'] <= end]
+
+
+def coming_sunday():
+    sundays = sorted({s['date'] for s in PUB if s['day'] == 'Sun'})
+    return sundays[0] if sundays else None
+
+
+def FormatCard(f):
+    nxt = next((s for s in by_format(f['id']) if s['seats_left'] != 0), None)
+    pair = f'<small>Pair {rm(f["pair_price"])}</small>' if f.get('pair_price') else ''
+    if f.get('bundle'):
+        pair = f'<small>{e(f["bundle"]["name"])}: adult + child · extra child {rm(f["bundle"]["extra_child"])}</small>'
+    when = f'<b>Next: {day_date(nxt["date"])} · {fmt_time(nxt["time"])}</b>' if nxt else '<b>New dates soon</b>'
+    badge = '<span class="badge dine">Dine + workshop available</span>' if f.get('dine_addon') else ''
+    return f'''<article class="card v-studio">
+  {photo(f['id'])}
+  <div class="body">
+    <h3>{e(f['name'])}</h3><div class="sub">{e(f['summary'])}</div>
+    <div class="price">{money_from(f)} {pair}</div>
+    <div class="meta">{when}<span>{e(length(f))} · {e(f['room'])}</span></div>
+    <div class="badges">{badge}</div>
+    <div class="actions"><a class="btn" href="/workshops/{f['id']}/">See dates</a></div>
+  </div>
+</article>'''
+
+
+def SessionGrid(sessions, empty='New dates are on the way. WhatsApp us and we will tell you first.'):
+    if not sessions:
+        return f'<div class="empty">{e(empty)}</div>'
+    return '<div class="grid-cards">' + ''.join(SessionCard(s) for s in sessions) + '</div>'
+
+
+# --- Home -------------------------------------------------------------------
+def build_home():
+    min_ws = min(f['price'] for f in WORKSHOP_FORMATS if f.get('price') and not f.get('price_unit') and f.get('type') != 'class')
+    min_cl = min(p['price_month'] for p in PROGS if p.get('price_month'))
+    groups_from = min(g['price'] for g in WS['groups']['packages'] if g.get('price'))
+    msg = "Hi, I have a question about Master Artist. Source: {source}."
+    sunday = coming_sunday()
+    body = hero_split(
+        'Desa Sri Hartamas · Kuala Lumpur',
+        'Classes and workshops, <em>taught by working artists</em>',
+        'Weekly classes for kids, teens and adults, and one-off workshops in the room with the view: painting, baking, singing, photo and video.',
+        f'<span>Workshops from <b>{rm(min_ws)}</b></span><span>Classes from <b>{rm(min_cl)}</b>/month</span><span><b>{rm(TRIAL["price"])}</b> trial class</span>',
+        f'<a class="btn" href="/workshops/">See this week\'s workshops</a><a class="btn ghost" href="/trial/">Book a {rm(TRIAL["price"])} trial</a>',
+        '<img src="/hero-1.jpg" alt="A painting class at Master Artist" width="1200" height="1000" fetchpriority="high">')
+    doors = f'''<section class="sec"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Three ways in</span><h2>What are you <em>looking for?</em></h2></div>
+  <div class="doors">
+    <a class="door v-academy" href="/classes/">{photo('kids-art-older')}<span class="label">{e(SITE['labels']['academy'])}</span><h3>Weekly classes</h3>
+      <p>Art, voice, photo and video, and baking, in small groups with the same teacher every week. From {rm(min_cl)} a month; start with a {rm(TRIAL['price'])} trial.</p><span class="more">Classes and the trial</span></a>
+    <a class="door v-studio" href="/workshops/">{photo('bake-lab')}<span class="label">{e(SITE['labels']['studio'])}</span><h3>Workshops</h3>
+      <p>One evening or one Sunday: paint a canvas, bake a loaf, record a song. From {rm(min_ws)}, and you take it home.</p><span class="more">This week's workshops</span></a>
+    <a class="door v-studio" href="/groups/"><img src="/golden-shores-workshop-1.jpg" alt="A group workshop at Master Artist" loading="lazy" width="800" height="600"><span class="label">Groups</span><h3>Team days and private groups</h3>
+      <p>Art, baking or mixed team days with rooms running side by side. Packages from {rm(groups_from)}.</p><span class="more">Group packages</span></a>
+  </div></div></section>'''
+    week = week_sessions()
+    strip = WeekStrip(week) if week else EMPTY_WEEK
+    this_week = f'''<section class="sec alt v-studio"><div class="wrap">
+  <div class="sec-row"><div class="sec-head"><span class="eyebrow">Studio Sessions</span><h2>This <em>week</em></h2><p>Pick a session and book a seat. Prices include materials, and you take your work home.</p></div>
+    <div class="hero-cta">{f'<a class="btn" href="/this-sunday/">This Sunday</a>' if sunday else ''}<a class="btn ghost" href="/workshops/">All workshops</a></div></div>
+  {strip}
+</div></section>'''
+    made = '''<section class="sec"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Made here</span><h2>Work that goes <em>home with you</em></h2></div>
+  <div class="photo-row"><div><img src="/painting-1.jpg" alt="Watercolour work on the studio table" loading="lazy" width="600" height="600"></div>
+  <div><img src="/ciabatta-workshop-3.jpg" alt="Loaves from a baking workshop" loading="lazy" width="600" height="600"></div>
+  <div><img src="/craft-jars.jpg" alt="Painted jars from a craft workshop" loading="lazy" width="600" height="600"></div></div>
+</div></section>'''
+    reviews = f'''<section class="sec alt"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Google reviews</span><h2>What people <em>say</em></h2></div>
+  {GoogleReviews(2)}
+</div></section>'''
+    a = SITE['address']
+    visit = f'''<section class="sec" id="visit"><div class="wrap visit-grid">
+  <div><span class="eyebrow">Visit</span><h2>Two floors in <em>Desa Sri Hartamas</em></h2>
+    <p class="muted">{e(a['street'])}, {e(a['postcode'])} {e(a['city'])}, {e(a['note'])}. Classes and workshops run in the L2 front room (the room with the view), the L2 back room, the L2 recording studio and the L1 kitchen.</p>
+    <div class="hero-cta"><a class="btn ghost" href="{e(SITE['google']['maps_url'])}" target="_blank" rel="noopener">Open in Google Maps</a>{WhatsAppButton(msg, 'both')}</div></div>
+  <div>{HoursBlock()}</div>
+</div></section>'''
+    org = {'@context': 'https://schema.org', '@type': 'LocalBusiness', 'name': SITE['name'], 'url': SITE['url'], 'telephone': SITE['phone'],
+           'address': place()['address'], 'geo': {'@type': 'GeoCoordinates', 'latitude': SITE['address']['lat'], 'longitude': SITE['address']['lng']}}
+    page('/', 'Master Artist · Art, voice and baking classes and workshops in Sri Hartamas, KL',
+         f'Weekly classes taught by working artists, and workshops in the room with the view in Desa Sri Hartamas, KL. Workshops from {rm(min_ws)}; classes from {rm(min_cl)}/month; {rm(TRIAL["price"])} trial.',
+         body + doors + this_week + made + reviews + visit, extra_head=ld(org), data_attrs=' data-page="home"')
+
+
+# --- Workshops ----------------------------------------------------------------
+def studio_hero_note():
+    pw = POL['pricing_window']
+    until = dt.date.fromisoformat(pw['until'])
+    return f'<div class="hero-chips"><span>{e(pw["name"])} prices until {until.day} {until.strftime("%B %Y")}</span><span>Materials included</span><span>Take it home the same day</span></div>'
+
+
+def build_workshops_index():
+    week = week_sessions()
+    sunday = coming_sunday()
+    body = hero_band('Master Artist Studio Sessions', 'Workshops in <em>the room with the view</em>',
+                     'Painting, baking, singing, photo and video. One evening or one Sunday, taught properly, with something to take home.',
+                     (f'<a class="btn" href="/this-sunday/">This Sunday</a>' if sunday else '') + '<a class="btn ghost" href="#formats">All workshops</a>',
+                     crumbs(('/', 'Home'), (None, 'Workshops')), studio_hero_note())
+    body += f'''<section class="sec v-studio"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Next seven days</span><h2>This <em>week</em></h2></div>
+  {WeekStrip(week) if week else EMPTY_WEEK}
+</div></section>
+<section class="sec alt v-studio" id="formats"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Choose a workshop</span><h2>Every <em>workshop</em></h2><p>Pick one to see its next dates, then book a seat.</p></div>
+  <div class="grid-cards">{''.join(FormatCard(f) for f in WORKSHOP_FORMATS)}</div>
+</div></section>
+<section class="sec v-studio"><div class="wrap"><div class="cta-card"><div><h2>Bringing a <em>team?</em></h2><p>Art, baking or mixed team days, with rooms running side by side.</p></div>
+  <div class="hero-cta"><a class="btn" href="/groups/">Group packages</a></div></div></div></section>
+<section class="sec tight v-studio"><div class="wrap" style="max-width:820px"><div class="sec-head"><h2>Good to <em>know</em></h2></div>{Accordion(policy_items())}</div></section>'''
+    page('/workshops/', 'Art, baking and music workshops in KL · Master Artist Studio Sessions',
+         'Painting, baking, singing, photo and video workshops in Desa Sri Hartamas, KL. See this week, pick a date and book a seat.',
+         body, voice='studio', active='/workshops/', data_attrs=' data-page="workshops"')
+
+
+def build_format(f):
+    sessions = by_format(f['id'])
+    nxt4 = sessions[:4]
+    rest = sessions[4:]
+    msg = f"Hi, I'd like to book {f['name']}. Which dates have seats? Source: {{source}}."
+    if f.get('bundle'):
+        facts = f'<span>{e(f["bundle"]["name"])} <b>{rm(f["bundle"]["price"])}</b></span><span>Extra child <b>{rm(f["bundle"]["extra_child"])}</b></span>'
+    else:
+        facts = f'<span><b>{money_from(f)}</b></span>' + (f'<span>Pair <b>{rm(f["pair_price"])}</b></span>' if f.get('pair_price') else '')
+        if f.get('price_specialty'):
+            facts += f'<span>Specialty bakes <b>{rm(f["price_specialty"])}</b></span>'
+        if f.get('pack_price'):
+            facts += f'<span>{f["pack_size"]} sessions <b>{rm(f["pack_price"])}</b></span>'
+    facts += f'<span>{e(length(f))}</span><span>{e(f["room"])}</span>'
+    body = hero_split(e(f.get('discipline', '').capitalize() or 'Workshop'), e(f['name']), e(f['summary']), facts,
+                      f'<a class="btn" href="#dates">Choose a date</a>{WhatsAppButton(msg, "studio", "Ask on WhatsApp", cls="btn ghost", fmt=f["id"])}',
+                      photo(f['id'], eager=True), crumbs(('/', 'Home'), ('/workshops/', 'Workshops'), (None, f['name'])))
+    more = ''
+    if rest:
+        more = ('<details class="acc" style="margin-top:20px"><summary>More dates</summary><div><div class="grid-cards">'
+                + ''.join(SessionCard(s) for s in rest) + '</div></div></details>')
+    dine = ''
+    if f.get('dine_addon'):
+        d = WS['addons']['dine']
+        dine = f'<h2>Dine + <em>workshop</em></h2><p>On Tuesday and Thursday evenings, add dinner at Savor downstairs for {rm(d["price_per_person"])} a person ({rm(d["price_per_pair"])} a pair). Choose it when you book.</p>'
+    if f.get('bundle'):
+        b = f['bundle']
+        dine += f'<h2>{e(b["name"])}</h2><p>{rm(b["price"])} for {e(b["includes"])}. Each extra child is {rm(b["extra_child"])}.</p>'
+    team = TeacherCards(f['id'])
+    body += f'''<section class="sec v-studio" id="dates"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Next dates</span><h2>Pick a <em>date</em></h2><p>Seats are limited to {f['cap']}{' ' + e(f['cap_unit']) if f.get('cap_unit') else ''} a session.</p></div>
+  {SessionGrid(nxt4)}{more}
+</div></section>
+<section class="sec alt v-studio"><div class="wrap listing">
+  <div class="prose"><h2 style="margin-top:0">What you'll <em>make</em></h2><p class="lead">{e(f['summary'])}</p>
+    <p>All materials are included. Beginners are welcome: a teacher takes you through it step by step.</p>{dine}
+    {f'<h2>Who runs <em>it</em></h2><p>Taught by working artists from the Master Artist team.</p>{team}' if team else ''}</div>
+  <div class="aside"><h2 style="font-size:26px">Good to <em>know</em></h2>{Accordion(policy_items())}</div>
+</div></section>'''
+    title = f"{f['name']} workshop in KL · {money_from(f)} · Master Artist"
+    page(f"/workshops/{f['id']}/", title, f"{f['summary']} {money_from(f)}, {f['room']}, Desa Sri Hartamas, KL. Pick a date and book a seat.",
+         body, voice='studio', active='/workshops/', data_attrs=f' data-page="format" data-format="{e(f["id"])}"')
+
+
+def SoldOut(s):
+    nxt = next((x for x in PUB if x['id'] == s.get('next_session')), None)
+    btn = f'<a class="btn block" href="{session_url(nxt)}">Sold out — next date {day_date(nxt["date"])}</a>' if nxt else ''
+    return f'<div class="booking v-studio"><h3>This session is sold out</h3><p class="muted">{e(s["name"])} on {day_date(s["date"])} is full.</p>{btn}</div>'
+
+
+def event_ld(s, url):
+    f = FORMATS[s['format']]
+    return {'@context': 'https://schema.org', '@type': 'Event', 'name': f"{s['name']}" + (f" · {s['theme']}" if s.get('theme') else ''),
+            'description': f['summary'], 'startDate': f"{s['date']}T{s['time']}:00+08:00", 'endDate': f"{s['date']}T{s['end']}:00+08:00",
+            'eventStatus': 'https://schema.org/EventScheduled', 'eventAttendanceMode': 'https://schema.org/OfflineEventAttendanceMode',
+            'location': place(), 'image': [SITE['url'] + '/' + PHOTOS[s['format']][0]] if s['format'] in PHOTOS else [],
+            'organizer': {'@type': 'Organization', 'name': SITE['name'], 'url': SITE['url']},
+            'offers': {'@type': 'Offer', 'price': s['price'], 'priceCurrency': 'MYR', 'url': SITE['url'] + url,
+                       'availability': 'https://schema.org/SoldOut' if s['seats_left'] == 0 else 'https://schema.org/InStock'}}
+
+
+def build_session_day(slots):
+    s0 = slots[0]
+    f = FORMATS[s0['format']]
+    url = f"/workshops/{f['id']}/{s0['date']}/"
+    d = dt.date.fromisoformat(s0['date'])
+    times = ''
+    if len(slots) > 1:
+        times = '<div class="times" role="tablist" aria-label="Choose a time">' + ''.join(
+            f'<a href="#t{s["time"].replace(":", "")}" data-slot="t{s["time"].replace(":", "")}"{" aria-current=true" if i == 0 else ""}>{fmt_time(s["time"])}</a>'
+            for i, s in enumerate(slots)) + '</div>'
+    blocks = []
+    for s in slots:
+        price_line = rm(s['price']) + (f" <small>{e(s['price_unit'])}</small>" if s.get('price_unit') else '')
+        if s.get('pair_price'):
+            price_line += f" <small>· pair {rm(s['pair_price'])}</small>"
+        if s.get('bundle'):
+            price_line = f"{rm(s['price'])} <small>{e(s['bundle']['name'])}, adult + child · extra child {rm(s['bundle']['extra_child'])}</small>"
+        items = [('Date', long_date(s['date'])), ('Time', f"{fmt_time(s['time'])}–{fmt_time(s['end'])}"), ('Length', e(length(f))),
+                 ('Room', e(s['room'])), ('Seats', seats_html(s))]
+        if s.get('public_holiday'):
+            items.append(('Holiday', e(s['public_holiday']) + (' · no surcharge' if s.get('surcharge_waived') else '')))
+        action = SoldOut(s) if s['seats_left'] == 0 else BookingEmbed(s)
+        blocks.append(f'<div class="slot" id="t{s["time"].replace(":", "")}">{FactsBlock(items, price_line, "studio")}<div style="margin-top:16px">{action}</div></div>')
+    theme = next((s['theme'] for s in slots if s.get('theme')), None)
+    t0 = fmt_time(s0['time']) if len(slots) == 1 else ' or '.join(fmt_time(s['time']) for s in slots)
+    h1 = f"{d.strftime('%A')} {d.day} {d.strftime('%B')}, {t0}. <em>{e(f['name'])}.</em>"
+    lede = (e(theme) + '. ' if theme else '') + e(f['summary'])
+    if any(s.get('dine') for s in slots):
+        lede += ' Dinner at Savor downstairs is available with this session.'
+    more = [x for x in week_from(s0['date']) if x['format'] != f['id']][:8]
+    team = TeacherCards(f['id'])
+    body = hero_band(e(f['name']), h1, lede, '', crumbs(('/', 'Home'), ('/workshops/', 'Workshops'), (f'/workshops/{f["id"]}/', f['name']), (None, day_date(s0['date']))))
+    body += f'''<section class="sec v-studio"><div class="wrap listing book">
+  <div class="aside">{times}{''.join(blocks)}</div>
+  <div class="prose">{photo(f['id'], cls='rounded')}
+    <h2>What you'll <em>make</em></h2><p class="lead">{e(f['summary'])}</p><p>All materials are included, and beginners are welcome.</p>
+    {f'<h2>Who runs <em>it</em></h2><p>Taught by working artists from the Master Artist team.</p>{team}' if team else ''}
+    <h2>Good to <em>know</em></h2>{Accordion(policy_items())}
+    <p style="margin-top:20px"><a class="btn ghost" href="/workshops/{f['id']}/">Other dates for {e(f['name'])}</a></p></div>
+</div></section>'''
+    if more:
+        body += f'<section class="sec alt v-studio"><div class="wrap"><div class="sec-head"><h2>More this <em>week</em></h2></div>{WeekStrip(more)}</div></section>'
+    head_ld = ''.join(ld(event_ld(s, url)) for s in slots)
+    title = f"{f['name']} · {day_date(s0['date'])} {t0} · {rm(s0['price'])} · Master Artist KL"
+    page(url, title, f"{f['name']} on {long_date(s0['date'])} at {t0}, {s0['room']}, Desa Sri Hartamas. {rm(s0['price'])}. {f['summary']}",
+         body, voice='studio', active='/workshops/', extra_head=head_ld,
+         data_attrs=f' data-page="session" data-format="{e(f["id"])}"')
+
+
+def week_from(iso):
+    end = (dt.date.fromisoformat(iso) + dt.timedelta(days=6)).isoformat()
+    return [s for s in PUB if iso <= s['date'] <= end]
+
+
+def build_this_sunday():
+    sunday = coming_sunday()
+    sessions = [s for s in PUB if s['date'] == sunday and s['seats_left'] != 0] if sunday else []
+    title_day = long_date(sunday).split(' ', 1)[1] if sunday else ''
+    body = hero_band('Master Artist Studio Sessions', f'This Sunday, <em>{e(title_day)}</em>',
+                     'Every session this Sunday that still has seats. Pick one and book.', '',
+                     crumbs(('/', 'Home'), ('/workshops/', 'Workshops'), (None, 'This Sunday')), studio_hero_note())
+    body += f'''<section class="sec v-studio"><div class="wrap">{SessionGrid(sessions, 'This Sunday is full. See the next dates on the workshops page.')}
+  <p style="margin-top:24px"><a class="btn ghost" href="/workshops/">All workshops</a></p></div></section>'''
+    page('/this-sunday/', f'This Sunday at Master Artist · workshops with seats left',
+         'Painting, baking and family workshops this Sunday in Desa Sri Hartamas, KL, with seats left.',
+         body, voice='studio', active='/workshops/', data_attrs=' data-page="this-sunday"')
+
+
+def build_workshops():
+    import shutil
+    for d in (ROOT / 'workshops').glob('*'):
+        if d.is_dir():
+            shutil.rmtree(d)   # dated pages roll daily; regenerate from scratch
+    build_workshops_index()
+    for f in WORKSHOP_FORMATS:
+        build_format(f)
+    days = {}
+    for s in PUB:
+        days.setdefault((s['format'], s['date']), []).append(s)
+    for slots in days.values():
+        build_session_day(sorted(slots, key=lambda s: s['time']))
+    build_this_sunday()
+    return len(days)
+
+
+# --- Classes ----------------------------------------------------------------
+def academy_cta(programme=None):
+    p_msg = programme or {'name': 'a class'}
+    return f'''<div class="cta-card"><div><h2>Start with a <em>{rm(TRIAL["price"])} trial</em></h2><p>One class in the programme you choose. The {rm(TRIAL["price"])} is {e(TRIAL["note"])}.</p></div>
+  <div class="hero-cta"><a class="btn" href="/trial/{f"?programme={programme['id']}" if programme else ''}">Book a {rm(TRIAL["price"])} trial</a>{WhatsAppButton(wa_trial(p_msg), "academy", "WhatsApp us", programme=(programme or {}).get("id", ""), trial=True)}</div></div>'''
+
+
+def build_classes_index():
+    min_cl = min(p['price_month'] for p in PROGS if p.get('price_month'))
+    body = hero_band(e(SITE['labels']['academy']), 'Weekly classes, <em>taught by working artists</em>',
+                     f"Art, voice, photo and video, and baking, in small groups with the same teacher every week. You'll actually get better. From {rm(min_cl)} a month.",
+                     f'<a class="btn" href="/trial/">Book a {rm(TRIAL["price"])} trial</a><a class="btn ghost" href="/holiday-camps/">Holiday camps</a>',
+                     crumbs(('/', 'Home'), (None, 'Classes')))
+    body += f'''<section class="sec v-academy"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Programmes</span><h2>Choose a <em>class</em></h2><p>Monthly, with a showcase every term. Siblings get {int(CL['discounts']['sibling'] * 100)}% off.</p></div>
+  <div class="grid-cards">{''.join(ProgrammeCard(p) for p in PROGS)}</div>
+</div></section>
+<section class="sec tight v-academy"><div class="wrap">{academy_cta()}</div></section>
+<section class="sec alt v-academy"><div class="wrap"><div class="sec-head"><span class="eyebrow">Google reviews</span><h2>What parents and students <em>say</em></h2></div>{GoogleReviews(3)}</div></section>'''
+    page('/classes/', 'Kids art classes, voice lessons and more in Sri Hartamas, KL · Master Artist Academy',
+         f'Weekly art, voice, photo and video, and baking classes in Desa Sri Hartamas, KL, taught by working artists. From {rm(min_cl)}/month; {rm(TRIAL["price"])} trial.',
+         body, voice='academy', active='/classes/', data_attrs=' data-page="classes"')
+
+
+def build_programme(p):
+    c = COPY.get(p['id'], {})
+    cap = p.get('cap')
+    intro = (c.get('intro') or p.get('summary', '')).replace('{cap}', str(cap))
+    if 'price_month' in p:
+        price_line = f"{rm(p['price_month'])}/month <small>· {rm(p['per_session'])} per session</small>"
+        hero_price = f"<span><b>{rm(p['price_month'])}</b>/month</span>"
+    else:
+        price_line = f"{rm(p['price_course'])} <small>· 6 weeks · {rm(p['price_at_bake_lab'])} if you book at a Bake Lab</small>"
+        hero_price = f"<span><b>{rm(p['price_course'])}</b> for 6 weeks</span>"
+    extras = []
+    if p.get('group_price_month'):
+        extras.append(('Group lessons', f"{rm(p['group_price_month'])}/month"))
+    if p.get('adult_price_month'):
+        extras.append(('Adults', f"{rm(p['adult_price_month'])}/month"))
+    if p.get('sibling_or_student_price'):
+        extras.append(('Sibling or student', f"{rm(p['sibling_or_student_price'])}/month"))
+    course = FORMATS.get('baking-course-6wk') if p['id'] == 'baking-course' else None
+    starts = ''
+    if course:
+        nxt = [c_ for c_ in course.get('cohorts', []) if c_['start'] >= TODAY.isoformat()]
+        starts = ' · '.join(f"{long_date(c_['start'])}, {fmt_time(c_['time'])}" for c_ in nxt)
+        extras.append(('Next starts', starts))
+        extras.append(('Runs with', f"at least {p.get('min')} bakers"))
+    teacher_names = ', '.join(t['name'] for t in teachers_for(p['id']) if t.get('name')) or p.get('teacher', '')
+    items = [('Ages', e(c.get('ages', ''))), ('Class size', f'Up to {cap}' if cap else ''), ('Days', e(slot_text(p))),
+             ('Room', e(p.get('room', ''))), ('Teacher', e(teacher_names))] + [(k, e(v)) for k, v in extras]
+    trial_btn = f'<a class="btn" href="/trial/?programme={p["id"]}">Book a {rm(TRIAL["price"])} trial</a>'
+    body = hero_split(e(SITE['labels']['academy']), e(c.get('headline', p['name'])), e(p.get('summary', '')),
+                      hero_price + (f"<span>Ages <b>{e(c['ages'])}</b></span>" if c.get('ages') and c['ages'][0].isdigit() else f"<span>{e(c.get('ages', ''))}</span>") + (f"<span>Up to <b>{cap}</b> a class</span>" if cap else ''),
+                      trial_btn + WhatsAppButton(wa_trial(p), 'academy', 'WhatsApp us', cls='btn ghost', programme=p['id'], trial=True),
+                      photo(p['id'], eager=True, label=p['name']), crumbs(('/', 'Home'), ('/classes/', 'Classes'), (None, p['name'])))
+    levels = ''.join(f'<div class="level"><h3>{e(l["name"])}</h3><p>{e(l["text"])}</p></div>' for l in c.get('levels', []))
+    faqs = [
+        ('How does the trial work?', f"Book one class for {rm(TRIAL['price'])}. If you continue, the {rm(TRIAL['price'])} is {e(TRIAL['note'])}."),
+        ('When exactly is the class?', e(p.get('slot_note') or f"Classes run {slot_text(p)}. We agree the exact time with you at the trial.").capitalize()),
+        ('How big are the classes?', f"Up to {cap} students, so the teacher sees everyone's work every week." if cap else 'Small groups.'),
+        ('What do we need to bring?', e(c.get('bring', 'Nothing; materials are included.'))),
+        ('Are there discounts?', f"Siblings get {int(CL['discounts']['sibling'] * 100)}% off. Refer a friend and you get {rm(CL['discounts']['referral']['referrer_credit'])} credit; they get {rm(CL['discounts']['referral']['new_student_first_month_off'])} off their first month."),
+    ]
+    team = TeacherCards(p['id'])
+    body += f'''<section class="sec v-academy"><div class="wrap listing">
+  <div class="prose"><p class="lead">{e(intro)}</p>
+    <h2>What a term <em>looks like</em></h2><p>{e(p.get('term', ''))}</p><div class="levels">{levels}</div>
+    {f'<h2>Who <em>teaches</em></h2>{team}' if team else ''}</div>
+  <div class="aside">{FactsBlock(items, price_line, 'academy', f'<div class="hero-cta">{trial_btn}</div>')}</div>
+</div></section>
+<section class="sec tight v-academy"><div class="wrap">{academy_cta(p)}</div></section>
+<section class="sec v-academy"><div class="wrap" style="max-width:820px"><div class="sec-head"><h2>Questions <em>parents ask</em></h2></div>{Accordion(faqs)}</div></section>
+<section class="sec alt v-academy"><div class="wrap"><div class="sec-head"><span class="eyebrow">Google reviews</span><h2>What families <em>say</em></h2></div>{GoogleReviews(3)}</div></section>'''
+    course_ld = {'@context': 'https://schema.org', '@type': 'Course', 'name': p['name'], 'description': p.get('summary', ''),
+                 'provider': {'@type': 'Organization', 'name': SITE['labels']['academy'], 'url': SITE['url']},
+                 'offers': {'@type': 'Offer', 'price': p.get('price_month') or p.get('price_course'), 'priceCurrency': 'MYR', 'category': 'Paid'},
+                 'hasCourseInstance': {'@type': 'CourseInstance', 'courseMode': 'onsite', 'location': place()}}
+    title = f"{p['name']} in Sri Hartamas, KL · {rm(p.get('price_month') or p.get('price_course'))}{'/month' if p.get('price_month') else ''} · Master Artist Academy"
+    page(f"/classes/{p['id']}/", title, f"{p.get('summary', '')} {price_line.split(' <')[0]}. {rm(TRIAL['price'])} trial, credited against the first month.",
+         body, voice='academy', active='/classes/', extra_head=ld(course_ld), data_attrs=f' data-page="programme" data-programme="{p["id"]}"')
+
+
+def build_trial():
+    opts = ''.join(f'<option value="{p["id"]}">{e(p["name"])}</option>' for p in PROGS) + '<option value="not-sure">Not sure yet</option>'
+    days = ''.join(f'<option>{d}</option>' for d in ['Any day', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Sunday'])
+    body = hero_band(e(SITE['labels']['academy']), f'Book a <em>{rm(TRIAL["price"])} trial class</em>',
+                     f"One class in the programme you choose, with the teacher who will teach you every week. If you continue, the {rm(TRIAL['price'])} is {e(TRIAL['note'])}.",
+                     '', crumbs(('/', 'Home'), ('/classes/', 'Classes'), (None, 'Trial')))
+    body += f'''<section class="sec v-academy"><div class="wrap listing book">
+  <div class="aside"><form class="booking form trial-form v-academy" novalidate>
+    <h3>Your trial</h3>
+    <div><label for="tp">Programme</label><select id="tp" name="programme" required>{opts}</select></div>
+    <div class="row"><div><label for="tn">Your name</label><input id="tn" name="name" type="text" autocomplete="name" required maxlength="120"></div>
+      <div><label for="ta">Student's age</label><input id="ta" name="age" type="text" inputmode="numeric" maxlength="20"></div></div>
+    <div class="row"><div><label for="tph">Phone / WhatsApp</label><input id="tph" name="phone" type="tel" autocomplete="tel" required maxlength="40"></div>
+      <div><label for="tem">Email <span class="muted">(optional)</span></label><input id="tem" name="email" type="email" autocomplete="email" maxlength="320"></div></div>
+    <div><label for="td">Preferred day</label><select id="td" name="day">{days}</select></div>
+    <div><label for="tm">Anything we should know? <span class="muted">(optional)</span></label><textarea id="tm" name="message" rows="2" maxlength="1000"></textarea></div>
+    <p class="small muted">How we use your details: <a href="/privacy/">PDPA notice</a>.</p>
+    <p class="err" role="alert" hidden></p>
+    <button class="btn block" type="submit">Send and open WhatsApp</button>
+    <div class="done" role="status"><b>Thanks, we have your details.</b> Send the WhatsApp message and we will confirm a time.</div>
+  </form></div>
+  <div class="prose"><h2 style="margin-top:0">How it <em>works</em></h2>
+    <div class="levels"><div class="level"><h3>1 · Tell us</h3><p>Send the form. WhatsApp opens with your details so we can reply quickly.</p></div>
+    <div class="level"><h3>2 · We agree a time</h3><p>We find a class time that suits you and confirm it on WhatsApp.</p></div>
+    <div class="level"><h3>3 · Come and try</h3><p>Meet the teacher and do a real class. Decide afterwards.</p></div></div>
+    <h2>Programmes</h2><p>{' · '.join(f'<a href="/classes/{p["id"]}/">{e(p["name"])}</a>' for p in PROGS)}</p></div>
+</div></section>'''
+    page('/trial/', f'Book a {rm(TRIAL["price"])} trial class · Master Artist Academy, Sri Hartamas KL',
+         f'Try one art, voice, photo and video or baking class for {rm(TRIAL["price"])}, credited in full against your first month.',
+         body, voice='academy', active='/classes/', data_attrs=' data-page="trial"')
+
+
+def build_holiday_camps():
+    cards = []
+    for c in CL['holiday_camps']:
+        msg = f"Hi, I'd like to register interest in the {c['name']} for the school holidays. Source: {{source}}."
+        cards.append(f'''<article class="card v-academy">{photo(c['id'], label=c['name'])}<div class="body">
+  <h3>{e(c['name'])}</h3><div class="price">{rm(c['price'])} <small>Ages {e(c['ages'])}</small></div>
+  <div class="meta"><b>{e(fmt_range(c['time']))} daily</b><span>{e(c['room'])}</span><span>{e(c['dates'].capitalize())}</span></div>
+  <div class="actions">{WhatsAppButton(msg, 'academy', 'Register interest', programme=c['id'])}</div></div></article>''')
+    body = hero_band(e(SITE['labels']['academy']), 'School holiday <em>camps</em>',
+                     'Three mornings with a working artist, in small groups. Dates are announced for each school break.', '',
+                     crumbs(('/', 'Home'), ('/classes/', 'Classes'), (None, 'Holiday camps')))
+    body += f'''<section class="sec v-academy"><div class="wrap"><div class="grid-cards">{''.join(cards)}</div></div></section>
+<section class="sec tight v-academy"><div class="wrap">{academy_cta()}</div></section>'''
+    page('/holiday-camps/', 'School holiday art and photo camps in KL · Master Artist Academy',
+         'Three-day school holiday camps in art and in photo and video for kids and teens, in Desa Sri Hartamas, KL.',
+         body, voice='academy', active='/classes/', data_attrs=' data-page="holiday-camps"')
+
+
+def build_classes():
+    build_classes_index()
+    for p in PROGS:
+        build_programme(p)
+    build_trial()
+    build_holiday_camps()
+
+
 if __name__ == '__main__':
     build_styleguide()
-    print('built /styleguide/')
+    build_home()
+    n = build_workshops()
+    build_classes()
+    print(f'built /, /styleguide/, /workshops/ ({len(WORKSHOP_FORMATS)} formats, {n} dated pages), /this-sunday/, /classes/ ({len(PROGS)} programmes), /trial/, /holiday-camps/')

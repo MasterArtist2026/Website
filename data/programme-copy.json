@@ -1,0 +1,80 @@
+{
+  "_note": "Academy page copy, keyed by programme id. DRAFT written from classes-seed.json summaries: confirm the level descriptions with each teacher before launch. Prices, sizes and times are never written here; they come from classes-seed.json.",
+  "kids-art-younger": {
+    "ages": "5–9",
+    "headline": "Weekly art classes for ages 5 to 9, taught by a working artist.",
+    "intro": "Small groups of up to {cap}, one class a week, the same teacher every week. Children learn to draw what they see, mix their own colours and finish real pieces they are proud to bring home.",
+    "levels": [
+      {"name": "Level 1 · Explore", "text": "Line, shape and colour mixing; drawing from objects on the table; paint, pastel and clay."},
+      {"name": "Level 2 · Build", "text": "Observation drawing, simple composition and layering paint; a small series on one theme."},
+      {"name": "Level 3 · Create", "text": "Their own project from sketch to finished piece, shown at the term showcase."}
+    ],
+    "bring": "Nothing; all materials are included. Clothes that can get paint on them."
+  },
+  "kids-art-older": {
+    "ages": "10–15",
+    "headline": "Weekly art classes for ages 10 to 15, taught by a working artist.",
+    "intro": "Composition, acrylic and watercolour in small groups of up to {cap}, with a portfolio by the end of the year. Good for students who want to get properly better, or who are preparing for art at school.",
+    "levels": [
+      {"name": "Level 1 · Foundations", "text": "Observation drawing, tone, perspective and colour theory."},
+      {"name": "Level 2 · Media", "text": "Acrylic, watercolour and mixed media; studies from life and photographs."},
+      {"name": "Level 3 · Portfolio", "text": "A self-directed series, critiqued each week and shown at the showcase."}
+    ],
+    "bring": "Nothing; all materials are included. A sketchbook of their own is welcome."
+  },
+  "adult-art": {
+    "ages": "Adults",
+    "headline": "A weekly art class for adults: the same teacher, your own project, visible progress.",
+    "intro": "Up to {cap} adults a class. You choose what to work on (drawing, acrylic or watercolour) and carry it week to week with a working artist beside you. Beginners welcome.",
+    "levels": [
+      {"name": "Start", "text": "Drawing and colour basics, with short exercises that build confidence quickly."},
+      {"name": "Develop", "text": "A longer piece in the medium you choose, with one-to-one guidance each week."},
+      {"name": "Finish", "text": "A finished body of work, and a place at the showcase if you want it."}
+    ],
+    "bring": "Nothing; materials are included."
+  },
+  "voice": {
+    "ages": "Kids, teens and adults",
+    "headline": "Voice lessons with Sabrina Hew, recorded so you hear your own progress.",
+    "intro": "Technique, repertoire and performance in the L2 recording studio. Lessons are recorded, so every few weeks you can hear how far you have come.",
+    "levels": [
+      {"name": "Foundations", "text": "Breath, posture, pitch and a healthy, comfortable range."},
+      {"name": "Repertoire", "text": "Songs chosen with you, in the styles you want to sing."},
+      {"name": "Performance", "text": "A recorded performance in the studio and a place at the showcase."}
+    ],
+    "bring": "Water, and a song you love."
+  },
+  "teen-photo-video": {
+    "ages": "13–17",
+    "headline": "A weekly photo and video club for teens: shoot, edit and screen your own work.",
+    "intro": "Up to {cap} teens, every week. They shoot and edit on their phones, post as a club and screen their work once a month. No camera needed.",
+    "levels": [
+      {"name": "Shoot", "text": "Light, framing and movement; short exercises on the phone they already have."},
+      {"name": "Edit", "text": "Cutting, colour and sound in free phone apps."},
+      {"name": "Screen", "text": "A finished short each month, shown at the club screening."}
+    ],
+    "bring": "A charged phone with some free storage."
+  },
+  "photo-video-adult": {
+    "ages": "Adults",
+    "headline": "Weekly photography and videography for adults and small-business owners.",
+    "intro": "Small groups of up to {cap}. Learn to shoot and edit photos and short videos that look professional, for yourself or for your business.",
+    "levels": [
+      {"name": "Basics", "text": "Light, composition and settings on your phone or camera."},
+      {"name": "Projects", "text": "A product, portrait or short-film project of your choice."},
+      {"name": "Publish", "text": "Edit, export and post work you are happy to put your name on."}
+    ],
+    "bring": "Your phone or camera."
+  },
+  "baking-course": {
+    "ages": "Adults and teens 13+",
+    "headline": "A six-week plant-based baking course, from foundations to a bake of your own.",
+    "intro": "Six weekly sessions in the L1 kitchen, up to {cap} bakers. Each week builds on the last, and the final week is a showcase bake you choose yourself.",
+    "levels": [
+      {"name": "Weeks 1–2 · Foundations", "text": "Doughs, proving and shaping; the basics every plant-based bake depends on."},
+      {"name": "Weeks 3–4 · Technique", "text": "Enriched doughs, laminating and plant-based swaps for eggs and butter."},
+      {"name": "Weeks 5–6 · Showcase", "text": "Plan and bake a showcase piece of your own choice."}
+    ],
+    "bring": "An apron if you have one; everything else is provided."
+  }
+}
