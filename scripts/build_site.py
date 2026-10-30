@@ -228,7 +228,7 @@ def BookingEmbed(s):
     when = f"{day_date(s['date'])} at {fmt_time(s['time'])}"
     return f'''<form class="booking v-studio" data-session="{e(s['id'])}" data-format="{e(s['format'])}" data-name="{e(s['name'])}" data-when="{e(when)}"
   data-price="{s['price'] or 0}" data-pair="{s.get('pair_price') or 0}" data-dine="{dine['price_per_person']}" data-dine-pair="{dine['price_per_pair']}" data-booking="whatsapp" data-unit="{msg_unit}">
-  <h3>Book this session</h3>
+  <h2 class="h3">Book this session</h2>
   <div class="row">
     <div><label for="qty">{unit}</label><input id="qty" name="qty" type="number" min="1" max="{s['seats_left'] or 1}" value="1"></div>
     {pair_opt}
@@ -313,7 +313,8 @@ def head(title, desc, canonical, extra=''):
 <link rel="icon" type="image/svg+xml" href="/logo.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@1,9..144,400;1,9..144,500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://www.googletagmanager.com"><link rel="preconnect" href="https://connect.facebook.net">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@1,9..144,500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/ma.css?v={ver('assets/ma.css')}">
 <!-- Google Tag Manager -->
 <script>(function(w,d,s,l,i){{w[l]=w[l]||[];w[l].push({{'gtm.start':new Date().getTime(),event:'gtm.js'}});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);}})(window,document,'script','dataLayer','{t['gtm']}');</script>
@@ -334,7 +335,7 @@ DIRECT_TAGS = f'''<script async src="https://www.googletagmanager.com/gtag/js?id
 _a = SITE['address']
 BUSINESS = {'@context': 'https://schema.org', '@type': ['LocalBusiness', 'EducationalOrganization'], '@id': SITE['url'] + '/#business',
             'name': SITE['name'], 'url': SITE['url'], 'telephone': SITE['phone'], 'email': SITE['email'], 'image': SITE['url'] + '/hero-1.jpg',
-            'logo': SITE['url'] + '/logo.svg', 'sameAs': [SITE['instagram']], 'priceRange': 'RM50–RM2,400',
+            'logo': SITE['url'] + '/logo.svg', 'sameAs': [SITE['instagram']], 'priceRange': f"RM{CL['trial']['price']}–RM{max(g.get('price') or 0 for g in WS['groups']['packages']):,}",
             'address': {'@type': 'PostalAddress', 'streetAddress': _a['street'], 'addressLocality': _a['city'], 'postalCode': _a['postcode'],
                         'addressRegion': _a['region'], 'addressCountry': _a['country']},
             'geo': {'@type': 'GeoCoordinates', 'latitude': _a['lat'], 'longitude': _a['lng']},
@@ -365,21 +366,33 @@ def footer(voice, wa=None):
     a = SITE['address']
     return f'''<footer class="site-foot"><div class="wrap">
   <div class="cols">
-    <div><h4>Visit</h4><p>{e(a['street'])}, {e(a['postcode'])} {e(a['city'])}<br>{e(a['note'].capitalize())}</p></div>
-    <div><h4>Hours</h4>{HoursBlock()}</div>
-    <div><h4>Explore</h4><ul><li><a href="/workshops/">Workshops</a></li><li><a href="/classes/">Classes</a></li><li><a href="/birthdays/">Birthday parties</a></li><li><a href="/groups/">Team days</a></li><li><a href="/gift-vouchers/">Gift vouchers</a></li><li><a href="/teachers/">Teachers</a></li><li><a href="/reviews/">Reviews</a></li><li><a href="/showcase/">Showcase</a></li></ul></div>
-    <div><h4>Contact</h4><ul><li>{wa_attrs(wa, voice, SITE['phone'], cls='')}</li><li><a href="{SITE['instagram']}">Instagram</a></li><li><a href="mailto:{SITE['email']}">{SITE['email']}</a></li></ul></div>
+    <div><h2 class="foot-h">Visit</h2><p>{e(a['street'])}, {e(a['postcode'])} {e(a['city'])}<br>{e(a['note'].capitalize())}</p></div>
+    <div><h2 class="foot-h">Hours</h2>{HoursBlock()}</div>
+    <div><h2 class="foot-h">Explore</h2><ul><li><a href="/workshops/">Workshops</a></li><li><a href="/classes/">Classes</a></li><li><a href="/birthdays/">Birthday parties</a></li><li><a href="/groups/">Team days</a></li><li><a href="/gift-vouchers/">Gift vouchers</a></li><li><a href="/teachers/">Teachers</a></li><li><a href="/reviews/">Reviews</a></li><li><a href="/showcase/">Showcase</a></li></ul></div>
+    <div><h2 class="foot-h">Contact</h2><ul><li>{wa_attrs(wa, voice, SITE['phone'], cls='')}</li><li><a href="{SITE['instagram']}">Instagram</a></li><li><a href="mailto:{SITE['email']}">{SITE['email']}</a></li></ul></div>
   </div>
   <div class="legal"><span>© {dt.date.today().year} Master Artist</span><a href="/privacy/">PDPA notice</a><a href="/terms/">Booking terms</a></div>
 </div></footer>
 {wa_attrs(wa, voice, 'WhatsApp', cls='btn wa wa-float')}'''
 
 
+def responsive_images(doc):
+    """Phones get the 640px copy in assets/img/ (made with sips, see LAUNCH-REPORT.md) when one exists."""
+    def swap(m):
+        src = m.group(1)
+        small = ROOT / 'assets' / 'img' / (pathlib.Path(src).stem + '-640.jpg')
+        if not small.exists():
+            return m.group(0)
+        return (f'<img src="/assets/img/{small.name}" srcset="/assets/img/{small.name} 640w, /{src} 1100w" '
+                f'sizes="(max-width: 700px) 92vw, 560px"')
+    return re.sub(r'<img src="/([^"/]+\.jpg)"', swap, doc)
+
+
 def page(path, title, desc, body, voice='both', active='', data_attrs='', extra_head='', noindex=False, wa=None):
     canonical = SITE['url'] + path
     robots = '<meta name="robots" content="noindex">' if noindex else ''
     doc = f'''<!DOCTYPE html>
-<html lang="en-MY" data-wa="{SITE['whatsapp']}" data-direct-tags="{1 if SITE['tracking'].get('direct_tags', True) else 0}" data-capi="{1 if SITE['tracking'].get('capi') else 0}" data-ads-trial="{SITE['tracking']['ads_labels']['trial_form']}" data-ads-whatsapp="{SITE['tracking']['ads_labels']['whatsapp']}">
+<html lang="en-MY" data-wa="{SITE['whatsapp']}" data-direct-tags="{1 if SITE['tracking'].get('direct_tags', True) else 0}" data-capi="{1 if SITE['tracking'].get('capi') else 0}" data-ads-trial="{SITE['tracking']['ads_labels']['trial_form']}" data-ads-whatsapp="{SITE['tracking']['ads_labels']['whatsapp']}" data-trial-price="{CL['trial']['price']}">
 <head>
 {head(title, desc, canonical, extra_head + robots)}
 </head>
@@ -398,6 +411,7 @@ def page(path, title, desc, body, voice='both', active='', data_attrs='', extra_
         depth = path.count('/') - 1
         GENERATED.append((path, '1.0' if path == '/' else '0.8' if depth <= 1 else '0.7' if depth == 2 else '0.5',
                           'daily' if path.startswith(('/workshops', '/this-sunday')) or path == '/' else 'monthly'))
+    doc = responsive_images(doc)
     out = ROOT / path.strip('/') / 'index.html' if path.endswith('/') else ROOT / path.strip('/')
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(doc)
@@ -431,7 +445,7 @@ def build_styleguide():
   <p>Body · Plus Jakarta Sans 16/1.6. Taught by working artists · you'll actually get better · the room with the view.</p><p class="small muted">Small · 14</p></section>
 
 <section class="sg-section"><h2>Buttons</h2><div class="sg-pair">
-  <div class="v-academy"><div class="sg-label">Academy</div><a class="btn" href="#">Book a RM50 trial</a> <a class="btn ghost" href="#">More</a></div>
+  <div class="v-academy"><div class="sg-label">Academy</div><a class="btn" href="#">Book a {rm(CL['trial']['price'])} trial</a> <a class="btn ghost" href="#">More</a></div>
   <div class="v-studio"><div class="sg-label">Studio Sessions</div><a class="btn" href="#">Book a seat</a> <a class="btn ghost" href="#">See this week</a></div></div>
   <p style="margin-top:16px">{WhatsAppButton(wa_studio(sample), 'studio', 'WhatsAppButton (studio)', fmt=sample['format'], session=sample['id'])}
   {WhatsAppButton(wa_trial(voice_p), 'academy', 'WhatsAppButton (academy trial)', programme=voice_p['id'], trial=True)}</p></section>
@@ -775,7 +789,7 @@ def build_format(f):
 def SoldOut(s):
     nxt = next((x for x in PUB if x['id'] == s.get('next_session')), None)
     btn = f'<a class="btn block" href="{session_url(nxt)}">Sold out — next date {day_date(nxt["date"])}</a>' if nxt else ''
-    return f'<div class="booking v-studio"><h3>This session is sold out</h3><p class="muted">{e(s["name"])} on {day_date(s["date"])} is full.</p>{btn}</div>'
+    return f'<div class="booking v-studio"><h2 class="h3">This session is sold out</h2><p class="muted">{e(s["name"])} on {day_date(s["date"])} is full.</p>{btn}</div>'
 
 
 def event_ld(s, url):
@@ -796,7 +810,7 @@ def build_session_day(slots):
     d = dt.date.fromisoformat(s0['date'])
     times = ''
     if len(slots) > 1:
-        times = '<div class="times" role="tablist" aria-label="Choose a time">' + ''.join(
+        times = '<div class="times" role="group" aria-label="Choose a time">' + ''.join(
             f'<a href="#t{s["time"].replace(":", "")}" data-slot="t{s["time"].replace(":", "")}"{" aria-current=true" if i == 0 else ""}>{fmt_time(s["time"])}</a>'
             for i, s in enumerate(slots)) + '</div>'
     blocks = []
@@ -965,7 +979,7 @@ def build_trial():
                      '', crumbs(('/', 'Home'), ('/classes/', 'Classes'), (None, 'Trial')))
     body += f'''<section class="sec v-academy"><div class="wrap listing book">
   <div class="aside"><form class="booking form trial-form v-academy" novalidate>
-    <h3>Your trial</h3>
+    <h2 class="h3">Your trial</h2>
     <div><label for="tp">Programme</label><select id="tp" name="programme" required>{opts}</select></div>
     <div class="row"><div><label for="tn">Your name</label><input id="tn" name="name" type="text" autocomplete="name" required maxlength="120"></div>
       <div><label for="ta">Student's age</label><input id="ta" name="age" type="text" inputmode="numeric" maxlength="20"></div></div>
@@ -1037,7 +1051,7 @@ def build_groups():
   <div class="actions"><a class="btn" href="?package={q}#quote" data-pick-package="{e(pk['name'])}">Ask for a quote</a></div></div></article>''')
     rooms = ', '.join(g['rooms_in_parallel'][:-1]) + ' and ' + g['rooms_in_parallel'][-1]
     opts = ''.join(f'<option>{e(pk["name"])}</option>' for pk in g['packages']) + '<option>Not sure yet</option>'
-    fields = f'''<h3>Ask for a quote</h3>
+    fields = f'''<h2 class="h3">Ask for a quote</h2>
   <div class="row"><div><label for="gn">Your name</label><input id="gn" name="name" required maxlength="120"></div>
     <div><label for="gc">Company or group <span class="muted">(optional)</span></label><input id="gc" name="company" maxlength="120"></div></div>
   <div><label for="gp">Package</label><select id="gp" name="package">{opts}</select></div>
@@ -1126,7 +1140,7 @@ def build_gift_vouchers():
                     opts += f'<option value="{e(f["name"])} pair voucher ({rm(f["pair_price"])})">{e(f["name"])} for two · {rm(f["pair_price"])}</option>'
             elif f.get('bundle'):
                 opts += f'<option value="{e(f["bundle"]["name"])} voucher ({rm(f["bundle"]["price"])})">{e(f["bundle"]["name"])} · {rm(f["bundle"]["price"])}</option>'
-    fields = f'''<h3>Buy a voucher</h3>
+    fields = f'''<h2 class="h3">Buy a voucher</h2>
   <div><label for="vv">Voucher</label><select id="vv" name="voucher">{opts}</select></div>
   <div class="row"><div><label for="vf">Your name</label><input id="vf" name="name" required maxlength="120"></div>
     <div><label for="vt">Who is it for?</label><input id="vt" name="to" required maxlength="120"></div></div>
@@ -1174,7 +1188,7 @@ def build_birthdays():
   <div class="meta"><b>Ages {e(pk['ages'])} · {e(length(pk))}</b><span>{e(pk['room'])}</span><span>{e(pk['when'])}</span></div>
   <div class="actions"><a class="btn" href="?package={q}#quote" data-pick-package="{e(pk['name'])}">Ask about a date</a></div></div></article>''')
     opts = ''.join(f'<option>{e(pk["name"])}</option>' for pk in b['packages'])
-    fields = f'''<h3>Plan a birthday</h3>
+    fields = f'''<h2 class="h3">Plan a birthday</h2>
   <div><label for="bp">Party</label><select id="bp" name="package">{opts}</select></div>
   <div class="row"><div><label for="bn">Your name</label><input id="bn" name="name" required maxlength="120"></div>
     <div><label for="ba">Birthday child's age <span class="muted">(or "adult")</span></label><input id="ba" name="age" required maxlength="20"></div></div>

@@ -4,6 +4,7 @@
 (function () {
   'use strict';
   var WA = document.documentElement.getAttribute('data-wa') || '60102779426';
+  var TRIAL = Number(document.documentElement.getAttribute('data-trial-price')) || 0;   // from classes-seed.json
   var SB_URL = 'https://fudaosneozobacdalncv.supabase.co';
   var SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1ZGFvc25lb3pvYmFjZGFsbmN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4OTIwNDUsImV4cCI6MjEwMjQ2ODA0NX0.0PKbkncE8goPg-iJlAUacNUa3MjWJSj1ZLeqTpkqPZ0';
 
@@ -56,7 +57,7 @@
     var label = document.documentElement.getAttribute('data-ads-' + (kind === 'trial_form' ? 'trial' : kind));
     if (!label || !window.gtag) return;
     var payload = { send_to: label, transport_type: 'beacon' };
-    if (kind === 'trial_form') { payload.value = 50; payload.currency = 'MYR'; }
+    if (kind === 'trial_form') { payload.value = TRIAL; payload.currency = 'MYR'; }
     try { gtag('event', 'conversion', payload); } catch (e) {}
   }
   // The head filter drops generate_lead hits unless a trial row has just been saved
@@ -242,7 +243,7 @@
         utm_campaign: blank(utm.utm_campaign), utm_content: blank(utm.utm_content), gclid: blank(utm.gclid), fbclid: blank(utm.fbclid),
         landing_page: location.pathname, referrer: blank(document.referrer)
       };
-      var lines = ["Hi, I'd like to book the RM50 trial for " + progLabel + '.', 'Name: ' + name, 'Phone: ' + phone,
+      var lines = ["Hi, I'd like to book the RM" + TRIAL + " trial for " + progLabel + '.', 'Name: ' + name, 'Phone: ' + phone,
         "Student's age: " + (get('age') || '-'), 'Preferred day: ' + (get('day') || '-')];
       if (get('message')) lines.push('', get('message'));
       lines.push('Source: ' + source + '.');
@@ -256,9 +257,9 @@
         form.dataset.sending = ''; btn.disabled = false; btn.textContent = label;
         if (res.status !== 201 && res.status !== 204) throw new Error('HTTP ' + res.status);
         allowLeadHit();
-        track('trial_requested', { voice: 'academy', programme: sel.value, lead_saved: 'yes', value: 50, currency: 'MYR' });
+        track('trial_requested', { voice: 'academy', programme: sel.value, lead_saved: 'yes', value: TRIAL, currency: 'MYR' });
         if (document.documentElement.getAttribute('data-direct-tags') === '1') {
-          try { window.gtag && gtag('event', 'generate_lead', { programme: sel.value, value: 50, currency: 'MYR', transport_type: 'beacon' }); } catch (e) {}
+          try { window.gtag && gtag('event', 'generate_lead', { programme: sel.value, value: TRIAL, currency: 'MYR', transport_type: 'beacon' }); } catch (e) {}
           adsConversion('trial_form');
         }
         window.open(waLink, '_blank', 'noopener');
