@@ -222,12 +222,14 @@ def BookingEmbed(s):
     pair_opt = (f'<div><label for="tk">Ticket</label><select id="tk" name="ticket"><option value="single">Single · {rm(s["price"])}</option>'
                 f'<option value="pair">Pair · {rm(s["pair_price"])}</option></select></div>') if s.get('pair_price') else '<input type="hidden" name="ticket" value="single">'
     dine_opt = (f'<div><label for="dn">Dine at Savor {"after" if s.get("dine_timing") == "after" else "before"}</label><select id="dn" name="dine">'
-                f'<option value="no">No thanks</option><option value="yes">Yes · from {rm(dine["price_from"])} each, paid at Savor</option></select></div>') if s.get('dine') else ''
+                f'<option value="no">No thanks</option><option value="yes">Yes · from {rm(dine["price_from"])} each, ordered online</option></select>'
+                + (f'<p class="note"><a href="{e(dine["order_url"])}" target="_blank" rel="noopener">Choose your meal from Savor\'s menu</a> and pay online.</p>' if dine.get('order_url') else '')
+                + '</div>') if s.get('dine') else ''
     unit = 'Pairs' if s.get('cap_unit') == 'pairs' else 'Families' if s.get('bundle') else 'Seats'
     msg_unit = {'Pairs': 'pair(s)', 'Families': 'Family Sunday ticket(s)'}.get(unit, 'seat(s)')
     when = f"{day_date(s['date'])} at {fmt_time(s['time'])}"
     return f'''<form class="booking v-studio" data-session="{e(s['id'])}" data-format="{e(s['format'])}" data-name="{e(s['name'])}" data-when="{e(when)}"
-  data-price="{s['price'] or 0}" data-pair="{s.get('pair_price') or 0}" data-booking="whatsapp" data-unit="{msg_unit}">
+  data-price="{s['price'] or 0}" data-pair="{s.get('pair_price') or 0}" data-booking="whatsapp" data-unit="{msg_unit}" data-dine-url="{e(dine.get('order_url') or '')}">
   <h2 class="h3">Book this session</h2>
   <div class="row">
     <div><label for="qty">{unit}</label><input id="qty" name="qty" type="number" min="1" max="{s['seats_left'] or 1}" value="1"></div>
@@ -766,7 +768,7 @@ def build_format(f):
     dine = ''
     if f.get('dine_addon'):
         d = WS['addons']['dine']
-        dine = f'<h2>Dine + <em>workshop</em></h2><p>Add a meal at Savor downstairs, chosen from Savor\'s menu: mains from {rm(d["price_from"])} a person, some dishes more. It\'s before an evening session and after a daytime one, and you pay at Savor. Choose it when you book.</p>'
+        dine = f'<h2>Dine + <em>workshop</em></h2><p>Add a meal at Savor downstairs, chosen from Savor\'s menu: mains from {rm(d["price_from"])} a person, some dishes more. It\'s before an evening session and after a daytime one. Choose it when you book, then pick your dish and pay online through Savor\'s menu link.</p>'
     if f.get('bundle'):
         b = f['bundle']
         dine += f'<h2>{e(b["name"])}</h2><p>{rm(b["price"])} for {e(b["includes"])}. Each extra child is {rm(b["extra_child"])}.</p>'
@@ -1099,7 +1101,7 @@ def build_prices():
     aac = FORMATS.get('adult-art-class')
     if aac and aac.get('status') != 'paused':
         extra_rows.append(('Adult Art Class (Thursday)', f"drop in, or {aac['pack_size']} for {rm(aac['pack_price'])}", rm(aac['price']), '/workshops/adult-art-class/'))
-    extra_rows.append((d['name'], "Any workshop · choose from Savor's menu, paid at Savor", f"from {rm(d['price_from'])}", None))
+    extra_rows.append((d['name'], "Any workshop · choose from Savor's menu and pay online", f"from {rm(d['price_from'])}", None))
     if sp:
         extra_rows.append(('Studio Pass', f"{sp['sessions']} workshop seats", rm(sp['launch']), None))
     for pk in g['packages']:
@@ -1334,7 +1336,7 @@ def build_terms():
             f"Each session runs with a minimum of {POL['minimum_to_run']} people. If a session doesn't reach it, we will offer you another date.",
             f"Sessions on public holidays are {int(POL['public_holiday_surcharge'] * 100)}% more, unless the page says otherwise.",
             f"Please arrive {POL['arrive_early_min']} minutes early. Prices shown are {e(pw['name'])} prices until {until.day} {until.strftime('%B %Y')}.",
-            f"Dine + workshop is a meal at Savor downstairs, chosen from Savor's menu (from {rm(WS['addons']['dine']['price_from'])} a person) and paid at Savor, booked with any workshop."]),
+            f"Dine + workshop is a meal at Savor downstairs, chosen from Savor's menu (from {rm(WS['addons']['dine']['price_from'])} a person), added to any workshop and paid online through Savor's menu link."]),
         ('Weekly classes (Master Artist Academy)', [
             f"A trial class is {rm(TRIAL['price'])}. If you continue, the {rm(TRIAL['price'])} is {e(TRIAL['note'])}. There is no obligation to continue.",
             "Monthly fees cover four weekly classes. All materials are included. Classes run subject to minimum numbers.",

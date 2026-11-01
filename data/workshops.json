@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-01T17:09:25",
+ "generated": "2026-11-01T17:10:54",
  "currency": "MYR",
  "formats": [
   {
@@ -247,8 +247,9 @@
   "dine": {
    "name": "Dine + workshop",
    "price_from": 25,
-   "description": "A meal at Savor downstairs with any workshop, chosen from Savor's menu: mains from RM25, some dishes more. Before an evening session, after a daytime one; paid at Savor.",
-   "applies_to": "formats with dine_addon true, every session"
+   "description": "A meal at Savor downstairs with any workshop: choose from Savor's menu and pay online through Savor's Stripe link. Mains from RM25, some dishes more. Before an evening session, after a daytime one.",
+   "applies_to": "formats with dine_addon true, every session",
+   "order_url": null
   }
  },
  "groups": {

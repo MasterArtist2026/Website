@@ -115,7 +115,7 @@ rows.append(([], 'blank'))
 rows.append((['Add-ons, passes and vouchers'], 'section'))
 rows.append((['Item', 'What', 'Price now', 'From 1 May 2027'], 'head'))
 rows.append(([dine['name'], 'A meal at Savor with any workshop (before an evening session, after a daytime one)',
-              f"from {rm(dine['price_from'])} a person (Savor menu; paid at Savor)",
+              f"from {rm(dine['price_from'])} a person (Savor menu; ordered and paid online through Savor's Stripe link)",
               rm(post.get('dine_addon')) or 'to set'], 'row'))
 sp = pol['pricing_window'].get('studio_pass', {})
 if sp:

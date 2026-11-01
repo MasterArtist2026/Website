@@ -136,7 +136,7 @@
       var t = total(), f = t.f;
       var lines = [
         'Hi, I\'d like to book ' + d.name + ' on ' + d.when + '.',
-        (t.isPair ? t.qty + ' pair ticket(s)' : t.qty + ' ' + (d.unit || 'seat(s)')) + ' — RM' + t.sum + '.' + (f.get('dine') === 'yes' ? ' Plus a meal at Savor for ' + t.people + ' (from the menu, paid at Savor).' : '')
+        (t.isPair ? t.qty + ' pair ticket(s)' : t.qty + ' ' + (d.unit || 'seat(s)')) + ' — RM' + t.sum + '.' + (f.get('dine') === 'yes' ? ' Plus a meal at Savor for ' + t.people + (d.dineUrl ? ' (I\'ll order from the menu link).' : ': please send me Savor\'s menu link.') : '')
       ];
       var LABELS = { name: 'Name', child_name: "Child's name", child_age: "Child's age", allergies: 'Allergies or needs', collector: 'Adult collecting' };
       Object.keys(LABELS).forEach(function (k) { if (f.get(k)) lines.push(LABELS[k] + ': ' + f.get(k)); });
