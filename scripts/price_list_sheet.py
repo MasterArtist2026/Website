@@ -32,15 +32,15 @@ if private.exists():
     pass_after = pw.get('studio_pass', {}).get('post_launch')
 
 # 1 May 2027 prices not in the plan yet: suggestions, marked as such
-SUGGESTED_POST = {'glow-canvas': 99, 'candle-making': 109, 'crochet-bag': 119}
+SUGGESTED_POST = {'glow-canvas': 95, 'candle-making': 88, 'crochet-bag': 119}
 WHY = {
     'watercolour-botanicals': 'Entry painting price, as posted on Facebook 1 Nov; drink and materials included.',
-    'acrylic-canvas': 'Same entry price as Watercolour (Facebook 1 Nov).',
-    'textured-canvas': 'RM80 in the first week (5 Nov), RM89 after (Facebook 1 Nov); paste and impasto medium cost more.',
-    'glow-canvas': 'Glow paints cost more; the strongest ad hook of the month (Facebook 1 Nov).',
-    'candle-making': 'Wax, jars and scents; Christmas gifting (Facebook 1 Nov).',
+    'acrylic-canvas': 'Matches The Weekend Workshop (RM88, 30x40cm, no drink); 8 Nov stays RM80 as posted on Facebook.',
+    'textured-canvas': 'Matches The Weekend Workshop painting at RM88; 5 Nov stays RM80 as posted.',
+    'glow-canvas': 'Same RM88 as the other canvases; the strongest ad hook of the month.',
+    'candle-making': 'Matches The Weekend Workshop candle workshops (RM80); Christmas gifting.',
     'crochet-bag': 'Chunky yarn and a hook to take home (Facebook 1 Nov).',
-    'bake-lab': 'Christmas Gingerbread at RM95 (Facebook 1 Nov). Focaccia at RM75 drew 25 people; ciabatta at RM120 drew 12.',
+    'bake-lab': 'RM85: RM10 above the RM75 focaccia that drew 25 people; The Weekend Workshop charges RM88-90.',
     'kids-art-studio': 'Sold only as Family Sunday: adult Textured Canvas plus a child, same hour.',
     'adult-art-class': 'A class, not a party: drop in, or four for the price of about three.',
 }
