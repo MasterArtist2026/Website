@@ -38,10 +38,11 @@
           "time": "15:00-17:00"
         }
       ],
-      "slot_note": "one 60-minute class a week inside these hours; exact time agreed at the trial",
+      "slot_note": "one 2-hour class a week inside these hours; exact time agreed at the trial",
       "teacher": "CY",
       "summary": "Drawing, colour and materials for younger children, taught in small groups by a working artist. Three levels with a certificate at each step.",
-      "term": "Monthly, with a showcase every 10–12 weeks."
+      "term": "Monthly, with a showcase every 10–12 weeks.",
+      "duration_min": 120
     },
     {
       "id": "kids-art-older",
@@ -74,10 +75,11 @@
           "time": "15:00-17:00"
         }
       ],
-      "slot_note": "one 60-minute class a week inside these hours",
+      "slot_note": "one 2-hour class a week inside these hours",
       "teacher": "CY",
       "summary": "Composition, acrylic, watercolour and a portfolio by the end of the year, for older children and early teens.",
-      "term": "Monthly, with a showcase every 10–12 weeks."
+      "term": "Monthly, with a showcase every 10–12 weeks.",
+      "duration_min": 120
     },
     {
       "id": "adult-art",
@@ -91,28 +93,13 @@
       "slots": [
         {
           "day": "Mon",
-          "time": "18:00-19:00"
-        },
-        {
-          "day": "Tue",
-          "time": "18:00-19:00"
-        },
-        {
-          "day": "Wed",
-          "time": "18:00-19:00"
-        },
-        {
-          "day": "Thu",
-          "time": "18:00-19:00"
-        },
-        {
-          "day": "Mon",
           "time": "19:30-21:30"
         }
       ],
       "teacher": "CY",
       "summary": "Weekly adult class with continuity: the same teacher, your own project, visible progress.",
-      "term": "Monthly."
+      "term": "Monthly.",
+      "duration_min": 120
     },
     {
       "id": "voice",
@@ -252,7 +239,7 @@
     }
   },
   "rooms_classes_use": {
-    "L2 front room": "older kids 15:00-18:00 Mon-Thu, adults 18:00-19:00 Mon-Thu, adults Mon 19:30-21:30",
+    "L2 front room": "older kids 15:00-18:00 Mon-Thu, adults Mon 19:30-21:30",
     "L2 back room": "younger kids 15:00-18:00 Mon-Thu, 15:00-17:00 Fri",
     "L2 recording studio": "voice and music lessons, teen club Wed 15:30-17:30"
   },

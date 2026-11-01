@@ -102,6 +102,16 @@ def PhotoRow(key, heading, voice):
 </div></section>'''
 
 
+def per_class(p):
+    """'RM100 per 2-hour class' when the class length is known, else 'RM100 per session'."""
+    m = p.get('duration_min')
+    if not m:
+        return f"{rm(p['per_session'])} per session"
+    h, mm = divmod(m, 60)
+    span = f"{h}-hour" if not mm else f"{m}-minute"
+    return f"{rm(p['per_session'])} per {span} class"
+
+
 def photo(key, cls='', label=None, eager=False):
     """Owned photo, or (TODO) a type panel with the name until a real photo exists."""
     if key in PHOTOS:
@@ -198,7 +208,7 @@ def SessionCard(s, link=True):
 def ProgrammeCard(p):
     """Academy card: photo · name & ages · RM/month (per session) · days · teacher · trial."""
     if 'price_month' in p:
-        price = f'<div class="price">{rm(p["price_month"])}/month <small>{rm(p["per_session"])} per session</small></div>'
+        price = f'<div class="price">{rm(p["price_month"])}/month <small>{per_class(p)}</small></div>'
     else:
         price = f'<div class="price">{rm(p["price_course"])} <small>6-week course</small></div>'
     days = sorted({s['day'] for s in p.get('slots', [])}, key=lambda d: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Mon-Thu', 'by arrangement'].index(d) if d in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Mon-Thu', 'by arrangement'] else 99)
@@ -301,7 +311,7 @@ def PriceTable(voice):
                 continue
             if 'price_month' in p:
                 price = f"{rm(p['price_month'])}/month"
-                extra = f"{rm(p['per_session'])} per session"
+                extra = per_class(p)
                 if p.get('group_price_month'):
                     extra += f" · group {rm(p['group_price_month'])}/month · adults {rm(p['adult_price_month'])}/month"
                 if p.get('sibling_or_student_price'):
@@ -506,7 +516,7 @@ def build_styleguide():
 
 <section class="sg-section"><h2>FactsBlock</h2><div class="sg-pair">
   {FactsBlock([('Date', day_date(sample['date'])), ('Time', fmt_time(sample['time']) + '–' + fmt_time(sample['end'])), ('Room', e(sample['room'])), ('Seats', seats_html(sample))], f"{rm(sample['price'])} <span class='small muted'>· pair {rm(sample['pair_price'])}</span>", 'studio')}
-  {FactsBlock([('Ages', '5–9'), ('Class size', f"max {kids['cap']}"), ('Days', 'Mon–Fri'), ('Room', e(kids['room'])), ('Teacher', e(teacher_for(kids['id'])))], f"{rm(kids['price_month'])}/month <span class='small muted'>· {rm(kids['per_session'])} per session</span>", 'academy')}</div></section>
+  {FactsBlock([('Ages', '5–9'), ('Class size', f"max {kids['cap']}"), ('Days', 'Mon–Fri'), ('Room', e(kids['room'])), ('Teacher', e(teacher_for(kids['id'])))], f"{rm(kids['price_month'])}/month <span class='small muted'>· {per_class(kids)}</span>", 'academy')}</div></section>
 
 <section class="sg-section"><h2>BookingEmbed + ConsentFields</h2><div class="sg-pair">
   <div><div class="sg-label">Adult · Textured Canvas with Dine</div>{BookingEmbed(sample)}</div>
@@ -964,7 +974,7 @@ def build_programme(p):
     cap = p.get('cap')
     intro = (c.get('intro') or p.get('summary', '')).replace('{cap}', str(cap))
     if 'price_month' in p:
-        price_line = f"{rm(p['price_month'])}/month <small>· {rm(p['per_session'])} per session</small>"
+        price_line = f"{rm(p['price_month'])}/month <small>· {per_class(p)}</small>"
         hero_price = f"<span><b>{rm(p['price_month'])}</b>/month</span>"
     else:
         price_line = f"{rm(p['price_course'])} <small>· 6 weeks · {rm(p['price_at_bake_lab'])} if you book at a Bake Lab</small>"
