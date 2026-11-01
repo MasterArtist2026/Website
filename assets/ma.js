@@ -119,12 +119,11 @@
   document.querySelectorAll('form.booking[data-session]').forEach(function (form) {
     var d = form.dataset;
     if (slots.length < 2) startBooking(form);
-    var price = Number(d.price || 0), pair = Number(d.pair || 0), dine = Number(d.dine || 0), dinePair = Number(d.dinePair || 0);
+    var price = Number(d.price || 0), pair = Number(d.pair || 0);
     function total() {
       var f = new FormData(form), qty = Math.max(1, Number(f.get('qty') || 1));
       var isPair = f.get('ticket') === 'pair', people = isPair ? qty * 2 : qty;
       var sum = isPair ? pair * qty : price * qty;
-      if (f.get('dine') === 'yes') sum += isPair ? dinePair * qty : dine * qty;
       var out = form.querySelector('[data-total]');
       if (out) out.textContent = 'RM' + sum.toLocaleString('en-MY');
       return { qty: qty, isPair: isPair, people: people, sum: sum, f: f };
@@ -137,7 +136,7 @@
       var t = total(), f = t.f;
       var lines = [
         'Hi, I\'d like to book ' + d.name + ' on ' + d.when + '.',
-        (t.isPair ? t.qty + ' pair ticket(s)' : t.qty + ' ' + (d.unit || 'seat(s)')) + (f.get('dine') === 'yes' ? ' + Dine' : '') + ' — RM' + t.sum + '.'
+        (t.isPair ? t.qty + ' pair ticket(s)' : t.qty + ' ' + (d.unit || 'seat(s)')) + ' — RM' + t.sum + '.' + (f.get('dine') === 'yes' ? ' Plus a meal at Savor for ' + t.people + ' (from the menu, paid at Savor).' : '')
       ];
       var LABELS = { name: 'Name', child_name: "Child's name", child_age: "Child's age", allergies: 'Allergies or needs', collector: 'Adult collecting' };
       Object.keys(LABELS).forEach(function (k) { if (f.get(k)) lines.push(LABELS[k] + ': ' + f.get(k)); });

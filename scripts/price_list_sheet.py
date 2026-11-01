@@ -101,7 +101,7 @@ for f in ws_seed['formats']:
         if post.get(f'{fid}-specialty'):
             later += f" · specialty {rm(post[f'{fid}-specialty'])}"
     cap = f"{f['cap']}{' ' + f['cap_unit'] if f.get('cap_unit') else ''}"
-    dine_txt = f"+{rm(dine['price_per_person'])}" if f.get('dine_addon') else '—'
+    dine_txt = f"from {rm(dine['price_from'])}" if f.get('dine_addon') else '—'
     suggested = bool(f.get('_price_status'))
     kind = 'sugg' if suggested else 'paused' if status == 'Paused' else 'row'
     rows.append(([f['name'], status + (' · price suggested' if suggested else ''), length(f.get('duration_min')),
@@ -115,7 +115,7 @@ rows.append(([], 'blank'))
 rows.append((['Add-ons, passes and vouchers'], 'section'))
 rows.append((['Item', 'What', 'Price now', 'From 1 May 2027'], 'head'))
 rows.append(([dine['name'], 'A meal at Savor with any workshop (before an evening session, after a daytime one)',
-              f"{rm(dine['price_per_person'])} a person · {rm(dine['price_per_pair'])} a pair",
+              f"from {rm(dine['price_from'])} a person (Savor menu; paid at Savor)",
               rm(post.get('dine_addon')) or 'to set'], 'row'))
 sp = pol['pricing_window'].get('studio_pass', {})
 if sp:

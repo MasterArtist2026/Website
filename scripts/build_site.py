@@ -222,12 +222,12 @@ def BookingEmbed(s):
     pair_opt = (f'<div><label for="tk">Ticket</label><select id="tk" name="ticket"><option value="single">Single · {rm(s["price"])}</option>'
                 f'<option value="pair">Pair · {rm(s["pair_price"])}</option></select></div>') if s.get('pair_price') else '<input type="hidden" name="ticket" value="single">'
     dine_opt = (f'<div><label for="dn">Dine at Savor {"after" if s.get("dine_timing") == "after" else "before"}</label><select id="dn" name="dine">'
-                f'<option value="no">No thanks</option><option value="yes">Yes · +{rm(dine["price_per_person"])} each ({rm(dine["price_per_pair"])} a pair)</option></select></div>') if s.get('dine') else ''
+                f'<option value="no">No thanks</option><option value="yes">Yes · from {rm(dine["price_from"])} each, paid at Savor</option></select></div>') if s.get('dine') else ''
     unit = 'Pairs' if s.get('cap_unit') == 'pairs' else 'Families' if s.get('bundle') else 'Seats'
     msg_unit = {'Pairs': 'pair(s)', 'Families': 'Family Sunday ticket(s)'}.get(unit, 'seat(s)')
     when = f"{day_date(s['date'])} at {fmt_time(s['time'])}"
     return f'''<form class="booking v-studio" data-session="{e(s['id'])}" data-format="{e(s['format'])}" data-name="{e(s['name'])}" data-when="{e(when)}"
-  data-price="{s['price'] or 0}" data-pair="{s.get('pair_price') or 0}" data-dine="{dine['price_per_person']}" data-dine-pair="{dine['price_per_pair']}" data-booking="whatsapp" data-unit="{msg_unit}">
+  data-price="{s['price'] or 0}" data-pair="{s.get('pair_price') or 0}" data-booking="whatsapp" data-unit="{msg_unit}">
   <h2 class="h3">Book this session</h2>
   <div class="row">
     <div><label for="qty">{unit}</label><input id="qty" name="qty" type="number" min="1" max="{s['seats_left'] or 1}" value="1"></div>
@@ -281,7 +281,7 @@ def PriceTable(voice):
     pw = WS['policies']['pricing_window']
     until = dt.date.fromisoformat(pw['until'])
     note = (f'<p class="price-note">{e(pw["name"])} prices until {until.day} {until.strftime("%B %Y")}. '
-            f'Dine + workshop {rm(WS["addons"]["dine"]["price_per_person"])} a person. Minimum {WS["policies"]["minimum_to_run"]} to run.</p>')
+            f'Dine + workshop: a meal at Savor from {rm(WS["addons"]["dine"]["price_from"])} a person. Minimum {WS["policies"]["minimum_to_run"]} to run.</p>')
     return f'<div class="v-studio"><table class="price-table"><caption>Studio Sessions · workshops</caption><thead><tr><th>Workshop</th><th>Details</th><th>Price</th></tr></thead><tbody>{"".join(rows)}</tbody></table>{note}</div>'
 
 
@@ -766,7 +766,7 @@ def build_format(f):
     dine = ''
     if f.get('dine_addon'):
         d = WS['addons']['dine']
-        dine = f'<h2>Dine + <em>workshop</em></h2><p>Add a meal at Savor downstairs for {rm(d["price_per_person"])} a person ({rm(d["price_per_pair"])} a pair): before an evening session, after a daytime one. Choose it when you book.</p>'
+        dine = f'<h2>Dine + <em>workshop</em></h2><p>Add a meal at Savor downstairs, chosen from Savor\'s menu: mains from {rm(d["price_from"])} a person, some dishes more. It\'s before an evening session and after a daytime one, and you pay at Savor. Choose it when you book.</p>'
     if f.get('bundle'):
         b = f['bundle']
         dine += f'<h2>{e(b["name"])}</h2><p>{rm(b["price"])} for {e(b["includes"])}. Each extra child is {rm(b["extra_child"])}.</p>'
@@ -831,7 +831,7 @@ def build_session_day(slots):
     h1 = f"{d.strftime('%A')} {d.day} {d.strftime('%B')}, {t0}. <em>{e(theme or f['name'])}.</em>"
     lede = e(f['summary'])
     if any(s.get('dine') for s in slots):
-        lede += f" Add a meal at Savor downstairs for {rm(WS['addons']['dine']['price_per_person'])}."
+        lede += f" Add a meal at Savor downstairs, from {rm(WS['addons']['dine']['price_from'])}."
     more = [x for x in week_from(s0['date']) if x['format'] != f['id']][:8]
     team = TeacherCards(f['id'])
     body = hero_band(e(f['name']), h1, lede, '', crumbs(('/', 'Home'), ('/workshops/', 'Workshops'), (f'/workshops/{f["id"]}/', f['name']), (None, day_date(s0['date']))))
@@ -1099,7 +1099,7 @@ def build_prices():
     aac = FORMATS.get('adult-art-class')
     if aac and aac.get('status') != 'paused':
         extra_rows.append(('Adult Art Class (Thursday)', f"drop in, or {aac['pack_size']} for {rm(aac['pack_price'])}", rm(aac['price']), '/workshops/adult-art-class/'))
-    extra_rows.append((d['name'], f"Any workshop · {rm(d['price_per_pair'])} a pair", f"+{rm(d['price_per_person'])}", None))
+    extra_rows.append((d['name'], "Any workshop · choose from Savor's menu, paid at Savor", f"from {rm(d['price_from'])}", None))
     if sp:
         extra_rows.append(('Studio Pass', f"{sp['sessions']} workshop seats", rm(sp['launch']), None))
     for pk in g['packages']:
@@ -1334,7 +1334,7 @@ def build_terms():
             f"Each session runs with a minimum of {POL['minimum_to_run']} people. If a session doesn't reach it, we will offer you another date.",
             f"Sessions on public holidays are {int(POL['public_holiday_surcharge'] * 100)}% more, unless the page says otherwise.",
             f"Please arrive {POL['arrive_early_min']} minutes early. Prices shown are {e(pw['name'])} prices until {until.day} {until.strftime('%B %Y')}.",
-            f"Dine + workshop is a meal at Savor downstairs ({rm(WS['addons']['dine']['price_per_person'])} a person), booked with any workshop."]),
+            f"Dine + workshop is a meal at Savor downstairs, chosen from Savor's menu (from {rm(WS['addons']['dine']['price_from'])} a person) and paid at Savor, booked with any workshop."]),
         ('Weekly classes (Master Artist Academy)', [
             f"A trial class is {rm(TRIAL['price'])}. If you continue, the {rm(TRIAL['price'])} is {e(TRIAL['note'])}. There is no obligation to continue.",
             "Monthly fees cover four weekly classes. All materials are included. Classes run subject to minimum numbers.",

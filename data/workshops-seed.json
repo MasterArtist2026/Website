@@ -246,9 +246,8 @@
   "addons": {
     "dine": {
       "name": "Dine + workshop",
-      "price_per_person": 25,
-      "price_per_pair": 50,
-      "description": "A meal at Savor downstairs with any workshop: before an evening session, after a daytime one.",
+      "price_from": 25,
+      "description": "A meal at Savor downstairs with any workshop, chosen from Savor's menu: mains from RM25, some dishes more. Before an evening session, after a daytime one; paid at Savor.",
       "applies_to": "formats with dine_addon true, every session"
     }
   },
