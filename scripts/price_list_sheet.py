@@ -159,6 +159,8 @@ for p in cl['programmes']:
         rows.append(([p['name'], 'Paused', '', p.get('note', ''), '', ''], 'paused'))
         continue
     other = []
+    if p.get('term_price'):
+        other.append(f"{p['term_classes']}-class term {rm(p['term_price'])}")
     if p.get('group_price_month'):
         other.append(f"group {rm(p['group_price_month'])}/month")
     if p.get('adult_price_month'):

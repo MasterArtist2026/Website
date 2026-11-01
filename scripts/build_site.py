@@ -312,6 +312,8 @@ def PriceTable(voice):
             if 'price_month' in p:
                 price = f"{rm(p['price_month'])}/month"
                 extra = per_class(p)
+                if p.get('term_price'):
+                    extra += f" · {p['term_classes']} classes {rm(p['term_price'])}"
                 if p.get('group_price_month'):
                     extra += f" · group {rm(p['group_price_month'])}/month · adults {rm(p['adult_price_month'])}/month"
                 if p.get('sibling_or_student_price'):
@@ -980,6 +982,8 @@ def build_programme(p):
         price_line = f"{rm(p['price_course'])} <small>· 6 weeks · {rm(p['price_at_bake_lab'])} if you book at a Bake Lab</small>"
         hero_price = f"<span><b>{rm(p['price_course'])}</b> for 6 weeks</span>"
     extras = []
+    if p.get('term_price'):
+        extras.append((f"{p['term_classes']}-class term", f"{rm(p['term_price'])} ({rm(round(p['term_price'] / p['term_classes']))} a class)"))
     if p.get('group_price_month'):
         extras.append(('Group lessons', f"{rm(p['group_price_month'])}/month"))
     if p.get('adult_price_month'):

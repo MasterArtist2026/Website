@@ -12,8 +12,8 @@
       "voice": "academy",
       "name": "Kids Art (ages 5–9)",
       "discipline": "art",
-      "price_month": 400,
-      "per_session": 100,
+      "price_month": 320,
+      "per_session": 80,
       "cap": 8,
       "room": "L2 back room",
       "slots": [
@@ -42,15 +42,17 @@
       "teacher": "CY",
       "summary": "Drawing, colour and materials for younger children, taught in small groups by a working artist. Three levels with a certificate at each step.",
       "term": "Monthly, with a showcase every 10–12 weeks.",
-      "duration_min": 120
+      "duration_min": 120,
+      "term_price": 840,
+      "term_classes": 12
     },
     {
       "id": "kids-art-older",
       "voice": "academy",
       "name": "Kids Art (ages 10–15)",
       "discipline": "art",
-      "price_month": 440,
-      "per_session": 110,
+      "price_month": 320,
+      "per_session": 80,
       "cap": 8,
       "room": "L2 front room",
       "slots": [
@@ -79,15 +81,17 @@
       "teacher": "CY",
       "summary": "Composition, acrylic, watercolour and a portfolio by the end of the year, for older children and early teens.",
       "term": "Monthly, with a showcase every 10–12 weeks.",
-      "duration_min": 120
+      "duration_min": 120,
+      "term_price": 840,
+      "term_classes": 12
     },
     {
       "id": "adult-art",
       "voice": "academy",
       "name": "Adult Art",
       "discipline": "art",
-      "price_month": 480,
-      "per_session": 120,
+      "price_month": 320,
+      "per_session": 80,
       "cap": 8,
       "room": "L2 front room",
       "slots": [
@@ -99,7 +103,9 @@
       "teacher": "CY",
       "summary": "Weekly adult class with continuity: the same teacher, your own project, visible progress.",
       "term": "Monthly.",
-      "duration_min": 120
+      "duration_min": 120,
+      "term_price": 840,
+      "term_classes": 12
     },
     {
       "id": "voice",
