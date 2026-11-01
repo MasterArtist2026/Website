@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-01T16:01:13",
+ "generated": "2026-11-01T16:57:50",
  "currency": "MYR",
  "formats": [
   {
@@ -368,13 +368,6 @@
     "Wed",
     "Thu",
     "Fri-morning-only"
-   ],
-   "blocked": [
-    {
-     "day": "Sun",
-     "until": "13:00",
-     "reason": "Savor needs the kitchen over Sunday lunch"
-    }
    ]
   },
   {
@@ -989,6 +982,35 @@
    "type": "workshop",
    "public": true,
    "next_session": null
+  },
+  {
+   "id": "bake-lab-2026-11-29-1000",
+   "format": "bake-lab",
+   "name": "Plant-based Bake Lab",
+   "variant": null,
+   "discipline": "baking",
+   "date": "2026-11-29",
+   "day": "Sun",
+   "time": "10:00",
+   "end": "12:00",
+   "label": "Sun 29 Nov · 10am",
+   "room": "L1 kitchen (Savor)",
+   "price": 95,
+   "pair_price": 171,
+   "price_set": "launch",
+   "price_unit": null,
+   "cap": 20,
+   "cap_unit": null,
+   "booked": 0,
+   "seats_left": 20,
+   "dine": true,
+   "dine_timing": "after",
+   "theme": "Christmas Gingerbread Cookies",
+   "public_holiday": null,
+   "surcharge_waived": false,
+   "type": "workshop",
+   "public": true,
+   "next_session": "bake-lab-2026-11-29-1500"
   },
   {
    "id": "bake-lab-2026-11-29-1500",
