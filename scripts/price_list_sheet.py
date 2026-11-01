@@ -6,12 +6,14 @@ groups, birthdays, vouchers and Academy classes. Reads data/workshops-seed.json,
 data/classes-seed.json and, if present, the git-ignored data/private/workshops-private.json
 (unannounced prices), so the sheet is internal: never publish it.
 
-Usage: python3 scripts/price_list_sheet.py <workbook.xlsx>   (needs openpyxl)
-Rerun after any price change; the sheet is replaced each time.
+Usage: python3 scripts/price_list_sheet.py <workbook vN.xlsx>   (needs openpyxl)
+Rerun after any price change; the sheet is replaced each time. Workbooks are versioned: save each
+rebuild as the next vN (never overwrite an earlier version); the version shows in the sheet title.
 """
 import datetime as dt
 import json
 import pathlib
+import re
 import sys
 
 import openpyxl
@@ -64,7 +66,8 @@ def length(m):
     return f'{h}h{mm:02d}' if mm else f'{h}h'
 
 
-rows.append((['Price List · Master Artist'], 'title'))
+version = re.search(r'\bv(\d+)\b', pathlib.Path(sys.argv[1]).stem)
+rows.append(([f"Price List · Master Artist{f' · workbook v{version.group(1)}' if version else ''}"], 'title'))
 rows.append(([f'Internal: includes prices not yet announced (1 May 2027). Do not post or forward outside the team. '
               f'Built {dt.date.today():%d %b %Y} from the website data; yellow = suggested, not yet confirmed.'], 'note'))
 rows.append(([], 'blank'))
