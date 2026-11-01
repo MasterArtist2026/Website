@@ -368,3 +368,55 @@ details.acc > div p:last-child { margin: 0; }
 .article .prose blockquote { margin: 24px 0; padding: 4px 20px; border-left: 3px solid var(--gold); }
 .article .prose table { border-collapse: collapse; width: 100%; font-size: 15px; }
 .article .prose th, .article .prose td { border-bottom: 1px solid var(--rule); padding: 8px; text-align: left; }
+
+/* ---------- photo heroes: a real photo behind the purple band ---------- */
+.page-hero.has-photo { background: var(--purple-deep); }
+.page-hero.has-photo::after { display: none; }
+.hero-bg { position: absolute; inset: 0; z-index: 0; }
+.hero-bg img { width: 100%; height: 100%; object-fit: cover; }
+.hero-bg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, rgba(42, 18, 64, .95) 0%, rgba(42, 18, 64, .85) 45%, rgba(42, 18, 64, .35) 100%); }
+.has-photo h1, .has-photo p, .split-hero h1 { text-shadow: 0 1px 14px rgba(20, 8, 32, .45); }
+@media (max-width: 780px) {
+  .page-hero.has-photo { padding-top: 140px; }
+  .page-hero.has-photo.compact { padding-top: 24px; }
+  .page-hero.compact .hero-bg::after { background: rgba(42, 18, 64, .84); }
+  .hero-bg::after { background: linear-gradient(180deg, rgba(42, 18, 64, .15) 0%, rgba(42, 18, 64, .8) 150px, rgba(42, 18, 64, .96) 100%); }
+}
+/* split heroes on phones: the photo goes behind the text instead of below it */
+@media (max-width: 960px) {
+  .split-hero { padding-top: 150px; }
+  .split-hero .wrap { position: static; }
+  .split-hero .wrap > div:first-child { position: relative; z-index: 1; }
+  .split-hero .hero-photo { position: absolute; inset: 0; z-index: 0; border: 0; border-radius: 0; aspect-ratio: auto; }
+  .split-hero .hero-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(42, 18, 64, .15) 0%, rgba(42, 18, 64, .8) 160px, rgba(42, 18, 64, .96) 100%); }
+  .split-hero .hero-photo:has(.ph) { display: none; }
+  .split-hero:has(.hero-photo .ph) { padding-top: 24px; }
+}
+
+/* ---------- icon facts ---------- */
+.i { width: 22px; height: 22px; flex: none; }
+.icon-facts { list-style: none; padding: 0; margin: 20px 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+@media (max-width: 600px) {
+  .icon-facts { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .icon-facts li { flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px; font-size: 14px; }
+  .icon-facts .ic { width: 34px; height: 34px; }
+}
+.icon-facts li { display: flex; gap: 12px; align-items: center; background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius-sm); padding: 10px 14px; font-weight: 600; font-size: 15px; line-height: 1.35; color: var(--ink); }
+.icon-facts .ic, .steps .ic { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--gold-pale); color: var(--gold-text); }
+.icon-facts.v-academy .ic, .v-academy .icon-facts .ic { background: var(--lavender-pale); color: var(--purple); }
+.hero-chips span { display: inline-flex; align-items: center; gap: 6px; }
+.hero-chips .i { width: 16px; height: 16px; color: var(--gold); }
+
+/* ---------- steps (groups) ---------- */
+.steps { list-style: none; padding: 0; margin: 20px 0 8px; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.steps li { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius-sm); padding: 16px; display: grid; gap: 4px; align-content: start; }
+.steps li b { font-size: 16px; color: var(--purple); margin-top: 6px; }
+.steps li > span:last-child { color: var(--muted); font-size: 14.5px; }
+
+/* ---------- graphic placeholders until a real photo exists ---------- */
+.ph { flex-direction: column; gap: 10px; }
+.ph .i { width: 64px; height: 64px; stroke-width: 1.2; opacity: .8; }
+
+/* ---------- photo strip above price tables ---------- */
+.photo-row.strip { margin-bottom: 24px; }
+.photo-row.strip > * { aspect-ratio: 4/3; }

@@ -112,6 +112,52 @@ def per_class(p):
     return f"{rm(p['per_session'])} per {span} class"
 
 
+# Line icons (24px, stroke = currentColor) for fact rows, chips and photo placeholders.
+_IC = {
+    'clock': '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    'palette': '<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5c0-4-4-7.4-9-7.4z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/>',
+    'cup': '<path d="M5 8h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 9h1.5a2.5 2.5 0 0 1 0 5H16M8 3v2M11 3v2M14 3v2"/>',
+    'bag': '<path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+    'users': '<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.5a5 5 0 0 1 5 5.5"/>',
+    'star': '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+    'tag': '<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.5"/>',
+    'fork': '<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 21V3c-2 0-3.5 2.5-3.5 6s1.5 4 3.5 4"/>',
+    'pin': '<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+    'calendar': '<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
+    'chat': '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>',
+    'brush': '<path d="M14 4l6 6-8 8-3-3"/><path d="M9 15c-2 0-4 1.5-4 4 0 .6-.4 1-1 1 1.3 1 6 1.5 7-3z"/>',
+    'mic': '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
+    'camera': '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+    'whisk': '<path d="M12 21v-7"/><path d="M12 14c-3 0-5-4-5-7a5 5 0 0 1 10 0c0 3-2 7-5 7z"/><path d="M12 14c-1.2 0-2-4-2-7s.8-5 2-5 2 2 2 5-.8 7-2 7z"/>',
+    'candle': '<rect x="8" y="10" width="8" height="11" rx="1"/><path d="M12 10V8M12 3c1.5 1.6 1.5 3 0 4-1.5-1-1.5-2.4 0-4z"/>',
+    'yarn': '<circle cx="12" cy="12" r="8"/><path d="M5 9c4 0 9 2 12 8M8 5c3 2 6 6 7 12M4.5 14c3-1 7 0 10 4"/>',
+    'moon': '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/><path d="M17 3v3M15.5 4.5h3"/>',
+    'cake': '<path d="M4 21h16v-8H4zM4 16c2 1.5 4 1.5 5.3 0 1.4 1.5 3.4 1.5 5.4 0 1.3 1.5 3.3 1.5 5.3 0M12 13V9M12 4c1 1.2 1 2.2 0 3-1-.8-1-1.8 0-3z"/>',
+    'steps': '<path d="M4 20h5v-5h5v-5h6"/><path d="M14 4h6v6"/>',
+}
+
+
+def icon(name):
+    return (f'<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" '
+            f'stroke-linejoin="round" aria-hidden="true">{_IC[name]}</svg>')
+
+
+def IconFacts(items, cls=''):
+    """A short list of facts, each with an icon: [(icon, html), ...]. Replaces paragraphs of small print."""
+    lis = ''.join(f'<li><span class="ic">{icon(i)}</span><span>{t}</span></li>' for i, t in items if t)
+    return f'<ul class="icon-facts{" " + cls if cls else ""}">{lis}</ul>'
+
+
+# Icon for a format or programme's placeholder panel, until a real photo exists.
+PH_ICON = {'glow-canvas': 'moon', 'candle-making': 'candle', 'crochet-bag': 'yarn'}
+DISC_ICON = {'art': 'brush', 'painting': 'brush', 'baking': 'whisk', 'voice': 'mic', 'music': 'mic', 'photo': 'camera', 'video': 'camera', 'craft': 'palette'}
+
+
+def ph_icon(key):
+    f = FORMATS.get(key) or next((p for p in CL['programmes'] if p['id'] == key), {})
+    return PH_ICON.get(key) or DISC_ICON.get(f.get('discipline', ''), 'palette')
+
+
 def photo(key, cls='', label=None, eager=False):
     """Owned photo, or (TODO) a type panel with the name until a real photo exists."""
     if key in PHOTOS:
@@ -120,7 +166,7 @@ def photo(key, cls='', label=None, eager=False):
         load = 'eager" fetchpriority="high' if eager else 'lazy'
         return f'<img src="/{src}" alt="{e(alt)}" loading="{load}" width="800" height="600"{cls_attr}>'
     name = label or (FORMATS.get(key) or {}).get('name') or key.replace('-', ' ').capitalize()
-    return f'<div class="ph{" " + cls if cls else ""}" data-todo="photo: {e(key)}">{e(name)}</div>'
+    return f'<div class="ph{" " + cls if cls else ""}" data-todo="photo: {e(key)}">{icon(ph_icon(key))}<span>{e(name)}</span></div>'
 
 
 def fmt_time(t):
@@ -666,8 +712,15 @@ def hero_split(eyebrow, h1, lede, facts, ctas, img, crumbs=''):
 </div></section>'''
 
 
-def hero_band(eyebrow, h1, lede, ctas='', crumbs='', extra=''):
-    return f'''<section class="page-hero on-dark"><div class="wrap">{crumbs}<span class="eyebrow">{eyebrow}</span><h1>{h1}</h1>
+def hero_bg(src, alt=''):
+    """A photo behind a purple hero band (the band's text sits on a dark gradient over it)."""
+    return f'<div class="hero-bg"><img src="/{src}" alt="{e(alt)}" width="1200" height="800" fetchpriority="high"></div>'
+
+
+def hero_band(eyebrow, h1, lede, ctas='', crumbs='', extra='', img=None, compact=False):
+    """compact: no photo band above the text on phones, so a session page's price and button stay above the fold."""
+    bg = hero_bg(*img) if isinstance(img, tuple) else (img or '')
+    return f'''<section class="page-hero on-dark{' has-photo' if bg else ''}{' compact' if compact else ''}">{bg}<div class="wrap">{crumbs}<span class="eyebrow">{eyebrow}</span><h1>{h1}</h1>
   {f'<p>{lede}</p>' if lede else ''}{f'<div class="hero-cta">{ctas}</div>' if ctas else ''}{extra}</div></section>'''
 
 
@@ -696,13 +749,18 @@ def FormatCard(f):
     return f'''<article class="card v-studio">
   {photo(f['id'])}
   <div class="body">
-    <h3>{e(f['name'])}</h3><div class="sub">{e(f['summary'])}</div>
+    <h3>{e(f['name'])}</h3><div class="sub">{e(first_sentence(f['summary']))}</div>
     <div class="price">{money_from(f)} {pair}</div>
     <div class="meta">{when}<span>{e(length(f))} · {e(f['room'])}</span></div>
     <div class="badges">{badge}</div>
     <div class="actions"><a class="btn" href="/workshops/{f['id']}/">See dates</a></div>
   </div>
 </article>'''
+
+
+def first_sentence(text):
+    m = re.match(r'(.+?[.!?])(\s|$)', text or '')
+    return m.group(1) if m else (text or '')
 
 
 def SessionGrid(sessions, empty='New dates are on the way. WhatsApp us and we will tell you first.'):
@@ -776,7 +834,9 @@ def build_home():
 def studio_hero_note():
     pw = POL['pricing_window']
     until = dt.date.fromisoformat(pw['until'])
-    return f'<div class="hero-chips"><span>{e(pw["name"])} prices until {until.day} {until.strftime("%B %Y")}</span><span>Materials included</span><span>Take it home the same day</span></div>'
+    return (f'<div class="hero-chips"><span>{icon("palette")}Materials included</span>'
+            f'<span>{icon("cup")}A drink on us</span><span>{icon("bag")}Take it home the same day</span>'
+            f'<span>{icon("tag")}{e(pw["name"])} prices until {until.day} {until.strftime("%B %Y")}</span></div>')
 
 
 def build_workshops_index():
@@ -785,7 +845,7 @@ def build_workshops_index():
     body = hero_band('Master Artist Studio Sessions', 'Workshops in <em>the room with the view</em>',
                      'Painting, candle making, crochet and baking, with a new theme every week. Two hours, taught properly, with something to take home.',
                      (f'<a class="btn" href="/this-sunday/">This Sunday</a>' if sunday else '') + '<a class="btn ghost" href="#formats">All workshops</a>',
-                     crumbs(('/', 'Home'), (None, 'Workshops')), studio_hero_note())
+                     crumbs(('/', 'Home'), (None, 'Workshops')), studio_hero_note(), img=('golden-shores-workshop-1.jpg', 'Adults painting at a Sunday workshop'))
     body += f'''<section class="sec v-studio"><div class="wrap">
   <div class="sec-head"><span class="eyebrow">Next seven days</span><h2>This <em>week</em></h2></div>
   {WeekStrip(week) if week else EMPTY_WEEK}
@@ -823,13 +883,16 @@ def build_format(f):
     if rest:
         more = ('<details class="acc" style="margin-top:20px"><summary>More dates</summary><div><div class="grid-cards">'
                 + ''.join(SessionCard(s) for s in rest) + '</div></div></details>')
-    dine = ''
+    make = [('clock', f"{e(length(f))} · {e(f['room'])}"),
+             ('palette', f"{e(POL['included'].capitalize())} included"),
+             ('users', f"Two of you get {int(POL['pair_discount'] * 100)}% off" if f.get('pair_price') else ''),
+             ('star', 'Beginners welcome: a teacher takes you through it step by step'),
+             ('bag', 'Take it home the same day')]
     if f.get('dine_addon'):
-        d = WS['addons']['dine']
-        dine = f'<h2>Dine + <em>workshop</em></h2><p>Add a meal at Savor downstairs, chosen from Savor\'s menu: mains from {rm(d["price_from"])} a person, some dishes more. It\'s before an evening session and after a daytime one. Choose it when you book, then pick your dish and pay online through Savor\'s menu link.</p>'
+        make.append(('fork', f"Add a meal at Savor downstairs, from {rm(WS['addons']['dine']['price_from'])}: choose from the menu and pay online"))
     if f.get('bundle'):
         b = f['bundle']
-        dine += f'<h2>{e(b["name"])}</h2><p>{rm(b["price"])} for {e(b["includes"])}. Each extra child is {rm(b["extra_child"])}.</p>'
+        make.append(('users', f"{e(b['name'])}: {rm(b['price'])} for {e(b['includes'])}; extra child {rm(b['extra_child'])}"))
     team = TeacherCards(f['id'])
     body += f'''<section class="sec v-studio" id="dates"><div class="wrap">
   <div class="sec-head"><span class="eyebrow">Next dates</span><h2>Pick a <em>date</em></h2><p>Seats are limited to {f['cap']}{' ' + e(f['cap_unit']) if f.get('cap_unit') else ''} a session.</p></div>
@@ -838,7 +901,7 @@ def build_format(f):
 {PhotoRow(f['id'], 'What people <em>made</em>', 'studio')}
 <section class="sec alt v-studio"><div class="wrap listing">
   <div class="prose"><h2 style="margin-top:0">What you'll <em>make</em></h2><p class="lead">{e(f['summary'])}</p>
-    <p>{e(POL['included'].capitalize())} are included, and two people get {int(POL['pair_discount'] * 100)}% off. Beginners are welcome: a teacher takes you through it step by step.</p>{dine}
+    {IconFacts(make)}
     {f'<h2>Who runs <em>it</em></h2><p>Taught by working artists from the Master Artist team.</p>{team}' if team else ''}</div>
   <div class="aside"><h2 style="font-size:26px">Good to <em>know</em></h2>{Accordion(policy_items())}</div>
 </div></section>'''
@@ -895,11 +958,13 @@ def build_session_day(slots):
         lede += f" Add a meal at Savor downstairs, from {rm(WS['addons']['dine']['price_from'])}."
     more = [x for x in week_from(s0['date']) if x['format'] != f['id']][:8]
     team = TeacherCards(f['id'])
-    body = hero_band(e(f['name']), h1, lede, '', crumbs(('/', 'Home'), ('/workshops/', 'Workshops'), (f'/workshops/{f["id"]}/', f['name']), (None, day_date(s0['date']))))
+    body = hero_band(e(f['name']), h1, lede, '', crumbs(('/', 'Home'), ('/workshops/', 'Workshops'), (f'/workshops/{f["id"]}/', f['name']), (None, day_date(s0['date']))),
+                     img=PHOTOS.get(f['id']), compact=True)
     body += f'''<section class="sec v-studio"><div class="wrap listing book">
   <div class="aside">{times}{''.join(blocks)}</div>
   <div class="prose">{photo(f['id'], cls='rounded')}
-    <h2>What you'll <em>make</em></h2><p class="lead">{e(f['summary'])}</p><p>{e(POL['included'].capitalize())} are included, and beginners are welcome.</p>
+    <h2>What you'll <em>make</em></h2><p class="lead">{e(f['summary'])}</p>
+    {IconFacts([('palette', f"{e(POL['included'].capitalize())} included"), ('star', 'Beginners welcome'), ('bag', 'Take it home the same day')])}
     {f'<h2>Who runs <em>it</em></h2><p>Taught by working artists from the Master Artist team.</p>{team}' if team else ''}
     <h2>Good to <em>know</em></h2>{Accordion(policy_items())}
     <p style="margin-top:20px"><a class="btn ghost" href="/workshops/{f['id']}/">Other dates for {e(f['name'])}</a></p></div>
@@ -924,7 +989,8 @@ def build_this_sunday():
     title_day = long_date(sunday).split(' ', 1)[1] if sunday else ''
     body = hero_band('Master Artist Studio Sessions', f'This Sunday, <em>{e(title_day)}</em>',
                      'Every session this Sunday that still has seats. Pick one and book.', '',
-                     crumbs(('/', 'Home'), ('/workshops/', 'Workshops'), (None, 'This Sunday')), studio_hero_note())
+                     crumbs(('/', 'Home'), ('/workshops/', 'Workshops'), (None, 'This Sunday')), studio_hero_note(),
+                     img=PHOTOS.get(sessions[0]['format']) if sessions else None)
     body += f'''<section class="sec v-studio"><div class="wrap">{SessionGrid(sessions, 'This Sunday is full. See the next dates on the workshops page.')}
   <p style="margin-top:24px"><a class="btn ghost" href="/workshops/">All workshops</a></p></div></section>'''
     page('/this-sunday/', f'This Sunday at Master Artist · workshops with seats left',
@@ -961,7 +1027,7 @@ def build_classes_index():
     body = hero_band(e(SITE['labels']['academy']), 'Weekly classes, <em>taught by working artists</em>',
                      f"Art, voice, photo and video, and baking, in small groups with the same teacher every week. You'll actually get better. From {rm(min_cl)} a month.",
                      f'<a class="btn" href="/trial/">Book a {rm(TRIAL["price"])} trial</a><a class="btn ghost" href="/holiday-camps/">Holiday camps</a>',
-                     crumbs(('/', 'Home'), (None, 'Classes')))
+                     crumbs(('/', 'Home'), (None, 'Classes')), img=('art-photo-1.jpg', 'Young students holding up their paintings'))
     body += f'''<section class="sec v-academy"><div class="wrap">
   <div class="sec-head"><span class="eyebrow">Programmes</span><h2>Choose a <em>class</em></h2><p>Monthly, with a showcase every term. Siblings get {int(CL['discounts']['sibling'] * 100)}% off.</p></div>
   <div class="grid-cards">{''.join(ProgrammeCard(p) for p in PROGS)}</div>
@@ -1009,7 +1075,14 @@ def build_programme(p):
                       hero_price + (f"<span>Ages <b>{e(c['ages'])}</b></span>" if c.get('ages') and c['ages'][0].isdigit() else f"<span>{e(c.get('ages', ''))}</span>") + (f"<span>Up to <b>{cap}</b> a class</span>" if cap else ''),
                       trial_btn + WhatsAppButton(wa_trial(p), 'academy', 'WhatsApp us', cls='btn ghost', programme=p['id'], trial=True),
                       photo(p['id'], eager=True, label=p['name']), crumbs(('/', 'Home'), ('/classes/', 'Classes'), (None, p['name'])))
-    levels = ''.join(f'<div class="level"><h3>{e(l["name"])}</h3><p>{e(l["text"])}</p></div>' for l in c.get('levels', []))
+    levels = Accordion([(l['name'], e(l['text'])) for l in c.get('levels', [])]) if c.get('levels') else ''
+    dur = p.get('duration_min')
+    span = (f"{dur // 60}-hour" if dur % 60 == 0 else f"{dur}-minute") if dur else ''
+    glance = IconFacts([('cake', f"Ages {e(c['ages'])}" if c.get('ages') and c['ages'][0].isdigit() else e(c.get('ages', ''))),
+                        ('clock', f"One {span} class a week" if span else ''),
+                        ('users', f"Up to {cap} a class" if cap else ''),
+                        ('star', 'The same teacher every week'),
+                        ('calendar', e(slot_text(p)))], 'v-academy')
     faqs = [
         ('How does the trial work?', f"Book one class for {rm(TRIAL['price'])}. If you continue, the {rm(TRIAL['price'])} is {e(TRIAL['note'])}."),
         ('When exactly is the class?', e(p.get('slot_note') or f"Classes run {slot_text(p)}. We agree the exact time with you at the trial.").capitalize()),
@@ -1019,8 +1092,8 @@ def build_programme(p):
     ]
     team = TeacherCards(p['id'])
     body += f'''<section class="sec v-academy"><div class="wrap listing">
-  <div class="prose"><p class="lead">{e(intro)}</p>
-    <h2>What a term <em>looks like</em></h2><p>{e(p.get('term', ''))}</p><div class="levels">{levels}</div>
+  <div class="prose"><p class="lead">{e(intro)}</p>{glance}
+    <h2>What a term <em>looks like</em></h2><p>{e(p.get('term', ''))}</p>{levels}
     {f'<h2>Who <em>teaches</em></h2>{team}' if team else ''}</div>
   <div class="aside">{FactsBlock(items, price_line, 'academy', f'<div class="hero-cta">{trial_btn}</div>')}</div>
 </div></section>
@@ -1042,7 +1115,7 @@ def build_trial():
     days = ''.join(f'<option>{d}</option>' for d in ['Any day', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Sunday'])
     body = hero_band(e(SITE['labels']['academy']), f'Book a <em>{rm(TRIAL["price"])} trial class</em>',
                      f"One class in the programme you choose, with the teacher who will teach you every week. If you continue, the {rm(TRIAL['price'])} is {e(TRIAL['note'])}.",
-                     '', crumbs(('/', 'Home'), ('/classes/', 'Classes'), (None, 'Trial')))
+                     '', crumbs(('/', 'Home'), ('/classes/', 'Classes'), (None, 'Trial')), img=('art-photo-4.jpg', 'A child painting at the studio table'))
     body += f'''<section class="sec v-academy"><div class="wrap listing book">
   <div class="aside"><form class="booking form trial-form v-academy" novalidate>
     <h2 class="h3">Your trial</h2>
@@ -1079,7 +1152,7 @@ def build_holiday_camps():
   <div class="actions">{WhatsAppButton(msg, 'academy', 'Register interest', programme=c['id'])}</div></div></article>''')
     body = hero_band(e(SITE['labels']['academy']), 'School holiday <em>camps</em>',
                      'Three mornings with a working artist, in small groups. Dates are announced for each school break.', '',
-                     crumbs(('/', 'Home'), ('/classes/', 'Classes'), (None, 'Holiday camps')))
+                     crumbs(('/', 'Home'), ('/classes/', 'Classes'), (None, 'Holiday camps')), img=('art-photo-2.jpg', 'Children painting in the studio'))
     body += f'''<section class="sec v-academy"><div class="wrap"><div class="grid-cards">{''.join(cards)}</div></div></section>
 <section class="sec tight v-academy"><div class="wrap">{academy_cta()}</div></section>'''
     page('/holiday-camps/', 'School holiday art and photo camps in KL · Master Artist Academy',
@@ -1104,6 +1177,13 @@ def WaForm(msg, fields, button, voice='studio', fmt='', done='we will reply with
             f'<div class="done" role="status"><b>Thanks.</b> Send the WhatsApp message and {e(done)}.</div></form>')
 
 
+# Package card photos for /groups/, in package order (adults only).
+GROUP_PHOTOS = [('golden-shores-workshop-1.jpg', 'Adults painting together at a workshop'),
+                ('focaccia-workshop-2.jpg', 'A full baking workshop in the L1 kitchen'),
+                ('ciabatta-workshop-1.jpg', 'Two guests with the bread they baked'),
+                ('golden-shores-workshop-5.jpg', 'A guest with her finished canvas')]
+
+
 def build_groups():
     g = WS['groups']
     cards = []
@@ -1113,7 +1193,8 @@ def build_groups():
         else:
             price = f'<div class="price">{rm(pk["per_person"])} <small>a person · from {pk["min_pax"]} people</small></div>'
         q = urllib.parse.quote(pk['name'])
-        cards.append(f'''<article class="card v-studio"><div class="body"><h3>{e(pk['name'])}</h3>{price}
+        img = photo_file(*GROUP_PHOTOS[len(cards) % len(GROUP_PHOTOS)])
+        cards.append(f'''<article class="card v-studio">{img}<div class="body"><h3>{e(pk['name'])}</h3>{price}
   <div class="actions"><a class="btn" href="?package={q}#quote" data-pick-package="{e(pk['name'])}">Ask for a quote</a></div></div></article>''')
     rooms = ', '.join(g['rooms_in_parallel'][:-1]) + ' and ' + g['rooms_in_parallel'][-1]
     opts = ''.join(f'<option>{e(pk["name"])}</option>' for pk in g['packages']) + '<option>Not sure yet</option>'
@@ -1129,7 +1210,7 @@ def build_groups():
     body = hero_band('Master Artist Studio Sessions', 'Team days and <em>private groups</em>',
                      f'Art, baking or a mix, with up to {len(g["rooms_in_parallel"])} rooms running side by side. Taught by working artists; everyone takes something home.',
                      '<a class="btn" href="#quote">Ask for a quote</a><a class="btn ghost" href="#packages">Packages</a>',
-                     crumbs(('/', 'Home'), (None, 'Groups')))
+                     crumbs(('/', 'Home'), (None, 'Groups')), img=('focaccia-workshop-3.jpg', 'A group shaping dough at the kitchen tables'))
     body += f'''<section class="sec v-studio" id="packages"><div class="wrap">
   <div class="sec-head"><span class="eyebrow">Packages</span><h2>Choose a <em>package</em></h2><p>Prices include materials and a teacher for each stream.</p></div>
   <div class="grid-cards">{''.join(cards)}</div>
@@ -1139,9 +1220,11 @@ def build_groups():
 <section class="sec alt v-studio" id="quote"><div class="wrap listing book">
   <div class="aside">{form}</div>
   <div class="prose"><h2 style="margin-top:0">How a team day <em>works</em></h2>
-    <p class="lead">Pick a package, tell us your numbers and a date, and we plan the day with you on WhatsApp.</p>
-    <p>For bigger groups we run streams in parallel in the {e(rooms)}, so everyone can choose what they make.</p>
-    <p>Add the team dinner package to have dinner at Savor downstairs with an evening workshop.</p>
+    <ol class="steps">
+      <li><span class="ic">{icon('chat')}</span><b>Tell us</b><span>Package, numbers and a date, on WhatsApp.</span></li>
+      <li><span class="ic">{icon('calendar')}</span><b>We plan it</b><span>Streams in parallel in the {e(rooms)}.</span></li>
+      <li><span class="ic">{icon('bag')}</span><b>Everyone makes something</b><span>And takes it home. Add dinner at Savor downstairs.</span></li>
+    </ol>
     <h2>Good to <em>know</em></h2>{Accordion([
         ('Fridays', f"Friday team days finish by {friday}; the building closes at 5pm on Fridays and all day Saturday."),
         ('Minimum numbers', f"Team days run from {POL['minimum_to_run']} people. Each extra person over a package is {rm(g['extra_pax'])}."),
@@ -1151,6 +1234,11 @@ def build_groups():
     page('/groups/', 'Team building workshops in KL · art and baking team days · Master Artist',
          f'Art, baking and mixed team days in Desa Sri Hartamas, KL, from {rm(min(pk["price"] for pk in g["packages"] if pk.get("price")))}. Rooms in parallel, dinner at Savor, quotes on WhatsApp.',
          body, voice='studio', active='/groups/', data_attrs=' data-page="groups"', wa={'msg': "Hi, I'd like a quote for a team day or group. Source: {source}.", 'fmt': 'groups'})
+
+
+def strip(*pics):
+    """A slim row of three photos above a price table."""
+    return '<div class="photo-row strip">' + ''.join(f'<div>{photo_file(src, alt)}</div>' for src, alt in pics) + '</div>'
 
 
 def build_prices():
@@ -1179,14 +1267,16 @@ def build_prices():
     body = hero_band('Prices', 'Every price, <em>in one place</em>',
                      'Weekly classes at Master Artist Academy, and workshops at Master Artist Studio Sessions. Materials are always included.',
                      '<a class="btn" href="#academy">Classes</a><a class="btn ghost" href="#studio">Workshops</a>',
-                     crumbs(('/', 'Home'), (None, 'Prices')))
+                     crumbs(('/', 'Home'), (None, 'Prices')), img=('golden-shores-workshop-4.jpg', 'A finished canvas held up at the end of a workshop'))
     body += f'''<section class="sec v-academy" id="academy"><div class="wrap">
   <div class="sec-head"><span class="eyebrow">{e(SITE['labels']['academy'])}</span><h2>Weekly <em>classes</em></h2><p>Monthly fees for small classes, taught by working artists.</p></div>
+  {strip(('art-photo-1.jpg', 'Young students holding up their paintings'), ('vocal-teaching-1.jpg', 'A one-to-one singing lesson'), ('painting-4.jpg', 'A teacher helping students paint'))}
   {PriceTable('academy')}{aca_notes}{camp_table}
   <p style="margin-top:24px"><a class="btn" href="/trial/">Book a {rm(TRIAL['price'])} trial</a></p>
 </div></section>
 <section class="sec alt v-studio" id="studio"><div class="wrap">
   <div class="sec-head"><span class="eyebrow">{e(SITE['labels']['studio'])}</span><h2>One-off <em>workshops</em></h2><p>Per seat, with pair prices where two of you come together.</p></div>
+  {strip(('golden-shores-workshop-5.jpg', 'A guest with her finished canvas'), ('focaccia-workshop-2.jpg', 'A full baking workshop in the L1 kitchen'), ('golden-shores-workshop-1.jpg', 'Adults painting at a workshop'))}
   {PriceTable('studio')}{more_table}
   <p style="margin-top:24px"><a class="btn" href="/workshops/">See this week's workshops</a></p>
 </div></section>'''
@@ -1266,7 +1356,7 @@ def build_birthdays():
     body = hero_band('Master Artist Studio Sessions', 'Birthday parties <em>they make something at</em>',
                      'Painting, clay or baking, with a teacher, all materials and time for cake. Everyone takes their piece home.',
                      '<a class="btn" href="#quote">Plan a birthday</a><a class="btn ghost" href="#parties">See the parties</a>',
-                     crumbs(('/', 'Home'), ('/groups/', 'Groups'), (None, 'Birthdays')))
+                     crumbs(('/', 'Home'), ('/groups/', 'Groups'), (None, 'Birthdays')), img=('painting-4.jpg', 'A teacher helping children paint'))
     body += f'''<section class="sec v-studio" id="parties"><div class="wrap">
   <div class="sec-head"><span class="eyebrow">Parties</span><h2>Choose a <em>party</em></h2><p>Every party includes {e(b['includes'])}.</p></div>
   <div class="grid-cards">{''.join(cards)}</div>
@@ -1333,7 +1423,7 @@ def build_about():
 def build_teachers():
     body = hero_band(e(SITE['labels']['academy']), 'Our <em>teachers</em>',
                      'Every class is led by someone who still practises the craft they teach.', '',
-                     crumbs(('/', 'Home'), ('/about/', 'About'), (None, 'Teachers')))
+                     crumbs(('/', 'Home'), ('/about/', 'About'), (None, 'Teachers')), img=('vocal-teaching-1.jpg', 'A one-to-one singing lesson'))
     body += f'''<section class="sec v-academy"><div class="wrap"><div class="teach-grid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))">
   {''.join(TeacherCard(t, bio=True) for t in TEACHERS if t.get('name'))}</div></div></section>
 <section class="sec tight v-academy"><div class="wrap">{academy_cta()}</div></section>'''
@@ -1345,7 +1435,7 @@ def build_teachers():
 def build_reviews():
     body = hero_band('Reviews', 'What people <em>say</em>', 'Reviews from families in our weekly classes and guests at our workshops, from Google.',
                      f'<a class="btn" href="{e(SITE["google"]["review_url"])}" target="_blank" rel="noopener">Write a review</a>',
-                     crumbs(('/', 'Home'), (None, 'Reviews')))
+                     crumbs(('/', 'Home'), (None, 'Reviews')), img=('ciabatta-workshop-1.jpg', 'Two guests with the ciabatta they baked'))
     body += f'''<section class="sec"><div class="wrap"><div class="sec-head"><span class="eyebrow">Google</span><h2>Our <em>rating</em></h2></div><div data-greviews-split>{GoogleReviews(5)}</div></div></section>
 <section class="sec alt v-academy" data-voice-section hidden><div class="wrap"><div class="sec-head"><span class="eyebrow">{e(SITE['labels']['academy'])}</span><h2>Weekly <em>classes</em></h2></div><div class="reviews" data-greviews-voice="academy"></div></div></section>
 <section class="sec v-studio" data-voice-section hidden><div class="wrap"><div class="sec-head"><span class="eyebrow">{e(SITE['labels']['studio'])}</span><h2><em>Workshops</em></h2></div><div class="reviews" data-greviews-voice="studio"></div></div></section>'''
@@ -1566,7 +1656,7 @@ def build_blog_shells():
     old = path.read_text() if path.exists() else ''
     m = re.search(r'<!--posts-->(.*?)<!--/posts-->', old, re.S)
     cards = m.group(1) if m else blog_cards_from_pages()
-    body = hero_band('Blog', 'Ideas from <em>the studio</em>', e(desc), '', crumbs(('/', 'Home'), (None, 'Blog')))
+    body = hero_band('Blog', 'Ideas from <em>the studio</em>', e(desc), '', crumbs(('/', 'Home'), (None, 'Blog')), img=('painting-1.jpg', 'Watercolour work on the studio table'))
     body += f'''<section class="sec"><div class="wrap">
   <div class="blog-grid" id="blogGrid"><!--posts-->{cards}<!--/posts--></div>
 </div></section>
