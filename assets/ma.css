@@ -348,3 +348,23 @@ details.acc > div p:last-child { margin: 0; }
 /* headings that are h2 for document order but styled as card titles */
 .h3 { font-size: 22px; }
 .site-foot h2.foot-h { color: var(--gold); font-size: 14px; font-weight: 700; margin-bottom: 14px; letter-spacing: 0; font-family: var(--font-body); }
+
+/* blog: index cards and posts (post.html is the template tools/build_blog.py fills) */
+.blog-grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.post-card { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius-card); padding: 10px 10px 20px; text-decoration: none; color: inherit; transition: .25s ease; }
+.post-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: transparent; }
+.post-card .cover { width: 100%; aspect-ratio: 16/10; object-fit: cover; border-radius: var(--radius-sm); background: var(--lavender-pale); }
+.post-card .cover.ph { display: grid; place-items: center; }
+.post-card .cover.ph img { width: 56px; opacity: .5; }
+.post-card .meta { font-size: 13px; color: var(--muted); margin: 14px 10px 4px; }
+.post-card h3 { font-size: 20px; margin: 0 10px 8px; }
+.post-card p { color: var(--muted); font-size: 15px; margin: 0 10px 12px; }
+.post-card .more { margin: auto 10px 0; font-weight: 600; color: var(--gold-text); }
+.post-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 14px; color: rgba(246, 241, 232, .8); }
+.article { max-width: 760px; margin: 0 auto; }
+.article > .cover { width: 100%; border-radius: var(--radius-card); margin-bottom: var(--s5, 24px); }
+.article .prose img { max-width: 100%; height: auto; border-radius: var(--radius-sm); }
+.article .prose ul, .article .prose ol { color: var(--muted); font-size: 17px; }
+.article .prose blockquote { margin: 24px 0; padding: 4px 20px; border-left: 3px solid var(--gold); }
+.article .prose table { border-collapse: collapse; width: 100%; font-size: 15px; }
+.article .prose th, .article .prose td { border-bottom: 1px solid var(--rule); padding: 8px; text-align: left; }

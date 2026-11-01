@@ -28,7 +28,7 @@ jobs:
       - name: Commit changes
         id: commit
         run: |
-          git add blog sitemap.xml
+          git add blog blog.html sitemap.xml
           if git diff --cached --quiet; then echo "No changes"; exit 0; fi
           git config user.name "blog-bot"
           git config user.email "blog-bot@users.noreply.github.com"

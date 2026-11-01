@@ -204,6 +204,16 @@ def merge_posts(remote, local):
     return sorted(by_slug.values(), key=lambda p: p.get('published_at') or '', reverse=True)
 
 
+def update_index(posts):
+    """Fill the post cards in blog.html (the page itself is built by scripts/build_site.py)."""
+    index = ROOT / 'blog.html'
+    doc = index.read_text()
+    cards = ''.join(card(p) for p in posts) or '<p>New articles are on the way.</p>'
+    new = re.sub(r'<!--posts-->.*?<!--/posts-->', lambda m: f'<!--posts-->{cards}<!--/posts-->', doc, count=1, flags=re.S)
+    if new != doc:
+        index.write_text(new)
+
+
 def main():
     template = (ROOT / 'post.html').read_text()
     remote = [p for p in fetch_posts() if re.fullmatch(r'[a-z0-9]+(-[a-z0-9]+)*', p.get('slug') or '')]
@@ -220,6 +230,7 @@ def main():
     for f in out_dir.glob('*.html'):          # unpublished or deleted posts
         if f.name not in keep:
             f.unlink()
+    update_index(posts)
     update_sitemap(posts)
     print(f'built {len(posts)} post(s)')
 

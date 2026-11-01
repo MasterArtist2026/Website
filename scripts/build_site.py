@@ -44,8 +44,8 @@ PHOTOS = {
     'bake-lab': ('focaccia-workshop-1.jpg', 'A full Bake Lab table shaping focaccia in the L1 kitchen'),
     'baking-course-6wk': ('baking-3.jpg', 'Mixing batter in a baking session'),
     'baking-course': ('baking-1.jpg', 'Students baking together'),
-    'textured-canvas': ('painting-2.jpg', 'A teacher guiding a canvas painting'),
-    'acrylic-canvas': ('painting-3.jpg', 'Close-up of a painting in progress'),
+    'textured-canvas': ('golden-shores-workshop-5.jpg', 'A guest holding up her finished textured seascape canvas'),
+    'acrylic-canvas': ('golden-shores-workshop-1.jpg', 'Adults painting canvases at a Sunday workshop'),
     'watercolour-botanicals': ('painting-1.jpg', 'Watercolour work on the table'),
     'kids-art-studio': ('art-photo-2.jpg', 'Children painting in the studio'),
     'parent-child-studio': ('painting-4.jpg', 'A teacher helping children paint'),
@@ -56,6 +56,50 @@ PHOTOS = {
     'adult-art': ('painting-2.jpg', 'An adult art session'),
     'voice': ('vocal-singing.jpg', 'Sabrina Hew singing'),
 }
+
+
+# More photos from past sessions, shown as a row on format and class pages. Adult workshop rows
+# show adults only; photos with children go on kids' class pages and Showcase.
+GALLERY = {
+    'textured-canvas': [('golden-shores-workshop-4.jpg', 'A finished textured seascape held up to the light'),
+                        ('golden-shores-workshop-1.jpg', 'Adults painting at a Sunday workshop'),
+                        ('painting-3.jpg', 'Close-up of a painting in progress')],
+    'acrylic-canvas': [('golden-shores-workshop-5.jpg', 'A guest with her finished canvas'),
+                       ('golden-shores-workshop-4.jpg', 'A finished canvas held up at the end of a session'),
+                       ('painting-3.jpg', 'Close-up of a painting in progress')],
+    'watercolour-botanicals': [('painting-1.jpg', 'Watercolour work on the studio table'),
+                               ('golden-shores-workshop-1.jpg', 'Adults painting at a workshop')],
+    'bake-lab': [('ciabatta-workshop-1.jpg', 'Two guests with the ciabatta they baked'),
+                 ('focaccia-workshop-2.jpg', 'A full focaccia workshop in the L1 kitchen'),
+                 ('ciabatta-workshop-4.jpg', 'Sliced ciabatta from the workshop'),
+                 ('focaccia-workshop-3.jpg', 'Guests shaping dough at the kitchen tables'),
+                 ('ciabatta-workshop-5.jpg', 'A guest photographing her finished loaf')],
+    'kids-art-younger': [('art-photo-1.jpg', 'Young students holding up their paintings'),
+                         ('art-photo-4.jpg', 'A child painting at the studio table'),
+                         ('painting-4.jpg', 'A teacher helping children paint')],
+    'kids-art-older': [('painting-4.jpg', 'A teacher helping students paint'),
+                       ('golden-shores-workshop-3.jpg', 'A student painting a seascape'),
+                       ('art-photo-1.jpg', 'Students with their finished paintings')],
+    'adult-art': [('golden-shores-workshop-1.jpg', 'Adults painting together'),
+                  ('golden-shores-workshop-5.jpg', 'A finished canvas'),
+                  ('painting-3.jpg', 'A painting in progress')],
+    'voice': [('vocal-teaching-1.jpg', 'A one-to-one singing lesson'),
+              ('vocal-teaching-2.jpg', 'A group singing session in the studio')],
+    'baking-course': [('baking-2.jpg', 'Almond brownies from a baking class'),
+                      ('baking-3.jpg', 'Mixing batter in a baking session'),
+                      ('focaccia-workshop-3.jpg', 'Bakers at the kitchen tables')],
+}
+
+
+def PhotoRow(key, heading, voice):
+    pics = GALLERY.get(key)
+    if not pics:
+        return ''
+    cells = ''.join(f'<div><img src="/{e(src)}" alt="{e(alt)}" loading="lazy" width="600" height="600"></div>' for src, alt in pics)
+    return f'''<section class="sec v-{voice}"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">From past sessions</span><h2>{heading}</h2></div>
+  <div class="photo-row">{cells}</div>
+</div></section>'''
 
 
 def photo(key, cls='', label=None, eager=False):
@@ -301,7 +345,7 @@ def HoursBlock():
 
 
 # ------------------------------------------------------------------ shell
-NAV = [('/classes/', 'Classes'), ('/workshops/', 'Workshops'), ('/groups/', 'Groups'), ('/prices/', 'Prices'), ('/about/', 'About')]
+NAV = [('/workshops/', 'Workshops'), ('/classes/', 'Classes'), ('/groups/', 'Groups'), ('/prices/', 'Prices'), ('/blog.html', 'Blog'), ('/about/', 'About')]
 
 
 def head(title, desc, canonical, extra=''):
@@ -370,7 +414,7 @@ def footer(voice, wa=None):
   <div class="cols">
     <div><h2 class="foot-h">Visit</h2><p>{e(a['street'])}, {e(a['postcode'])} {e(a['city'])}<br>{e(a['note'].capitalize())}</p></div>
     <div><h2 class="foot-h">Hours</h2>{HoursBlock()}</div>
-    <div><h2 class="foot-h">Explore</h2><ul><li><a href="/workshops/">Workshops</a></li><li><a href="/classes/">Classes</a></li><li><a href="/birthdays/">Birthday parties</a></li><li><a href="/groups/">Team days</a></li><li><a href="/gift-vouchers/">Gift vouchers</a></li><li><a href="/teachers/">Teachers</a></li><li><a href="/reviews/">Reviews</a></li><li><a href="/showcase/">Showcase</a></li></ul></div>
+    <div><h2 class="foot-h">Explore</h2><ul><li><a href="/workshops/">Workshops</a></li><li><a href="/classes/">Classes</a></li><li><a href="/birthdays/">Birthday parties</a></li><li><a href="/groups/">Team days</a></li><li><a href="/gift-vouchers/">Gift vouchers</a></li><li><a href="/teachers/">Teachers</a></li><li><a href="/reviews/">Reviews</a></li><li><a href="/showcase/">Showcase</a></li><li><a href="/blog.html">Blog</a></li></ul></div>
     <div><h2 class="foot-h">Contact</h2><ul><li>{wa_attrs(wa, voice, SITE['phone'], cls='')}</li><li><a href="{SITE['instagram']}">Instagram</a></li><li><a href="mailto:{SITE['email']}">{SITE['email']}</a></li></ul></div>
   </div>
   <div class="legal"><span>© {dt.date.today().year} Master Artist</span><a href="/privacy/">PDPA notice</a><a href="/terms/">Booking terms</a></div>
@@ -392,7 +436,7 @@ def responsive_images(doc):
 
 def page(path, title, desc, body, voice='both', active='', data_attrs='', extra_head='', noindex=False, wa=None):
     canonical = SITE['url'] + path
-    robots = '<meta name="robots" content="noindex">' if noindex else ''
+    robots = f'<meta name="robots" content="{noindex if isinstance(noindex, str) else "noindex"}">' if noindex else ''
     doc = f'''<!DOCTYPE html>
 <html lang="en-MY" data-wa="{SITE['whatsapp']}" data-direct-tags="{1 if SITE['tracking'].get('direct_tags', True) else 0}" data-capi="{1 if SITE['tracking'].get('capi') else 0}" data-ads-trial="{SITE['tracking']['ads_labels']['trial_form']}" data-ads-whatsapp="{SITE['tracking']['ads_labels']['whatsapp']}" data-trial-price="{CL['trial']['price']}">
 <head>
@@ -662,8 +706,8 @@ def build_home():
     sunday = coming_sunday()
     body = hero_split(
         'Desa Sri Hartamas · Kuala Lumpur',
-        'Classes and workshops, <em>taught by working artists</em>',
-        'Weekly classes for kids, teens and adults, and themed workshops in the room with the view: painting, candles, crochet and baking.',
+        'Workshops and classes, <em>taught by working artists</em>',
+        'Themed workshops in the room with the view, painting, candles, crochet and baking, and weekly classes for kids, teens and adults.',
         f'<span>Workshops from <b>{rm(min_ws)}</b></span><span>Classes from <b>{rm(min_cl)}</b>/month</span><span><b>{rm(TRIAL["price"])}</b> trial class</span>',
         f'<a class="btn" href="/workshops/">See this week\'s workshops</a><a class="btn ghost" href="/trial/">Book a {rm(TRIAL["price"])} trial</a>',
         '<img src="/hero-1.jpg" alt="A painting class at Master Artist" width="1200" height="1000" fetchpriority="high">')
@@ -678,10 +722,10 @@ def build_home():
     doors = f'''<section class="sec"><div class="wrap">
   <div class="sec-head"><span class="eyebrow">Three ways in</span><h2>What are you <em>looking for?</em></h2></div>
   <div class="doors">
-    <a class="door v-academy" href="/classes/">{photo('kids-art-older')}<span class="label">{e(SITE['labels']['academy'])}</span><h3>Weekly classes</h3>
-      <p>Art, voice, photo and video, and baking, in small groups with the same teacher every week. From {rm(min_cl)} a month; start with a {rm(TRIAL['price'])} trial.</p><span class="more">Classes and the trial</span></a>
     <a class="door v-studio" href="/workshops/">{photo('bake-lab')}<span class="label">{e(SITE['labels']['studio'])}</span><h3>Workshops</h3>
       <p>A weeknight or a Sunday: paint a canvas, pour a candle, crochet a bag. A new theme every week, from {rm(min_ws)}, and you take it home.</p><span class="more">This week's workshops</span></a>
+    <a class="door v-academy" href="/classes/">{photo('kids-art-older')}<span class="label">{e(SITE['labels']['academy'])}</span><h3>Weekly classes</h3>
+      <p>Art, voice, photo and video, and baking, in small groups with the same teacher every week. From {rm(min_cl)} a month; start with a {rm(TRIAL['price'])} trial.</p><span class="more">Classes and the trial</span></a>
     <a class="door v-studio" href="/groups/"><img src="/golden-shores-workshop-1.jpg" alt="A group workshop at Master Artist" loading="lazy" width="800" height="600"><span class="label">Groups</span><h3>Birthdays, team days and groups</h3>
       <p>Art, clay and baking birthday parties, and team days with rooms running side by side. Team packages from {rm(groups_from)}.</p><span class="more">Groups and birthdays</span></a>
   </div></div></section>'''
@@ -777,6 +821,7 @@ def build_format(f):
   <div class="sec-head"><span class="eyebrow">Next dates</span><h2>Pick a <em>date</em></h2><p>Seats are limited to {f['cap']}{' ' + e(f['cap_unit']) if f.get('cap_unit') else ''} a session.</p></div>
   {SessionGrid(nxt4)}{more}
 </div></section>
+{PhotoRow(f['id'], 'What people <em>made</em>', 'studio')}
 <section class="sec alt v-studio"><div class="wrap listing">
   <div class="prose"><h2 style="margin-top:0">What you'll <em>make</em></h2><p class="lead">{e(f['summary'])}</p>
     <p>{e(POL['included'].capitalize())} are included, and two people get {int(POL['pair_discount'] * 100)}% off. Beginners are welcome: a teacher takes you through it step by step.</p>{dine}
@@ -961,6 +1006,7 @@ def build_programme(p):
     {f'<h2>Who <em>teaches</em></h2>{team}' if team else ''}</div>
   <div class="aside">{FactsBlock(items, price_line, 'academy', f'<div class="hero-cta">{trial_btn}</div>')}</div>
 </div></section>
+{PhotoRow(p['id'], 'In the <em>studio</em>', 'academy')}
 <section class="sec tight v-academy"><div class="wrap">{academy_cta(p)}</div></section>
 <section class="sec v-academy"><div class="wrap" style="max-width:820px"><div class="sec-head"><h2>Questions <em>parents ask</em></h2></div>{Accordion(faqs)}</div></section>
 <section class="sec alt v-academy"><div class="wrap"><div class="sec-head"><span class="eyebrow">Google reviews</span><h2>What families <em>say</em></h2></div>{GoogleReviews(3)}</div></section>'''
@@ -1303,7 +1349,13 @@ def build_showcase():
   <div><img src="/ciabatta-workshop-3.jpg" alt="Loaves from a baking workshop" loading="lazy" width="600" height="600"></div>
   <div><img src="/painting-3.jpg" alt="A painting in progress" loading="lazy" width="600" height="600"></div>
   <div><img src="/craft-jars.jpg" alt="Painted jars" loading="lazy" width="600" height="600"></div>
-  <div><img src="/vocal-teaching-2.jpg" alt="A singing session in the studio" loading="lazy" width="600" height="600"></div></div>
+  <div><img src="/vocal-teaching-2.jpg" alt="A singing session in the studio" loading="lazy" width="600" height="600"></div>
+  <div><img src="/golden-shores-workshop-2.jpg" alt="Families painting seascapes together" loading="lazy" width="600" height="600"></div>
+  <div><img src="/art-photo-1.jpg" alt="Young students holding up their paintings" loading="lazy" width="600" height="600"></div>
+  <div><img src="/focaccia-workshop-2.jpg" alt="A full baking workshop in the L1 kitchen" loading="lazy" width="600" height="600"></div>
+  <div><img src="/golden-shores-workshop-4.jpg" alt="A finished textured seascape" loading="lazy" width="600" height="600"></div>
+  <div><img src="/baking-2.jpg" alt="Almond brownies from a baking class" loading="lazy" width="600" height="600"></div>
+  <div><img src="/craft-1.jpg" alt="A craft workshop at the window tables" loading="lazy" width="600" height="600"></div></div>
 </div></section>
 <section class="sec alt"><div class="wrap"><div class="doors">
   <div class="door v-academy" style="padding:24px"><span class="label" style="margin:0 0 4px">{e(SITE['labels']['academy'])}</span><h3 style="margin:0 0 8px">Show your work</h3>
@@ -1391,6 +1443,120 @@ def build_static():
     build_privacy()
 
 
+# --- Blog ------------------------------------------------------------------------------
+# tools/build_blog.py (hourly in CI) writes blog/<slug>.html from post.html and fills blog.html's
+# <!--posts--> block. These two shells give them the site's design; the ids, meta tags and the
+# pretty-printed BreadcrumbList below are the hooks build_blog.py replaces, so keep them as they are.
+BLOG_API = 'https://fudaosneozobacdalncv.supabase.co/rest/v1/blog_public'
+# Public, read-only key (the same one tools/build_blog.py and the trial form use)
+BLOG_ANON = re.search(r"ANON = '([^']+)'", (ROOT / 'tools' / 'build_blog.py').read_text()).group(1)
+
+
+def blog_cards_from_pages():
+    """Cards for blog.html read off the built posts, newest first (build_blog.py writes the same markup)."""
+    cards = []
+    for f in (ROOT / 'blog').glob('*.html'):
+        doc = f.read_text()
+        title = re.search(r'<h1>(.*?)</h1>', doc, re.S)
+        if not title:
+            continue
+        desc = re.search(r'<meta name="description" content="([^"]*)"', doc)
+        img = re.search(r'<meta property="og:image" content="([^"]*)"', doc)
+        alt = re.search(r'<meta property="og:image:alt" content="([^"]*)"', doc)
+        date = re.search(r'"datePublished": "([^"]*)"', doc)
+        meta = re.search(r'<div class="post-meta"><span>([^<]*)</span>', doc)
+        has_cover = '<img loading="lazy" class="cover"' in doc
+        cover = (f'<img class="cover" src="{img.group(1)}" alt="{alt.group(1) if alt else ""}" loading="lazy">'
+                 if has_cover and img else '<div class="cover ph"><img src="/logo.svg" alt=""></div>')
+        cards.append((date.group(1) if date else '',
+                      f'<a class="post-card" href="/blog/{f.name}">{cover}<div class="meta">{meta.group(1) if meta else ""}</div>'
+                      f'<h3>{title.group(1)}</h3><p>{desc.group(1) if desc else ""}</p><span class="more">Read article</span></a>'))
+    return ''.join(c for _, c in sorted(cards, reverse=True))
+
+
+def blog_cta():
+    ws_from = rm(min(s['price'] for s in PUB if s.get('price')))
+    return (f'<section class="sec alt"><div class="wrap"><div class="doors">'
+            f'<a class="door v-studio" href="/workshops/" style="padding:24px"><span class="label" style="margin:0 0 4px">{e(SITE["labels"]["studio"])}</span>'
+            f'<h3 style="margin:0 0 8px">Come to a workshop</h3><p style="margin:0">A weeknight or a Sunday, a new theme every week, from {ws_from}.</p></a>'
+            f'<a class="door v-academy" href="/trial/" style="padding:24px"><span class="label" style="margin:0 0 4px">{e(SITE["labels"]["academy"])}</span>'
+            f'<h3 style="margin:0 0 8px">Try a class</h3><p style="margin:0">Weekly classes for kids, teens and adults. Start with a {rm(TRIAL["price"])} trial, '
+            f'credited against the first month.</p></a></div></div></section>')
+
+
+def blog_og(title, desc, url):
+    img = SITE['url'] + '/golden-shores-workshop-5.jpg'
+    return '\n'.join([
+        '<meta property="og:site_name" content="Master Artist">',
+        f'<meta property="og:title" content="{e(title)}">',
+        f'<meta property="og:description" content="{e(desc)}">',
+        f'<meta property="og:url" content="{url}">',
+        f'<meta property="og:image" content="{img}">',
+        f'<meta property="og:image:alt" content="{e(title)}">',
+        '<meta property="og:type" content="website">',
+        '<meta property="og:locale" content="en_MY">',
+        '<meta name="twitter:card" content="summary_large_image">',
+        f'<meta name="twitter:title" content="{e(title)}">',
+        f'<meta name="twitter:description" content="{e(desc)}">',
+        f'<meta name="twitter:image" content="{img}">'])
+
+
+POST_LOADER = '''<script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js" crossorigin="anonymous"></script>
+<script>(function () {
+  var slug = new URLSearchParams(location.search).get('slug'), art = document.getElementById('post');
+  if (!art || !slug || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) return;
+  var key = '__ANON__';
+  fetch('__API__?slug=eq.' + slug + '&select=*', {headers: {apikey: key, Authorization: 'Bearer ' + key}})
+    .then(function (r) { return r.json(); }).then(function (rows) {
+      var p = rows && rows[0]; if (!p) return;
+      document.title = p.title + ' \\u2014 Master Artist';
+      document.getElementById('postTitle').textContent = p.title;
+      document.getElementById('postCrumb').textContent = p.title;
+      document.getElementById('postMeta').innerHTML = '<span>' + new Date(p.published_at).toLocaleDateString('en-GB', {day: 'numeric', month: 'long', year: 'numeric'}) + '</span>';
+      art.innerHTML = '<div class="prose">' + (window.DOMPurify ? DOMPurify.sanitize(p.body_html || '') : '') + '</div>';
+    });
+})();</script>'''
+
+
+def build_blog_shells():
+    desc = 'Ideas, how-tos and news from Master Artist in Desa Sri Hartamas, KL: workshops, kids’ art, voice and baking.'
+    breadcrumb = json.dumps({'@context': 'https://schema.org', '@type': 'BreadcrumbList', 'itemListElement': [
+        {'@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': SITE['url'] + '/'},
+        {'@type': 'ListItem', 'position': 2, 'name': 'Blog', 'item': SITE['url'] + '/blog.html'}]}, indent=2)
+    # post.html: the template. Opened directly with ?slug= (404.html sends a post newer than the last
+    # hourly build here) it loads the post live; built pages lose the ids, so the loader does nothing there.
+    body = f'''<section class="page-hero on-dark"><div class="wrap">
+  <div class="crumbs"><a href="/">Home</a> / <a href="/blog.html">Blog</a> / <span id="postCrumb">Article</span></div>
+  <span class="eyebrow">Blog</span>
+    <h1 id="postTitle">Loading…</h1>
+    <div class="post-meta" id="postMeta"></div>
+</div></section>
+<section class="sec"><div class="wrap">
+    <article class="article" id="post"></article>
+</div></section>
+<section id="morePosts" class="alt" hidden><div class="wrap" style="padding:56px 0">
+  <div class="sec-head"><span class="eyebrow">Keep reading</span><h2>More from the <em>blog</em></h2></div>
+    <div class="blog-grid" id="moreGrid"></div>
+</div></section>
+{blog_cta()}
+{POST_LOADER.replace('__ANON__', BLOG_ANON).replace('__API__', BLOG_API)}'''
+    page('/post.html', 'Blog — Master Artist', desc, body, voice='both', active='/blog.html',
+         extra_head=blog_og('Blog — Master Artist', desc, SITE['url'] + '/post.html')
+         + f'\n<script type="application/ld+json">\n{breadcrumb}\n</script>', noindex='noindex, follow')
+    # blog.html: the index. Keep the cards build_blog.py last wrote; else read them off the built posts.
+    path = ROOT / 'blog.html'
+    old = path.read_text() if path.exists() else ''
+    m = re.search(r'<!--posts-->(.*?)<!--/posts-->', old, re.S)
+    cards = m.group(1) if m else blog_cards_from_pages()
+    body = hero_band('Blog', 'Ideas from <em>the studio</em>', e(desc), '', crumbs(('/', 'Home'), (None, 'Blog')))
+    body += f'''<section class="sec"><div class="wrap">
+  <div class="blog-grid" id="blogGrid"><!--posts-->{cards}<!--/posts--></div>
+</div></section>
+{blog_cta()}'''
+    page('/blog.html', 'Blog · Master Artist, Sri Hartamas KL', desc, body, voice='both', active='/blog.html',
+         extra_head=blog_og('Blog · Master Artist', desc, SITE['url'] + '/blog.html'))
+    GENERATED[:] = [g for g in GENERATED if g[0] != '/blog.html']   # build_sitemap keeps the blog URLs already listed
+
 # --- Redirects and sitemap ------------------------------------------------------------
 REDIRECTS = {
     'about.html': '/about/', 'art.html': '/classes/', 'gallery.html': '/showcase/', 'media.html': '/classes/teen-photo-video/',
@@ -1438,6 +1604,7 @@ if __name__ == '__main__':
     build_gift_vouchers()
     build_static()
     build_redirects()
+    build_blog_shells()
     urls, posts = build_sitemap()
     print(f'sitemap: {urls} pages + {posts} blog posts; {len(REDIRECTS)} redirects')
     print(f'built /, /styleguide/, /workshops/ ({len(WORKSHOP_FORMATS)} formats, {n} dated pages), /this-sunday/, /classes/ ({len(PROGS)} programmes), /trial/, /holiday-camps/, /groups/, /prices/, /gift-vouchers/, /birthdays/, /about/, /teachers/, /reviews/, /showcase/, /terms/, /privacy/')
