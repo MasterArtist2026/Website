@@ -150,13 +150,15 @@ def expand(seed, themes, bookings, holidays, today, days):
         sid = f"{fid}-{iso}-{entry['time'].replace(':', '')}"
         variant = entry.get('variant') if fid == entry['format'] else None
         price, pair, price_set = price_for(fmt, d, policies, variant)
+        if price_set == 'launch' and entry.get('price'):   # a dated session priced on its own (e.g. the first week)
+            price, pair = entry['price'], entry.get('pair_price', pair)
         is_hol = iso in hol
         if is_hol and iso not in waived and price:
             price = round(price * (1 + surcharge))
         cap = fmt.get(f'cap_{variant}', fmt.get('cap')) if variant else fmt.get('cap')
         booked = int(bookings.get(sid, 0))
-        dine = bool(entry.get('dine')) or (fmt.get('dine_addon') and entry['day'] in ('Tue', 'Thu')
-                                            and hm_to_min(entry['time']) >= 18 * 60)
+        dine = bool(entry.get('dine') or fmt.get('dine_addon'))
+        evening = hm_to_min(entry['time']) >= 18 * 60
         end_min = hm_to_min(entry['end']) if entry.get('end') else hm_to_min(entry['time']) + fmt.get('duration_min', 0)
         room_id = entry.get('room')
         room = next((r['name'] for r in seed.get('rooms', []) if r['id'] == room_id), fmt.get('room'))
@@ -168,7 +170,7 @@ def expand(seed, themes, bookings, holidays, today, days):
             'room': room, 'price': price, 'pair_price': pair, 'price_set': price_set,
             'price_unit': fmt.get('price_unit'), 'cap': cap, 'cap_unit': fmt.get('cap_unit'),
             'booked': booked, 'seats_left': max(0, cap - booked) if cap else None,
-            'dine': bool(dine), 'dine_timing': entry.get('dine_timing', fmt.get('dine_timing', 'before')),
+            'dine': bool(dine), 'dine_timing': entry.get('dine_timing', fmt.get('dine_timing', 'before' if evening else 'after')),
             'theme': themes.get(sid) or entry.get('theme'), 'public_holiday': hol.get(iso),
             'surcharge_waived': is_hol and iso in waived,
             'type': fmt.get('type', 'workshop'),

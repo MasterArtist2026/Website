@@ -686,7 +686,7 @@ def build_home():
     week = week_sessions()
     strip = WeekStrip(week) if week else EMPTY_WEEK
     this_week = f'''<section class="sec alt v-studio"><div class="wrap">
-  <div class="sec-row"><div class="sec-head"><span class="eyebrow">Studio Sessions</span><h2>This <em>week</em></h2><p>Pick a session and book a seat. Prices include materials, and you take your work home.</p></div>
+  <div class="sec-row"><div class="sec-head"><span class="eyebrow">Studio Sessions</span><h2>This <em>week</em></h2><p>Pick a session and book a seat. Prices include {e(POL['included'])}, and you take your work home.</p></div>
     <div class="hero-cta">{f'<a class="btn" href="/this-sunday/">This Sunday</a>' if sunday else ''}<a class="btn ghost" href="/workshops/">All workshops</a></div></div>
   {strip}
 </div></section>'''
@@ -766,7 +766,7 @@ def build_format(f):
     dine = ''
     if f.get('dine_addon'):
         d = WS['addons']['dine']
-        dine = f'<h2>Dine + <em>workshop</em></h2><p>On Tuesday and Thursday evenings, add dinner at Savor downstairs for {rm(d["price_per_person"])} a person ({rm(d["price_per_pair"])} a pair). Choose it when you book.</p>'
+        dine = f'<h2>Dine + <em>workshop</em></h2><p>Add a meal at Savor downstairs for {rm(d["price_per_person"])} a person ({rm(d["price_per_pair"])} a pair): before an evening session, after a daytime one. Choose it when you book.</p>'
     if f.get('bundle'):
         b = f['bundle']
         dine += f'<h2>{e(b["name"])}</h2><p>{rm(b["price"])} for {e(b["includes"])}. Each extra child is {rm(b["extra_child"])}.</p>'
@@ -777,7 +777,7 @@ def build_format(f):
 </div></section>
 <section class="sec alt v-studio"><div class="wrap listing">
   <div class="prose"><h2 style="margin-top:0">What you'll <em>make</em></h2><p class="lead">{e(f['summary'])}</p>
-    <p>All materials are included. Beginners are welcome: a teacher takes you through it step by step.</p>{dine}
+    <p>{e(POL['included'].capitalize())} are included, and two people get {int(POL['pair_discount'] * 100)}% off. Beginners are welcome: a teacher takes you through it step by step.</p>{dine}
     {f'<h2>Who runs <em>it</em></h2><p>Taught by working artists from the Master Artist team.</p>{team}' if team else ''}</div>
   <div class="aside"><h2 style="font-size:26px">Good to <em>know</em></h2>{Accordion(policy_items())}</div>
 </div></section>'''
@@ -831,14 +831,14 @@ def build_session_day(slots):
     h1 = f"{d.strftime('%A')} {d.day} {d.strftime('%B')}, {t0}. <em>{e(theme or f['name'])}.</em>"
     lede = e(f['summary'])
     if any(s.get('dine') for s in slots):
-        lede += ' Dinner at Savor downstairs is available with this session.'
+        lede += f" Add a meal at Savor downstairs for {rm(WS['addons']['dine']['price_per_person'])}."
     more = [x for x in week_from(s0['date']) if x['format'] != f['id']][:8]
     team = TeacherCards(f['id'])
     body = hero_band(e(f['name']), h1, lede, '', crumbs(('/', 'Home'), ('/workshops/', 'Workshops'), (f'/workshops/{f["id"]}/', f['name']), (None, day_date(s0['date']))))
     body += f'''<section class="sec v-studio"><div class="wrap listing book">
   <div class="aside">{times}{''.join(blocks)}</div>
   <div class="prose">{photo(f['id'], cls='rounded')}
-    <h2>What you'll <em>make</em></h2><p class="lead">{e(f['summary'])}</p><p>All materials are included, and beginners are welcome.</p>
+    <h2>What you'll <em>make</em></h2><p class="lead">{e(f['summary'])}</p><p>{e(POL['included'].capitalize())} are included, and beginners are welcome.</p>
     {f'<h2>Who runs <em>it</em></h2><p>Taught by working artists from the Master Artist team.</p>{team}' if team else ''}
     <h2>Good to <em>know</em></h2>{Accordion(policy_items())}
     <p style="margin-top:20px"><a class="btn ghost" href="/workshops/{f['id']}/">Other dates for {e(f['name'])}</a></p></div>
@@ -1099,7 +1099,7 @@ def build_prices():
     aac = FORMATS.get('adult-art-class')
     if aac and aac.get('status') != 'paused':
         extra_rows.append(('Adult Art Class (Thursday)', f"drop in, or {aac['pack_size']} for {rm(aac['pack_price'])}", rm(aac['price']), '/workshops/adult-art-class/'))
-    extra_rows.append((d['name'], f"Tue and Thu evenings · {rm(d['price_per_pair'])} a pair", f"+{rm(d['price_per_person'])}", None))
+    extra_rows.append((d['name'], f"Any workshop · {rm(d['price_per_pair'])} a pair", f"+{rm(d['price_per_person'])}", None))
     if sp:
         extra_rows.append(('Studio Pass', f"{sp['sessions']} workshop seats", rm(sp['launch']), None))
     for pk in g['packages']:
@@ -1334,7 +1334,7 @@ def build_terms():
             f"Each session runs with a minimum of {POL['minimum_to_run']} people. If a session doesn't reach it, we will offer you another date.",
             f"Sessions on public holidays are {int(POL['public_holiday_surcharge'] * 100)}% more, unless the page says otherwise.",
             f"Please arrive {POL['arrive_early_min']} minutes early. Prices shown are {e(pw['name'])} prices until {until.day} {until.strftime('%B %Y')}.",
-            "Dine + workshop is a set dinner at Savor downstairs, booked with Tuesday and Thursday evening sessions."]),
+            f"Dine + workshop is a meal at Savor downstairs ({rm(WS['addons']['dine']['price_per_person'])} a person), booked with any workshop."]),
         ('Weekly classes (Master Artist Academy)', [
             f"A trial class is {rm(TRIAL['price'])}. If you continue, the {rm(TRIAL['price'])} is {e(TRIAL['note'])}. There is no obligation to continue.",
             "Monthly fees cover four weekly classes. All materials are included. Classes run subject to minimum numbers.",

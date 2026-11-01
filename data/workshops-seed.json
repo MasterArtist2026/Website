@@ -7,9 +7,9 @@
       "name": "Textured & Impasto Canvas",
       "discipline": "art",
       "duration_min": 120,
-      "price": 79,
-      "pair_price": 140,
-      "cap": 18,
+      "price": 89,
+      "pair_price": 160,
+      "cap": 20,
       "room": "L2 front room",
       "room_fallback": "L1 front room",
       "audience": "adults",
@@ -23,9 +23,9 @@
       "name": "Acrylic Canvas",
       "discipline": "art",
       "duration_min": 120,
-      "price": 69,
-      "pair_price": 120,
-      "cap": 18,
+      "price": 80,
+      "pair_price": 144,
+      "cap": 20,
       "room": "L2 front room",
       "room_fallback": "L1 front room",
       "audience": "adults",
@@ -39,9 +39,9 @@
       "name": "Watercolour",
       "discipline": "art",
       "duration_min": 120,
-      "price": 69,
-      "pair_price": 120,
-      "cap": 16,
+      "price": 80,
+      "pair_price": 144,
+      "cap": 20,
       "room": "L2 front room",
       "room_fallback": "L1 front room",
       "audience": "adults",
@@ -55,15 +55,15 @@
       "name": "Plant-based Bake Lab",
       "discipline": "baking",
       "duration_min": 120,
-      "price": 75,
+      "price": 95,
       "price_specialty": 85,
-      "pair_price": 130,
-      "cap": 24,
+      "pair_price": 171,
+      "cap": 20,
       "room": "L1 kitchen",
       "audience": "all",
       "summary": "One plant-based bake, boxed to take home. A familiar bread most weeks (focaccia, pizza dough, cinnamon rolls, bagels, milk bread); specialty breads and cakes at RM85.",
       "upsell": "baking-course",
-      "dine_addon": false,
+      "dine_addon": true,
       "live_from": "2026-11-04",
       "cap_specialty": 20
     },
@@ -117,46 +117,43 @@
       "name": "Glow-in-the-Dark Canvas",
       "discipline": "art",
       "duration_min": 120,
-      "price": 85,
-      "pair_price": 150,
-      "cap": 18,
+      "price": 89,
+      "pair_price": 160,
+      "cap": 20,
       "room": "L2 front room",
       "audience": "adults",
       "summary": "One canvas painted with glow-in-the-dark acrylics from a guided theme: it looks finished in daylight and lights up when the lights go off.",
       "upsell": "adult-art",
       "dine_addon": true,
-      "live_from": "2026-11-04",
-      "_price_status": "SUGGESTED, confirm"
+      "live_from": "2026-11-04"
     },
     {
       "id": "candle-making",
       "name": "Candle Making",
       "discipline": "craft",
       "duration_min": 120,
-      "price": 89,
-      "pair_price": 160,
-      "cap": 16,
+      "price": 99,
+      "pair_price": 178,
+      "cap": 20,
       "room": "L1 front room (Savor)",
       "audience": "all",
       "summary": "Pour, scent and decorate your own candles in gift-ready jars, from a seasonal theme. Everything boxed to take home.",
-      "dine_addon": false,
-      "live_from": "2026-11-04",
-      "_price_status": "SUGGESTED, confirm"
+      "dine_addon": true,
+      "live_from": "2026-11-04"
     },
     {
       "id": "crochet-bag",
       "name": "Chunky Crochet",
       "discipline": "craft",
       "duration_min": 120,
-      "price": 95,
-      "pair_price": 170,
-      "cap": 14,
+      "price": 110,
+      "pair_price": 198,
+      "cap": 20,
       "room": "L2 front room",
       "audience": "adults and teens",
       "summary": "Learn the basic stitches with chunky yarn and a big hook, and leave with your own small bag. No experience needed.",
-      "dine_addon": false,
-      "live_from": "2026-11-04",
-      "_price_status": "SUGGESTED, confirm"
+      "dine_addon": true,
+      "live_from": "2026-11-04"
     },
     {
       "id": "kids-art-studio",
@@ -249,10 +246,10 @@
   "addons": {
     "dine": {
       "name": "Dine + workshop",
-      "price_per_person": 35,
-      "price_per_pair": 65,
-      "description": "Set dinner at Savor downstairs before (or after, for the Adult Art Class) the Tuesday or Thursday session.",
-      "applies_to": "formats with dine_addon true, Tue and Thu evenings"
+      "price_per_person": 25,
+      "price_per_pair": 50,
+      "description": "A meal at Savor downstairs with any workshop: before an evening session, after a daytime one.",
+      "applies_to": "formats with dine_addon true, every session"
     }
   },
   "groups": {
@@ -451,7 +448,9 @@
     },
     "public_holiday_surcharge_waived_dates": [
       "2026-11-08"
-    ]
+    ],
+    "included": "a drink and all materials",
+    "pair_discount": 0.1
   },
   "launch": {
     "first_public_sessions": "2026-11-04",
@@ -482,11 +481,13 @@
       },
       {
         "date": "2026-11-05",
-        "time": "19:30",
-        "end": "21:30",
+        "time": "19:00",
+        "end": "21:00",
         "format": "textured-canvas",
         "theme": "Autumn Textures",
-        "room": "l2-front"
+        "room": "l2-front",
+        "price": 80,
+        "pair_price": 144
       },
       {
         "date": "2026-11-08",
@@ -522,10 +523,10 @@
       },
       {
         "date": "2026-11-12",
-        "time": "19:30",
-        "end": "21:30",
+        "time": "19:00",
+        "end": "21:00",
         "format": "glow-canvas",
-        "theme": "Starry Night Glow",
+        "theme": "Galaxy Night Glow",
         "room": "l2-front"
       },
       {
@@ -554,8 +555,8 @@
       },
       {
         "date": "2026-11-19",
-        "time": "19:30",
-        "end": "21:30",
+        "time": "19:00",
+        "end": "21:00",
         "format": "glow-canvas",
         "theme": "Glow Lagoon: Jellyfish",
         "room": "l2-front"
@@ -586,8 +587,8 @@
       },
       {
         "date": "2026-11-26",
-        "time": "19:30",
-        "end": "21:30",
+        "time": "19:00",
+        "end": "21:00",
         "format": "textured-canvas",
         "theme": "Golden Impasto Sky",
         "room": "l2-front"

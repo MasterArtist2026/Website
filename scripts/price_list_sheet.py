@@ -30,15 +30,15 @@ if private.exists():
     pass_after = pw.get('studio_pass', {}).get('post_launch')
 
 # 1 May 2027 prices not in the plan yet: suggestions, marked as such
-SUGGESTED_POST = {'glow-canvas': 99, 'candle-making': 99, 'crochet-bag': 109}
+SUGGESTED_POST = {'glow-canvas': 99, 'candle-making': 109, 'crochet-bag': 119}
 WHY = {
-    'watercolour-botanicals': 'Entry painting price; the adult floor is RM65.',
-    'acrylic-canvas': 'Easiest first visit; same entry price as Watercolour.',
-    'textured-canvas': 'Proven seller; texture paste and impasto medium cost more.',
-    'glow-canvas': 'Glow paints cost more; the strongest ad hook of the month.',
-    'candle-making': 'Wax, jars and scents; Christmas gifting.',
-    'crochet-bag': 'Chunky yarn and a hook to take home; kept under RM99, where earlier workshops lost people.',
-    'bake-lab': 'Focaccia at RM75 drew 25 people; ciabatta at RM120 drew 12.',
+    'watercolour-botanicals': 'Entry painting price, as posted on Facebook 1 Nov; drink and materials included.',
+    'acrylic-canvas': 'Same entry price as Watercolour (Facebook 1 Nov).',
+    'textured-canvas': 'RM80 in the first week (5 Nov), RM89 after (Facebook 1 Nov); paste and impasto medium cost more.',
+    'glow-canvas': 'Glow paints cost more; the strongest ad hook of the month (Facebook 1 Nov).',
+    'candle-making': 'Wax, jars and scents; Christmas gifting (Facebook 1 Nov).',
+    'crochet-bag': 'Chunky yarn and a hook to take home (Facebook 1 Nov).',
+    'bake-lab': 'Christmas Gingerbread at RM95 (Facebook 1 Nov). Focaccia at RM75 drew 25 people; ciabatta at RM120 drew 12.',
     'kids-art-studio': 'Sold only as Family Sunday: adult Textured Canvas plus a child, same hour.',
     'adult-art-class': 'A class, not a party: drop in, or four for the price of about three.',
 }
@@ -72,7 +72,7 @@ rows.append(([], 'blank'))
 # Workshops
 rows.append((['Studio Sessions · workshops'], 'section'))
 rows.append((['Workshop', 'Status (Nov 2026)', 'Length', 'Room', 'Max seats', f'Price now (to {until:%d %b %Y})',
-              '2 people', 'Dine add-on (Tue/Thu eve)', 'From 1 May 2027', 'Why this price'], 'head'))
+              '2 people (10% off)', 'Meal add-on', 'From 1 May 2027', 'Why this price'], 'head'))
 dine = ws_seed['addons']['dine']
 for f in ws_seed['formats']:
     if f.get('type') == 'course':
@@ -111,7 +111,7 @@ rows.append(([], 'blank'))
 # Add-ons, passes, vouchers
 rows.append((['Add-ons, passes and vouchers'], 'section'))
 rows.append((['Item', 'What', 'Price now', 'From 1 May 2027'], 'head'))
-rows.append(([dine['name'], 'Set dinner at Savor with a Tue or Thu evening session',
+rows.append(([dine['name'], 'A meal at Savor with any workshop (before an evening session, after a daytime one)',
               f"{rm(dine['price_per_person'])} a person · {rm(dine['price_per_pair'])} a pair",
               rm(post.get('dine_addon')) or 'to set'], 'row'))
 sp = pol['pricing_window'].get('studio_pass', {})
