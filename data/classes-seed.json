@@ -114,8 +114,7 @@
       "discipline": "voice",
       "price_month": 400,
       "per_session": 100,
-      "group_price_month": 340,
-      "adult_price_month": 480,
+      "group_price_month": 300,
       "cap": 6,
       "room": "L2 recording studio",
       "slots": [
@@ -134,7 +133,9 @@
       ],
       "teacher": "Sabrina",
       "summary": "Technique, repertoire and performance with Sabrina; recorded in the studio so you hear your own progress. Small intake to start.",
-      "term": "Monthly."
+      "term": "Monthly.",
+      "duration_min": 90,
+      "format_note": "Usually one-to-one; small groups on request."
     },
     {
       "id": "teen-photo-video",
@@ -161,8 +162,8 @@
       "voice": "academy",
       "name": "Photography & Videography",
       "discipline": "photography-videography",
-      "price_month": 560,
-      "per_session": 140,
+      "price_month": 400,
+      "per_session": 100,
       "cap": 6,
       "room": "L2 recording studio",
       "slots": [
