@@ -55,11 +55,12 @@ PHOTOS = {
     'kids-art-older': ('art-photo-3.jpg', 'Older students working on a painting together'),
     'adult-art': ('painting-2.jpg', 'An adult art session'),
     'voice': ('vocal-singing.jpg', 'Sabrina Hew singing'),
-    # TODO: drawings until real photos from these workshops exist
+    # TODO: a drawing and two Unsplash-licence stock photos until real photos from these workshops exist
     'glow-canvas': ('art-glow-canvas.svg', 'Illustration of a glow-in-the-dark canvas of glowing jellyfish in a dark lagoon'),
-    'candle-making': ('art-candle-making.svg', 'Illustration of three hand-poured candles in jars with pine and berries'),
-    'crochet-bag': ('art-crochet-bag.svg', 'Illustration of a chunky crochet tote bag with yarn and a hook'),
+    'candle-making': ('candle-making-stock.jpg', 'Lit candles in white ceramic holders on a table dressed for Christmas'),
+    'crochet-bag': ('crochet-bag-stock.jpg', 'A pink and cream chunky crochet bag on a wooden floor'),
 }
+STAND_INS = {'glow-canvas', 'candle-making', 'crochet-bag'}   # not our photos: kept out of Event schema images
 
 
 # More photos from past sessions, shown as a row on format and class pages. Adult workshop rows
@@ -940,7 +941,7 @@ def event_ld(s, url):
     return {'@context': 'https://schema.org', '@type': 'Event', 'name': f"{s['name']}" + (f" · {s['theme']}" if s.get('theme') else ''),
             'description': f['summary'], 'startDate': f"{s['date']}T{s['time']}:00+08:00", 'endDate': f"{s['date']}T{s['end']}:00+08:00",
             'eventStatus': 'https://schema.org/EventScheduled', 'eventAttendanceMode': 'https://schema.org/OfflineEventAttendanceMode',
-            'location': place(), 'image': [SITE['url'] + '/' + PHOTOS[s['format']][0]] if not PHOTOS.get(s['format'], ('.svg',))[0].endswith('.svg') else [],
+            'location': place(), 'image': [SITE['url'] + '/' + PHOTOS[s['format']][0]] if s['format'] in PHOTOS and s['format'] not in STAND_INS else [],
             'organizer': {'@type': 'Organization', 'name': SITE['name'], 'url': SITE['url']},
             'offers': {'@type': 'Offer', 'price': s['price'], 'priceCurrency': 'MYR', 'url': SITE['url'] + url,
                        'availability': 'https://schema.org/SoldOut' if s['seats_left'] == 0 else 'https://schema.org/InStock'}}
