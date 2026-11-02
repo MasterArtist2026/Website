@@ -240,10 +240,11 @@ def SessionCard(s, link=True):
     else:
         action = f'<a class="btn block" href="/workshops/{s["format"]}/{s["date"]}/">Book</a>' if link else ''
     return f'''<article class="card v-studio">
-  {photo(s['format'])}
+  <div class="card-photo">{photo(s['format'])}{CalDate(s['date'])}</div>
   <div class="body">
+    <div class="when">{fmt_time(s['time'])}–{fmt_time(s['end'])}</div>
     <h3>{e(title)}</h3>{theme}
-    <div class="meta"><b>{day_date(s['date'])} · {fmt_time(s['time'])}–{fmt_time(s['end'])}</b><span>{e(s['room'])}</span></div>
+    <div class="meta"><span>{e(s['room'])}</span></div>
     {price}
     <div class="badges">{' '.join(badges)} {seats_html(s)}</div>
     <div class="actions">{action}</div>
@@ -345,8 +346,29 @@ def BookingEmbed(s):
 </form>'''
 
 
+def CalDate(iso):
+    """Tear-off calendar date for a session tile: WED / 4 / NOV."""
+    d = dt.date.fromisoformat(iso)
+    return (f'<time class="cal" datetime="{iso}"><span class="dow">{d.strftime("%a")}</span>'
+            f'<b>{d.day}</b><span class="mon">{d.strftime("%b")}</span></time>')
+
+
 def WeekStrip(sessions):
-    return '<div class="week-strip">' + ''.join(SessionCard(s) for s in sessions) + '</div>'
+    """Sessions as a schedule: one heading per week (Mon–Sun), then that week's tiles."""
+    start = dt.date.fromisoformat(START)
+    weeks = {}
+    for s in sessions:
+        d = dt.date.fromisoformat(s['date'])
+        weeks.setdefault(d - dt.timedelta(days=d.weekday()), []).append(s)
+    out = []
+    for mon, ss in sorted(weeks.items()):
+        sun = mon + dt.timedelta(days=6)
+        span = f'{mon.day}–{sun.day} {sun.strftime("%B")}' if mon.month == sun.month else f'{mon.day} {mon.strftime("%b")} – {sun.day} {sun.strftime("%b")}'
+        ahead = (mon - (start - dt.timedelta(days=start.weekday()))).days // 7
+        tag = {0: 'This week', 1: 'Next week'}.get(ahead, '')
+        out.append(f'<div class="wk"><h3 class="wk-head">{f"<span>{tag}</span>" if tag else ""}{span}</h3>'
+                   f'<div class="week-strip">{"".join(SessionCard(x) for x in ss)}</div></div>')
+    return '<div class="schedule">' + ''.join(out) + '</div>'
 
 
 def PriceTable(voice):
