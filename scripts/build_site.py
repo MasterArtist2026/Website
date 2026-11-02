@@ -343,10 +343,13 @@ def BookingEmbed(s):
     {pair_opt}
   </div>
   {f'<div class="row">{dine_opt}</div>' if dine_opt else ''}
-  <div><label for="nm">Your name</label><input id="nm" name="name" type="text" autocomplete="name" maxlength="120" required></div>
+  <div class="row">
+    <div><label for="fn">First name</label><input id="fn" name="first_name" type="text" autocomplete="given-name" maxlength="60" required></div>
+    <div><label for="ln">Last name</label><input id="ln" name="last_name" type="text" autocomplete="family-name" maxlength="60" required></div>
+  </div>
   <div class="row">
     <div><label for="ph">WhatsApp number</label><input id="ph" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="012-345 6789" required></div>
-    <div><label for="em">Email <span class="muted">(optional)</span></label><input id="em" name="email" type="email" autocomplete="email" maxlength="320"></div>
+    <div><label for="em">Email</label><input id="em" name="email" type="email" autocomplete="email" maxlength="320" required></div>
   </div>
   {ConsentFields(consent_kind(s))}
   <div class="total"><span>Total</span><b data-total>{rm(s['price'])}</b></div>

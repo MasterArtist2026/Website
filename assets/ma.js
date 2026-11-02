@@ -144,7 +144,8 @@
         'Hi, I\'d like to book ' + d.name + ' on ' + d.when + '.',
         (t.isPair ? t.qty + ' pair ticket(s)' : t.qty + ' ' + (d.unit || 'seat(s)')) + ' — RM' + t.sum + '.' + (f.get('dine') === 'yes' ? ' Plus a meal at Savor for ' + t.people + (d.dineUrl ? ' (I\'ll order from the menu link).' : ': please send me Savor\'s menu link.') : '')
       ];
-      var LABELS = { name: 'Name', child_name: "Child's name", child_age: "Child's age", allergies: 'Allergies or needs', collector: 'Adult collecting' };
+      lines.push('Name: ' + get('first_name') + ' ' + get('last_name'), 'Email: ' + get('email'));
+      var LABELS = { child_name: "Child's name", child_age: "Child's age", allergies: 'Allergies or needs', collector: 'Adult collecting' };
       Object.keys(LABELS).forEach(function (k) { if (f.get(k)) lines.push(LABELS[k] + ': ' + f.get(k)); });
       if (f.get('photo')) lines.push('Photo consent: ' + f.get('photo'));
       var CONSENTS = { parent: 'Parent/guardian consent: given', kitchen: 'Kitchen and allergen notice: confirmed', terms: 'Participation and booking terms: agreed' };
@@ -159,7 +160,8 @@
       var consents = ['parent', 'kitchen', 'terms'].filter(function (k) { return f.get(k); });
       var row = {
         session_id: d.session, format: d.format, session_name: d.name, session_when: d.when, session_date: d.date,
-        cap: d.cap ? Number(d.cap) : null, name: get('name'), phone: phone, email: blank(get('email')),
+        cap: d.cap ? Number(d.cap) : null, first_name: get('first_name'), last_name: get('last_name'),
+        name: get('first_name') + ' ' + get('last_name'), phone: phone, email: get('email').toLowerCase(),
         qty: t.qty, ticket: t.isPair ? 'pair' : 'single', people: t.people, amount: t.sum, dine: f.get('dine') === 'yes',
         allergies: blank(get('allergies')), child_name: blank(get('child_name')), child_age: blank(get('child_age')),
         collector: blank(get('collector')), photo_consent: blank(get('photo')), consents: consents, source: blank(source),

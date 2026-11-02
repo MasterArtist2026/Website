@@ -1136,7 +1136,7 @@ window.tlStatus = async (id, status) => {
 window.bkCsv = id => {
   const rows = bkRows.filter(b => b.session_id === id);
   if (!rows.length) return;
-  const cols = ['name', 'phone', 'email', 'ticket', 'qty', 'people', 'dine', 'allergies', 'child_name', 'child_age', 'collector', 'photo_consent', 'amount', 'status', 'created_at', 'source'];
+  const cols = ['first_name', 'last_name', 'phone', 'email', 'ticket', 'qty', 'people', 'dine', 'allergies', 'child_name', 'child_age', 'collector', 'photo_consent', 'amount', 'status', 'created_at', 'source'];
   const cell = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
   const csv = [cols.join(','), ...rows.map(b => cols.map(c => cell(b[c])).join(','))].join('\n');
   const a = document.createElement('a');

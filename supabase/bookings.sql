@@ -22,9 +22,11 @@ create table if not exists public.workshop_bookings (
   session_when    text not null,
   session_date    date not null,
   cap             int,
-  name            text not null,
+  first_name      text not null,
+  last_name       text not null,
+  name            text not null,          -- first_name + ' ' + last_name, used in lists and reports
   phone           text not null,
-  email           text,
+  email           text not null,
   qty             int not null default 1,
   ticket          text not null default 'single',
   people          int not null default 1,
@@ -54,8 +56,9 @@ create table if not exists public.workshop_bookings (
   constraint wb_format_format check (format ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
   constraint wb_text_lens check (
     char_length(session_name) <= 200 and char_length(session_when) <= 80
-    and char_length(btrim(name)) between 1 and 120
-    and (email is null or (char_length(email) <= 320 and email ~* '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$'))
+    and char_length(btrim(first_name)) between 1 and 60 and char_length(btrim(last_name)) between 1 and 60
+    and char_length(btrim(name)) between 3 and 121
+    and char_length(email) <= 320 and email ~* '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$'
     and (allergies is null or char_length(allergies) <= 1000)
     and (child_name is null or char_length(child_name) <= 120)
     and (child_age is null or char_length(child_age) <= 40)
