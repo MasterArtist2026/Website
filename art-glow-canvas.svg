@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <radialGradient id="room" cx="50%" cy="40%" r="75%">
+      <stop offset="0" stop-color="#3B1C5A"/>
+      <stop offset="1" stop-color="#160A24"/>
+    </radialGradient>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0E1638"/>
+      <stop offset="1" stop-color="#241046"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="7" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="soft" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+  </defs>
+  <rect width="800" height="600" fill="url(#room)"/>
+  <!-- easel -->
+  <g stroke="#7A5530" stroke-width="16" stroke-linecap="round">
+    <line x1="300" y1="560" x2="360" y2="120"/>
+    <line x1="500" y1="560" x2="440" y2="120"/>
+    <line x1="400" y1="520" x2="400" y2="110"/>
+  </g>
+  <rect x="236" y="468" width="328" height="20" rx="6" fill="#8C6239"/>
+  <!-- canvas -->
+  <rect x="250" y="110" width="300" height="360" rx="6" fill="#F6F1E8"/>
+  <rect x="264" y="124" width="272" height="332" rx="3" fill="url(#sky)"/>
+  <!-- glowing moon -->
+  <circle cx="460" cy="190" r="34" fill="#E8FFB0" filter="url(#glow)"/>
+  <circle cx="474" cy="182" r="30" fill="url(#sky)"/>
+  <!-- stars -->
+  <g fill="#B9FFF4" filter="url(#glow)">
+    <circle cx="300" cy="160" r="4"/><circle cx="352" cy="200" r="3"/><circle cx="398" cy="150" r="4.5"/>
+    <circle cx="510" cy="250" r="3"/><circle cx="318" cy="246" r="3.5"/><circle cx="420" cy="232" r="2.5"/>
+  </g>
+  <!-- neon flowers -->
+  <g filter="url(#glow)" fill="none" stroke-width="6" stroke-linecap="round">
+    <path d="M330 440 C 330 380, 320 350, 334 316" stroke="#7CFFB2"/>
+    <path d="M400 440 C 404 390, 396 360, 402 330" stroke="#7CFFB2"/>
+    <path d="M470 440 C 470 396, 480 370, 468 344" stroke="#7CFFB2"/>
+    <path d="M400 400 C 420 390, 432 380, 440 366" stroke="#7CFFB2"/>
+  </g>
+  <g filter="url(#glow)">
+    <g fill="#FF6FD8">
+      <circle cx="334" cy="300" r="16"/><circle cx="318" cy="316" r="14"/><circle cx="350" cy="316" r="14"/><circle cx="334" cy="330" r="12"/>
+    </g>
+    <circle cx="334" cy="315" r="8" fill="#FFF36B"/>
+    <g fill="#62E6FF">
+      <circle cx="402" cy="312" r="17"/><circle cx="385" cy="328" r="14"/><circle cx="419" cy="328" r="14"/>
+    </g>
+    <circle cx="402" cy="324" r="8" fill="#FFF36B"/>
+    <g fill="#FFB347">
+      <circle cx="468" cy="328" r="15"/><circle cx="453" cy="342" r="13"/><circle cx="483" cy="342" r="13"/>
+    </g>
+    <circle cx="468" cy="340" r="7" fill="#FFF36B"/>
+  </g>
+  <!-- palette and brushes in front -->
+  <g transform="translate(560 470) rotate(-12)">
+    <path d="M0 40 C 0 0, 70 -20, 120 10 C 160 34, 140 80, 100 74 C 80 70, 84 92, 60 96 C 20 100, 0 70, 0 40 Z" fill="#E9D9B8"/>
+    <circle cx="96" cy="60" r="12" fill="#3B1C5A"/>
+    <g filter="url(#glow)">
+      <circle cx="30" cy="40" r="11" fill="#FF6FD8"/><circle cx="58" cy="20" r="11" fill="#7CFFB2"/>
+      <circle cx="92" cy="20" r="10" fill="#62E6FF"/><circle cx="40" cy="74" r="10" fill="#FFF36B"/>
+    </g>
+  </g>
+  <g transform="translate(120 520) rotate(-35)">
+    <rect x="0" y="-5" width="150" height="10" rx="5" fill="#C79733"/>
+    <rect x="150" y="-6" width="26" height="12" fill="#B8B8C4"/>
+    <path d="M176 -6 L 206 0 L 176 6 Z" fill="#7CFFB2" filter="url(#soft)"/>
+  </g>
+  <!-- sparkles in the room -->
+  <g fill="#E6B44C" opacity=".85">
+    <path d="M110 120 l6 16 16 6 -16 6 -6 16 -6 -16 -16 -6 16 -6 z"/>
+    <path d="M680 150 l4 11 11 4 -11 4 -4 11 -4 -11 -11 -4 11 -4 z"/>
+    <path d="M650 330 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z"/>
+  </g>
+</svg>

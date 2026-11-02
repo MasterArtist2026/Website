@@ -55,6 +55,10 @@ PHOTOS = {
     'kids-art-older': ('art-photo-3.jpg', 'Older students working on a painting together'),
     'adult-art': ('painting-2.jpg', 'An adult art session'),
     'voice': ('vocal-singing.jpg', 'Sabrina Hew singing'),
+    # TODO: drawings until real photos from these workshops exist
+    'glow-canvas': ('art-glow-canvas.svg', 'Illustration of a glow-in-the-dark canvas: neon flowers under a glowing moon'),
+    'candle-making': ('art-candle-making.svg', 'Illustration of three hand-poured candles in jars with pine and berries'),
+    'crochet-bag': ('art-crochet-bag.svg', 'Illustration of a chunky crochet tote bag with yarn and a hook'),
 }
 
 
@@ -936,7 +940,7 @@ def event_ld(s, url):
     return {'@context': 'https://schema.org', '@type': 'Event', 'name': f"{s['name']}" + (f" · {s['theme']}" if s.get('theme') else ''),
             'description': f['summary'], 'startDate': f"{s['date']}T{s['time']}:00+08:00", 'endDate': f"{s['date']}T{s['end']}:00+08:00",
             'eventStatus': 'https://schema.org/EventScheduled', 'eventAttendanceMode': 'https://schema.org/OfflineEventAttendanceMode',
-            'location': place(), 'image': [SITE['url'] + '/' + PHOTOS[s['format']][0]] if s['format'] in PHOTOS else [],
+            'location': place(), 'image': [SITE['url'] + '/' + PHOTOS[s['format']][0]] if not PHOTOS.get(s['format'], ('.svg',))[0].endswith('.svg') else [],
             'organizer': {'@type': 'Organization', 'name': SITE['name'], 'url': SITE['url']},
             'offers': {'@type': 'Offer', 'price': s['price'], 'priceCurrency': 'MYR', 'url': SITE['url'] + url,
                        'availability': 'https://schema.org/SoldOut' if s['seats_left'] == 0 else 'https://schema.org/InStock'}}
