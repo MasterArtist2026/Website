@@ -180,6 +180,16 @@ a{color:var(--purple)}
   .snav.on{border-left:0;border-bottom-color:var(--gold)}
   .bodyw{padding:20px}
 }
+/* bookings */
+.bk-sum{display:flex;gap:10px;flex-wrap:wrap;margin:2px 0 10px;font-size:13px}
+.bk-sum span{background:#fff;border:1px solid var(--line);padding:4px 10px;border-radius:999px}
+.bk-sum span.full{background:#FBE4E0;border-color:#E9B8AE}
+.bk-wrap{overflow-x:auto}
+table.bk{width:100%;border-collapse:collapse;font-size:13px}
+table.bk th{text-align:left;font-weight:600;padding:6px 8px;border-bottom:2px solid var(--line);white-space:nowrap}
+table.bk td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+table.bk tr.gone td{opacity:.45;text-decoration:line-through}
+table.bk select{font-size:12.5px;padding:3px 4px}
 </style>
 </head>
 <body>
@@ -280,6 +290,7 @@ const SECTIONS = [
   { id:'hero',         key:'hero',         label:'Homepage Hero',       ready:true },
   { id:'programmes',   key:'programmes',   label:'Programmes',          ready:true },
   { id:'classes',      key:'classes',      label:'Class Schedule',      ready:true },
+  { id:'bookings',     key:'bookings',     label:'Bookings',            ready:true },
   { id:'events',       key:'events',       label:'Events Calendar',     ready:true },
   { id:'fees',         key:'fees',         label:'Fees & Policies',     ready:true },
   { id:'gallery',      key:'gallery',      label:'Gallery',             ready:true },
@@ -429,6 +440,7 @@ async function boot(){
   // Links from the blog agent's review email: admin.html#blog/<slug>
   const hm = location.hash.match(/^#blog(?:\/([a-z0-9-]+))?$/);
   if (hm && canRead('blog')) { current = 'blog'; blogOpenSlug = hm[1] || null; }
+  if (location.hash === '#bookings' && canRead('bookings')) current = 'bookings';
 
   $('authScreen').style.display='none';
   $('appScreen').classList.add('on');
@@ -1010,6 +1022,129 @@ window.addTestimonial = async () => {
 /* ---------- events calendar ----------
    Events shown on the homepage "What's on" calendar and the Workshops page's
    upcoming list. Hidden events and events more than a day old don't show. */
+/* ---------- Bookings: workshop bookings by session, and trial requests ---------- */
+let bkTab = 'upcoming';
+const BK_STATUS = ['requested', 'confirmed', 'paid', 'cancelled', 'refunded'];
+const TL_STATUS = ['new', 'contacted', 'enrolled', 'closed'];
+const BK_LIVE = s => s !== 'cancelled' && s !== 'refunded';
+const waNum = p => { const d = String(p || '').replace(/\D/g, ''); return d.startsWith('0') ? '6' + d : d; };  // 012… → 6012…
+let bkRows = [];
+views.bookings = async function(){
+  busy(true,'Loading…');
+  const [bk, tl, ws] = await Promise.all([
+    sb.from('workshop_bookings').select('*').order('session_date').order('created_at'),
+    sb.from('trial_leads').select('id,created_at,parent_name,phone,email,child_age,programme_slug,message,ref_code,status').order('created_at', { ascending:false }).limit(200),
+    fetch('/data/workshops.json', { cache:'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null)
+  ]);
+  busy(false);
+  if (bk.error) {
+    $('view').innerHTML = `<div class="msg err">${esc(bk.error.message)}</div>
+      <div class="hint">If this says the table doesn't exist, run <b>supabase/bookings.sql</b> in the Supabase SQL Editor.</div>`;
+    return;
+  }
+  bkRows = bk.data || [];
+  const w = canWrite('bookings'), today = todayISO();
+  // Every scheduled session, booked or not, plus any booked session no longer in the schedule
+  const sessions = {};
+  ((ws && ws.sessions) || []).filter(s => s.public && s.type !== 'course').forEach(s => {
+    const theme = s.theme ? `${s.theme} · ${s.name}` : s.name;
+    sessions[s.id] = { id:s.id, date:s.date, time:s.time, name:theme, cap:s.cap, rows:[] };
+  });
+  bkRows.forEach(b => {
+    if (!sessions[b.session_id]) sessions[b.session_id] = { id:b.session_id, date:b.session_date, time:'', name:b.session_name, cap:b.cap, rows:[] };
+    sessions[b.session_id].when = b.session_when;
+    sessions[b.session_id].rows.push(b);
+  });
+  const all = Object.values(sessions).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  const upcoming = all.filter(s => s.date >= today), past = all.filter(s => s.date < today && s.rows.length).reverse();
+  const newTrials = (tl.data || []).filter(r => r.status === 'new').length;
+  const dayName = d => new Date(d + 'T00:00').toLocaleDateString('en-MY', { weekday:'short', day:'numeric', month:'short' });
+  let html = `<div class="hint"><b>Who has booked what.</b> Every booking sent from a workshop page lands here as <b>requested</b>.
+    Change it to <b>confirmed</b> once you have agreed it on WhatsApp, <b>paid</b> when the money is in, or <b>cancelled</b>.
+    Cancelled and refunded bookings don't count towards the seats. Each new booking also emails and WhatsApps you the session's list.</div>
+    <div class="blog-tabs">
+      <button class="${bkTab==='upcoming'?'on':''}" onclick="bkGo('upcoming')">Upcoming workshops (${upcoming.reduce((n, s) => n + s.rows.filter(b => BK_LIVE(b.status)).length, 0)} bookings)</button>
+      <button class="${bkTab==='past'?'on':''}" onclick="bkGo('past')">Past workshops</button>
+      <button class="${bkTab==='trials'?'on':''}" onclick="bkGo('trials')">Trial class requests${newTrials ? ` (${newTrials} new)` : ''}</button>
+    </div>`;
+  if (bkTab === 'trials') html += trialTable(tl, w);
+  else {
+    const shown = bkTab === 'upcoming' ? upcoming : past;
+    if (!shown.length) html += `<div class="empty">${bkTab==='upcoming' ? 'No upcoming workshops.' : 'No past bookings.'}</div>`;
+    shown.forEach(s => {
+      const live = s.rows.filter(b => BK_LIVE(b.status));
+      const seats = live.reduce((n, b) => n + b.people, 0), meals = live.filter(b => b.dine).reduce((n, b) => n + b.people, 0);
+      const paid = live.filter(b => b.status === 'paid').reduce((n, b) => n + b.amount, 0), due = live.filter(b => b.status !== 'paid').reduce((n, b) => n + b.amount, 0);
+      const full = s.cap && seats >= s.cap;
+      html += `<div class="card"><div class="card-h">
+          <span class="grip">${esc(dayName(s.date))}${s.time ? ' · ' + esc(s.time) : ''} · ${esc(s.name)}</span>
+          ${s.rows.length ? `<button class="btn sm" onclick="bkCsv('${esc(s.id)}')">Download list</button>` : ''}</div>
+        <div class="card-b">
+          <div class="bk-sum"><span class="${full?'full':''}"><b>${seats}</b>${s.cap ? ' of ' + s.cap : ''} seats</span>
+            <span>${live.length} booking${live.length===1?'':'s'}</span><span>Savor meals: ${meals}</span>
+            <span>Paid RM${paid}</span>${due ? `<span>To collect RM${due}</span>` : ''}
+            ${seats && seats < 6 ? '<span class="full">Below the minimum of 6</span>' : ''}</div>
+          ${s.rows.length ? bookingTable(s.rows, w) : '<div class="empty" style="margin:0">No bookings yet.</div>'}
+        </div></div>`;
+    });
+  }
+  $('view').innerHTML = html;
+};
+function bookingTable(rows, w){
+  const opt = (list, v) => list.map(x => `<option ${x===v?'selected':''}>${x}</option>`).join('');
+  return `<div class="bk-wrap"><table class="bk"><tr><th>Name</th><th>Contact</th><th>Tickets</th><th>Savor</th><th>Allergies / needs</th><th>Photos</th><th>Amount</th><th>Status</th><th>Booked</th></tr>
+    ${rows.map(b => `<tr class="${BK_LIVE(b.status)?'':'gone'}">
+      <td><b>${esc(b.name)}</b>${b.child_name ? `<br><small>Child: ${esc(b.child_name)}${b.child_age ? ', ' + esc(b.child_age) : ''}</small>` : ''}${b.collector ? `<br><small>Collecting: ${esc(b.collector)}</small>` : ''}</td>
+      <td><a href="https://wa.me/${waNum(b.phone)}" target="_blank" rel="noopener">${esc(b.phone)}</a>${b.email ? `<br><small>${esc(b.email)}</small>` : ''}</td>
+      <td>${b.ticket==='pair' ? `${b.qty} pair (${b.people})` : b.people}</td>
+      <td>${b.dine ? 'Yes' : ''}</td><td>${esc(b.allergies || '')}</td>
+      <td>${b.photo_consent==='no' ? '<b>No</b>' : esc(b.photo_consent || '')}</td>
+      <td>RM${b.amount}</td>
+      <td>${w ? `<select onchange="bkStatus('${b.id}', this.value)">${opt(BK_STATUS, b.status)}</select>` : esc(b.status)}</td>
+      <td><small>${esc(new Date(b.created_at).toLocaleString('en-MY', { day:'numeric', month:'short', hour:'numeric', minute:'2-digit' }))}${b.source ? '<br>' + esc(b.source) : ''}</small></td></tr>`).join('')}
+  </table></div>`;
+}
+function trialTable(tl, w){
+  if (tl.error) return `<div class="msg err">${esc(tl.error.message)}</div>`;
+  const rows = tl.data || [];
+  if (!rows.length) return `<div class="empty">No trial requests yet.</div>`;
+  const opt = v => TL_STATUS.map(x => `<option ${x===v?'selected':''}>${x}</option>`).join('');
+  return `<div class="card"><div class="card-b"><div class="bk-wrap"><table class="bk"><tr><th>Received</th><th>Name</th><th>Contact</th><th>Class</th><th>Age</th><th>Message</th><th>From</th><th>Status</th></tr>
+    ${rows.map(r => `<tr class="${r.status==='closed'?'gone':''}">
+      <td><small>${esc(new Date(r.created_at).toLocaleString('en-MY', { day:'numeric', month:'short', hour:'numeric', minute:'2-digit' }))}</small></td>
+      <td><b>${esc(r.parent_name)}</b></td>
+      <td><a href="https://wa.me/${waNum(r.phone)}" target="_blank" rel="noopener">${esc(r.phone)}</a>${r.email ? `<br><small>${esc(r.email)}</small>` : ''}</td>
+      <td>${esc(r.programme_slug || '')}</td><td>${esc(r.child_age || '')}</td><td><small>${esc(r.message || '')}</small></td><td>${esc(r.ref_code)}</td>
+      <td>${w ? `<select onchange="tlStatus(${r.id}, this.value)">${opt(r.status)}</select>` : esc(r.status)}</td></tr>`).join('')}
+  </table></div></div></div>`;
+}
+window.bkGo = async t => { bkTab = t; await render(); };
+window.bkStatus = async (id, status) => {
+  busy(true);
+  const { error } = await sb.from('workshop_bookings').update({ status, updated_at: new Date().toISOString(), updated_by: me.id }).eq('id', id);
+  busy(false);
+  if (error) { toast('Could not save: ' + error.message); return; }
+  toast('Saved: ' + status); await render();
+};
+window.tlStatus = async (id, status) => {
+  busy(true);
+  const { error } = await sb.from('trial_leads').update({ status }).eq('id', id);
+  busy(false);
+  if (error) { toast('Could not save: ' + error.message); return; }
+  toast('Saved: ' + status);
+};
+window.bkCsv = id => {
+  const rows = bkRows.filter(b => b.session_id === id);
+  if (!rows.length) return;
+  const cols = ['name', 'phone', 'email', 'ticket', 'qty', 'people', 'dine', 'allergies', 'child_name', 'child_age', 'collector', 'photo_consent', 'amount', 'status', 'created_at', 'source'];
+  const cell = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const csv = [cols.join(','), ...rows.map(b => cols.map(c => cell(b[c])).join(','))].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv' }));
+  a.download = `${id}.csv`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+
 let evFilter = 'upcoming';
 const todayISO = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 const hm = t => (t || '').slice(0, 5);

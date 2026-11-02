@@ -335,14 +335,19 @@ def BookingEmbed(s):
     msg_unit = {'Pairs': 'pair(s)', 'Families': 'Family Sunday ticket(s)'}.get(unit, 'seat(s)')
     when = f"{day_date(s['date'])} at {fmt_time(s['time'])}"
     return f'''<form class="booking v-studio" data-session="{e(s['id'])}" data-format="{e(s['format'])}" data-name="{e(s['name'])}" data-when="{e(when)}"
-  data-price="{s['price'] or 0}" data-pair="{s.get('pair_price') or 0}" data-booking="whatsapp" data-unit="{msg_unit}" data-dine-url="{e(dine.get('order_url') or '')}">
+  data-price="{s['price'] or 0}" data-pair="{s.get('pair_price') or 0}" data-booking="whatsapp" data-unit="{msg_unit}" data-dine-url="{e(dine.get('order_url') or '')}"
+  data-date="{s['date']}" data-cap="{s.get('cap') or ''}">
   <h2 class="h3">Book this session</h2>
   <div class="row">
     <div><label for="qty">{unit}</label><input id="qty" name="qty" type="number" min="1" max="{s['seats_left'] or 1}" value="1"></div>
     {pair_opt}
   </div>
   {f'<div class="row">{dine_opt}</div>' if dine_opt else ''}
-  <div><label for="nm">Your name</label><input id="nm" name="name" type="text" autocomplete="name" required></div>
+  <div><label for="nm">Your name</label><input id="nm" name="name" type="text" autocomplete="name" maxlength="120" required></div>
+  <div class="row">
+    <div><label for="ph">WhatsApp number</label><input id="ph" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="012-345 6789" required></div>
+    <div><label for="em">Email <span class="muted">(optional)</span></label><input id="em" name="email" type="email" autocomplete="email" maxlength="320"></div>
+  </div>
   {ConsentFields(consent_kind(s))}
   <div class="total"><span>Total</span><b data-total>{rm(s['price'])}</b></div>
   <button class="btn wa block" type="submit">{WA_ICON}<span>Book on WhatsApp</span></button>

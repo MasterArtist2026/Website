@@ -133,7 +133,13 @@
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       if (!form.reportValidity()) return;
-      var t = total(), f = t.f;
+      var t = total(), f = t.f, get = function (k) { return String(f.get(k) || '').trim(); };
+      var phone = get('phone'), digits = phone.replace(/\D/g, '');
+      if (digits.length < 8 || digits.length > 15 || !/^[0-9+(). -]+$/.test(phone)) {
+        var ph = form.querySelector('[name=phone]'); ph.setCustomValidity('Please add a phone number we can WhatsApp.'); ph.reportValidity();
+        ph.addEventListener('input', function () { ph.setCustomValidity(''); }, { once: true });
+        return;
+      }
       var lines = [
         'Hi, I\'d like to book ' + d.name + ' on ' + d.when + '.',
         (t.isPair ? t.qty + ' pair ticket(s)' : t.qty + ' ' + (d.unit || 'seat(s)')) + ' — RM' + t.sum + '.' + (f.get('dine') === 'yes' ? ' Plus a meal at Savor for ' + t.people + (d.dineUrl ? ' (I\'ll order from the menu link).' : ': please send me Savor\'s menu link.') : '')
@@ -147,6 +153,25 @@
       track('whatsapp_click', { voice: 'studio', format: d.format, session_id: d.session, value: t.sum, currency: 'MYR' });
       window.open(waUrl(lines.join('\n')), '_blank', 'noopener');
       form.classList.add('sent');
+      // Save the booking for the admin portal and Sabrina's report. WhatsApp opens first (a popup opened
+      // after a network wait is blocked on phones); keepalive lets the save finish as the page loses focus.
+      var blank = function (v) { return v ? v : null; };
+      var consents = ['parent', 'kitchen', 'terms'].filter(function (k) { return f.get(k); });
+      var row = {
+        session_id: d.session, format: d.format, session_name: d.name, session_when: d.when, session_date: d.date,
+        cap: d.cap ? Number(d.cap) : null, name: get('name'), phone: phone, email: blank(get('email')),
+        qty: t.qty, ticket: t.isPair ? 'pair' : 'single', people: t.people, amount: t.sum, dine: f.get('dine') === 'yes',
+        allergies: blank(get('allergies')), child_name: blank(get('child_name')), child_age: blank(get('child_age')),
+        collector: blank(get('collector')), photo_consent: blank(get('photo')), consents: consents, source: blank(source),
+        utm_source: blank(utm.utm_source), utm_medium: blank(utm.utm_medium), utm_campaign: blank(utm.utm_campaign),
+        utm_content: blank(utm.utm_content), gclid: blank(utm.gclid), fbclid: blank(utm.fbclid), landing_page: location.pathname
+      };
+      try {
+        fetch(SB_URL + '/rest/v1/workshop_bookings', {
+          method: 'POST', body: JSON.stringify(row), keepalive: true,
+          headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON, 'Content-Type': 'application/json', Prefer: 'return=minimal' }
+        }).catch(function () {});
+      } catch (err) {}
     });
   });
 
