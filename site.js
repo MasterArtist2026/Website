@@ -4,6 +4,7 @@
    fetched. All reads use public, read-only views, so the anon key is safe here. */
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 import { firstTouch, refCode, withRef } from './attribution.mjs';
+import { buildPublicLead, postLead } from './lead-capture.mjs';
 
 const SUPABASE_URL  = 'https://fudaosneozobacdalncv.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1ZGFvc25lb3pvYmFjZGFsbmN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4OTIwNDUsImV4cCI6MjEwMjQ2ODA0NX0.0PKbkncE8goPg-iJlAUacNUa3MjWJSj1ZLeqTpkqPZ0';
@@ -190,6 +191,10 @@ function rotator(items, dotHost, dotClass, interval, hoverHost, slide) {
 function adsLead(source, where) {
   const label = GOOGLE_ADS_LABELS[source];
   if (!label || !window.gtag) return;
+  // lead-gate.js drops repeat conversion hits unless this label was just armed.
+  const gate = window.__maLead || (window.__maLead = {});
+  gate.armedLabel = label;
+  gate.armUsed = false;
   // beacon transport survives a tab switch or unload, same as before.
   const payload = { send_to: label, link_location: where, transport_type: 'beacon' };
   if (source === 'trial_form') {
@@ -201,22 +206,34 @@ function adsLead(source, where) {
   } catch { /* a blocked tag must not break the page */ }
 }
 
-// The Google tag copies every page_view on this domain into generate_lead.
-// The head snippet drops those hits unless a save has just opened this window.
-function allowLeadHit() {
-  window.__allowGenerateLead = (window.__allowGenerateLead || 0) + 1;
-  setTimeout(() => {
-    window.__allowGenerateLead = Math.max(0, (window.__allowGenerateLead || 1) - 1);
-  }, 2000);
+// One generate_lead per successful save. The nonce lets lead-gate.js drop the
+// page-view copy GA4 creates, and a second call for the same form is ignored.
+function trackSavedLead(form, detail) {
+  if (form && form.dataset.leadTracked === '1') return;
+  if (form) form.dataset.leadTracked = '1';
+  const nonce = Math.random().toString(36).slice(2, 12);
+  const gate = window.__maLead || (window.__maLead = {});
+  gate.nonce = nonce;
+  gate.allowance = 1;
+  const source = detail.source || 'trial_form';
+  const payload = {
+    programme: detail.programme || '',
+    link_location: detail.where || '',
+    lead_source: source,
+    lead_nonce: nonce,
+    currency: 'MYR',
+    transport_type: 'beacon',
+  };
+  if (source === 'trial_form') payload.value = 50;
+  try { window.gtag && gtag('event', 'generate_lead', payload); } catch { /* a blocked tag must not break the page */ }
+  if (source === 'trial_form') adsLead('trial_form', detail.where || '');
+  try { window.fbq && fbq('track', 'Lead', { content_name: detail.programme || 'Enquiry' }); } catch { /* a blocked pixel must not break the page */ }
 }
 
 function track(kind, detail) {
   const where = detail.where || '';
   if (kind === 'trial') {
-    allowLeadHit();
-    try { window.fbq && fbq('track', 'Lead', { content_name: detail.programme || 'Trial class' }); } catch {}
-    try { window.gtag && gtag('event', 'generate_lead', { programme: detail.programme || '', link_location: where, value: 50, currency: 'MYR', transport_type: 'beacon' }); } catch {}
-    adsLead('trial_form', where);
+    trackSavedLead(null, detail);
   } else if (kind === 'whatsapp') {
     try { window.fbq && fbq('track', 'Contact', { content_name: where }); } catch {}
     try { window.gtag && gtag('event', 'whatsapp_click', { link_location: where, page: location.pathname, transport_type: 'beacon' }); } catch {}
@@ -238,67 +255,105 @@ document.addEventListener('click', e => {
   if (a) track('whatsapp', { where: placeOf(a) });
 }, true);
 
-/* -------------------------------------------------------------- trial form
-   The form inserts a row into public.trial_leads. generate_lead and the Ads
-   conversion fire only after that insert succeeds. WhatsApp then opens so the
-   family can send the same details. A failed save does not count as a lead. */
-const PROGRAMME_SLUGS = {
-  'Voice with Sabrina Hew': 'voice',
-  'Group Voice': 'group-voice',
-  'Piano & Instruments': 'piano',
-  'Mont Kiara Orchestra': 'orchestra',
-  'Art — Young Kids (4–8)': 'art-young-kids',
-  'Art — Older Kids (9–15)': 'art-older-kids',
-  'Graphic Design (10+)': 'graphic-design',
-  'Photography': 'photography',
-  'Videography & Film': 'videography',
-  'Adult Art (mornings)': 'adult-art',
-  'Adult Voice & Piano (mornings)': 'adult-voice-piano',
-  'Baking workshop': 'baking-workshop',
-  'Painting workshop': 'painting-workshop',
-  'Craft workshop': 'craft-workshop',
-  'Not sure yet': 'not-sure',
-};
+/* -------------------------------------------------------------- lead forms
+   Trial, workshop, booking and enquiry forms insert one row into public.leads.
+   generate_lead fires only after that insert succeeds, and only once.
+   Booking and enquiry forms (Studio Sessions, including draft PR #4) save the
+   lead first, then re-dispatch the submit so checkout or the enquiry handler
+   still runs. A failed save does not count as a lead. */
+const LEADS_ENDPOINT = SUPABASE_URL + '/rest/v1/leads';
 
-function programmeSlug(label) {
-  if (PROGRAMME_SLUGS[label]) return PROGRAMME_SLUGS[label];
-  const slug = String(label || '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
-  return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug) ? slug : null;
+function leadSource(form) {
+  if (form.dataset.leadSource) return form.dataset.leadSource;
+  if (form.classList.contains('workshop-form')) return 'workshop_form';
+  if (form.classList.contains('book-form')) return 'booking_form';
+  if (form.classList.contains('enquiry-form')) return 'enquiry_form';
+  return 'trial_form';
 }
 
-// anon can INSERT these columns only. id, created_at and status stay off the
-// payload so Postgres fills them. Prefer: return=minimal, because asking
-// PostgREST to return the row needs SELECT and anon does not have it.
-async function insertTrialLead(row) {
-  const res = await fetch(SUPABASE_URL + '/rest/v1/trial_leads', {
-    method: 'POST',
-    headers: {
-      apikey: SUPABASE_ANON,
-      Authorization: 'Bearer ' + SUPABASE_ANON,
-      'Content-Type': 'application/json',
-      Prefer: 'return=minimal',
-    },
-    body: JSON.stringify(row),
-  });
-  if (res.status === 201 || res.status === 204) return { ok: true };
-  let message = 'HTTP ' + res.status;
+function sessionInterest(form) {
+  const scope = form.closest('.book-layout') || form.parentElement;
+  const dd = scope && scope.querySelector('.facts dd');
+  return dd ? dd.textContent.trim() : '';
+}
+
+function leadInterest(form, data) {
+  return data.programme || data.workshop || data.interest || data.package || sessionInterest(form) || '';
+}
+
+function leadMessage(source, data) {
+  const note = [];
+  if (data.day && data.day !== 'Any day') note.push('Preferred day: ' + data.day);
+  if (data.child_name) note.push("Child's name: " + data.child_name);
+  if (data.child_age && source !== 'trial_form') note.push("Child's age: " + data.child_age);
+  if (data.qty) note.push('Places: ' + data.qty);
+  if (data.company) note.push('Company: ' + data.company);
+  if (data.headcount) note.push('Headcount: ' + data.headcount);
+  if (data.event_date) note.push('Date: ' + data.event_date);
+  if (data.message && String(data.message).trim()) note.push(String(data.message).trim());
+  return note.join('\n');
+}
+
+function leadInput(form, data) {
+  const source = leadSource(form);
+  return {
+    name: data.name,
+    phone: data.phone,
+    email: data.email,
+    interest: leadInterest(form, data),
+    childAge: source === 'trial_form' ? data.age : (data.age || data.child_age),
+    message: leadMessage(source, data),
+    source,
+    sourcePage: (location.pathname + location.search).slice(0, 500),
+    touch,
+  };
+}
+
+async function savePublicLead(input) {
+  const built = buildPublicLead(input);
+  if (!built.ok) return built;
   try {
-    const body = await res.json();
-    if (body && body.message) message = body.message;
-  } catch { /* empty body */ }
-  return { ok: false, message };
+    const saved = await postLead({
+      fetchImpl: fetch,
+      endpoint: LEADS_ENDPOINT,
+      anonKey: SUPABASE_ANON,
+      row: built.row,
+    });
+    if (saved.ok) return { ok: true };
+    console.warn('[site] lead', saved.message);
+    return { ok: false, error: 'We could not save your enquiry just now.' };
+  } catch (err) {
+    console.warn('[site] lead', err);
+    return { ok: false, error: 'We could not save your enquiry just now.' };
+  }
 }
+window.masterArtistSaveLead = savePublicLead;
 
 function formNote(form, kind, html) {
-  let el = form.querySelector('.' + kind);
+  let el = form.querySelector(':scope > .' + kind) || form.querySelector('.' + kind);
   if (!el) {
     el = document.createElement('p');
     el.className = 'full ' + kind;
     const fine = form.querySelector('.fine');
     if (fine) fine.before(el); else form.appendChild(el);
   }
+  el.hidden = false;
   el.innerHTML = html;
   return el;
+}
+
+function whatsAppLines(source, data, interest) {
+  const intro = source === 'workshop_form'
+    ? "Hi Master Artist! I'd like to reserve a workshop spot."
+    : source === 'booking_form'
+      ? "Hi Master Artist! I'd like to book a session."
+      : "Hi Master Artist! I'd like to book a RM50 trial class.";
+  const lines = [intro, '', 'Name: ' + String(data.name || '').trim(), 'Phone: ' + String(data.phone || '').trim()];
+  if (source === 'trial_form') lines.push("Student's age: " + (data.age || '-'), 'Programme: ' + (interest || '-'), 'Preferred day: ' + (data.day || '-'));
+  else lines.push('Interest: ' + (interest || '-'));
+  if (data.email) lines.push('Email: ' + String(data.email).trim());
+  if (data.message && String(data.message).trim()) lines.push('', String(data.message).trim());
+  return lines;
 }
 
 function addContactFields(form, n) {
@@ -316,100 +371,118 @@ function addContactFields(form, n) {
   else form.prepend(block);
 }
 
-(function initTrialForms() {
+function chooseOption(sel, value) {
+  if (!sel || !value) return;
+  if (![...sel.options].some(o => o.value === value)) {
+    const opt = document.createElement('option');
+    opt.value = value;
+    opt.textContent = value;
+    sel.appendChild(opt);
+  }
+  sel.value = value;
+}
+
+async function submitOwnedForm(form) {
+  if (form.dataset.sending === '1' || form.classList.contains('sent')) return;
+  const data = Object.fromEntries(new FormData(form));
+  const input = leadInput(form, data);
+  const preview = buildPublicLead(input);
+  if (!preview.ok) {
+    form.classList.add('failed');
+    formNote(form, 'err', preview.error);
+    return;
+  }
+  const lines = whatsAppLines(input.source, data, input.interest);
+  const btn = form.querySelector('[type=submit]');
+  const label = btn ? btn.textContent : '';
+  form.dataset.sending = '1';
+  form.classList.remove('failed');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+  const saved = await savePublicLead(input);
+  form.dataset.sending = '';
+  if (!saved.ok) {
+    if (btn) { btn.disabled = false; btn.textContent = label; }
+    form.classList.add('failed');
+    formNote(form, 'err', saved.error + ' <a href="' + esc(waLink(lines.join('\n'))) + '" target="_blank" rel="noopener">Message us on WhatsApp</a> and we will take it from there.');
+    return;
+  }
+  trackSavedLead(form, { programme: input.interest, where: placeOf(form), source: input.source });
+  window.open(waLink(lines.join('\n')), '_blank', 'noopener');
+  form.classList.add('sent');
+  if (btn) btn.textContent = 'Sent';
+  const ok = form.querySelector('.ok');
+  if (ok) ok.hidden = false;
+}
+
+function bindOwnedForms(selector) {
   const params = new URLSearchParams(location.search);
-  document.querySelectorAll('form.trial-form').forEach((form, n) => {
+  document.querySelectorAll(selector).forEach((form, n) => {
     addContactFields(form, n);
-    const pick = params.get('programme');
-    const sel = form.querySelector('[name=programme]');
-    if (sel && pick && [...sel.options].some(o => o.value === pick)) sel.value = pick;
-    form.addEventListener('submit', async e => {
-      e.preventDefault();
-      if (form.dataset.sending === '1' || form.classList.contains('sent')) return;
-      const f = Object.fromEntries(new FormData(form));
-      const name = String(f.name || '').trim();
-      const phone = String(f.phone || '').trim();
-      const email = String(f.email || '').trim();
-      const phoneDigits = phone.replace(/\D/g, '');
-      if (name.length < 1 || name.length > 120) {
-        form.classList.add('failed');
-        formNote(form, 'err', 'Please add your name.');
-        return;
-      }
-      if (phoneDigits.length < 8 || phoneDigits.length > 15 || !/^[0-9+(). -]+$/.test(phone)) {
-        form.classList.add('failed');
-        formNote(form, 'err', 'Please add a phone number we can WhatsApp.');
-        return;
-      }
-      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        form.classList.add('failed');
-        formNote(form, 'err', 'Please check the email address, or leave it blank.');
-        return;
-      }
-      const note = [];
-      if (f.day && f.day !== 'Any day') note.push('Preferred day: ' + f.day);
-      if (f.message && String(f.message).trim()) note.push(String(f.message).trim());
-      const programme = f.programme || '';
-      const row = {
-        parent_name: name,
-        phone,
-        email: blank(email),
-        child_age: blank(f.age),
-        programme_slug: programmeSlug(programme),
-        message: blank(note.join('\n\n')),
-        ref_code: refCode(touch),
-        utm_source: blank(touch.utm_source),
-        utm_medium: blank(touch.utm_medium),
-        utm_campaign: blank(touch.utm_campaign),
-        utm_term: blank(touch.utm_term),
-        utm_content: blank(touch.utm_content),
-        gclid: blank(touch.gclid),
-        fbclid: blank(touch.fbclid),
-        landing_page: blank(touch.landing_page),
-        referrer: blank(touch.referrer),
-      };
-      const lines = [
-        "Hi Master Artist! I'd like to book a RM50 trial class.",
-        '',
-        'Name: ' + name,
-        'Phone: ' + phone,
-        "Student's age: " + (f.age || '-'),
-        'Programme: ' + (programme || '-'),
-        'Preferred day: ' + (f.day || '-'),
-      ];
-      if (email) lines.push('Email: ' + email);
-      if (f.message && String(f.message).trim()) lines.push('', String(f.message).trim());
-      const btn = form.querySelector('[type=submit]');
-      const label = btn ? btn.textContent : '';
-      form.dataset.sending = '1';
-      form.classList.remove('failed');
-      if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
-      let saved = { ok: false, message: 'The save did not finish.' };
-      try { saved = await insertTrialLead(row); }
-      catch (err) { saved = { ok: false, message: err && err.message }; }
-      form.dataset.sending = '';
-      if (!saved.ok) {
-        console.warn('[site] trial lead', saved.message);
-        if (btn) { btn.disabled = false; btn.textContent = label; }
-        form.classList.add('failed');
-        formNote(form, 'err', 'We could not save your enquiry just now. <a href="' + esc(waLink(lines.join('\n'))) + '" target="_blank" rel="noopener">Message us on WhatsApp</a> and we will take it from there.');
-        return;
-      }
-      track('trial', { programme, where: placeOf(form) });
-      window.open(waLink(lines.join('\n')), '_blank', 'noopener');
-      form.classList.add('sent');
-      if (btn) btn.textContent = 'Sent';
+    const programme = params.get('programme');
+    const workshop = params.get('workshop');
+    chooseOption(form.querySelector('[name=programme]'), programme);
+    chooseOption(form.querySelector('[name=workshop]'), workshop);
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      submitOwnedForm(form);
     });
   });
-  // "Book this class" buttons pre-select the programme in the nearest form
+}
+
+(function initLeadForms() {
+  bindOwnedForms('form.trial-form, form.workshop-form');
   document.addEventListener('click', e => {
-    const a = e.target.closest && e.target.closest('[data-pick]');
-    if (!a) return;
-    document.querySelectorAll('form.trial-form [name=programme]').forEach(sel => {
-      if ([...sel.options].some(o => o.value === a.dataset.pick)) sel.value = a.dataset.pick;
-    });
+    const pick = e.target.closest && e.target.closest('[data-pick]');
+    if (pick) {
+      document.querySelectorAll('form.trial-form [name=programme]').forEach(sel => chooseOption(sel, pick.dataset.pick));
+    }
+    const workshop = e.target.closest && e.target.closest('[data-workshop]');
+    if (workshop) {
+      document.querySelectorAll('form.workshop-form [name=workshop]').forEach(sel => chooseOption(sel, workshop.dataset.workshop));
+    }
   });
+
+  // Studio Sessions booking and enquiry forms live on draft PR #4. When that
+  // branch is merged, those forms are created by site.js and this capture
+  // listener still runs first: save the lead, then let their handler continue.
+  document.addEventListener('submit', event => {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement)) return;
+    if (!form.matches('form.book-form, form.enquiry-form')) return;
+    if (form.matches('form.trial-form, form.workshop-form')) return;
+    if (form.dataset.crmBypass === '1') return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    continueAfterLead(form);
+  }, true);
 })();
+
+async function continueAfterLead(form) {
+  if (form.dataset.sending === '1') return;
+  const data = Object.fromEntries(new FormData(form));
+  const input = leadInput(form, data);
+  const preview = buildPublicLead(input);
+  const err = form.querySelector('.err');
+  if (!preview.ok) {
+    if (err) { err.hidden = false; err.textContent = preview.error; }
+    return;
+  }
+  const btn = form.querySelector('[type=submit]');
+  form.dataset.sending = '1';
+  if (btn) btn.disabled = true;
+  const saved = await savePublicLead(input);
+  form.dataset.sending = '';
+  if (!saved.ok) {
+    if (btn) btn.disabled = false;
+    if (err) { err.hidden = false; err.textContent = saved.error; }
+    return;
+  }
+  trackSavedLead(form, { programme: input.interest, where: placeOf(form), source: input.source });
+  form.dataset.crmBypass = '1';
+  if (btn) btn.disabled = false;
+  if (typeof form.requestSubmit === 'function') form.requestSubmit();
+  else form.submit();
+}
 
 /* =============================================================== renderers */
 function renderBanner(rows) {
@@ -804,6 +877,13 @@ const typeLabel = e => (e.kind ? e.kind + ' ' : '') + (e.category || 'Workshop')
 const reserveText = e => e.category === 'Workshop'
   ? `Hi Master Artist! I'd like to reserve a spot at the ${e.label} workshop: ${e.title}.`
   : `Hi Master Artist! I'd like to know more about ${e.title} on ${e.label}.`;
+function reserveLink(e, label) {
+  if ((e.category || 'Workshop') === 'Workshop') {
+    const q = new URLSearchParams({ workshop: e.title || 'Workshop' });
+    return `<a class="btn btn-purple btn-sm" href="/workshops.html?${q.toString()}#workshop-form">${label || 'Reserve'}</a>`;
+  }
+  return `<a class="btn btn-purple btn-sm" href="${waLink(reserveText(e))}" target="_blank" rel="noopener">${label || 'Ask on WhatsApp'}</a>`;
+}
 
 function embeddedEvents() {
   try { return JSON.parse($('eventsData').textContent).map(e => ({ ...e, category: e.category || 'Workshop', reserve: e.reserve !== false })); }
@@ -842,7 +922,7 @@ function drawCalendar(events) {
     box.innerHTML = `<span class="cal-kind">${esc(typeLabel(e))}</span><h4>${esc(e.title)}</h4>
       <p class="cal-when">${esc(e.label)}</p>${e.desc ? `<p>${esc(e.desc)}</p>` : ''}
       ${e.category === 'Workshop' ? '<p class="cal-meta">All ages · no experience needed · at our studio above Savor</p>' : ''}
-      ${e.reserve ? `<a class="btn btn-purple btn-sm" href="${waLink(reserveText(e))}" target="_blank" rel="noopener" data-cal-reserve>${e.category === 'Workshop' ? 'Reserve on WhatsApp' : 'Ask on WhatsApp'}</a>` : ''}`;
+      ${e.reserve ? reserveLink(e, e.category === 'Workshop' ? 'Reserve' : 'Ask on WhatsApp') : ''}`;
     box.hidden = false;
     host.querySelectorAll('.cal-ev').forEach(b => b.classList.toggle('on', b.dataset.key === e.date + e.start));
     $('calList').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.key === e.date + e.start));
@@ -883,7 +963,7 @@ function drawUpcomingList(events) {
     .map(e => ({ ...e, label: eventLabel(e) })).sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
   list.innerHTML = ws.map(e => `<div class="up"><div class="when">${esc(e.label)}</div><div class="what"><b>${esc(e.title)}</b>
       <small>${esc(typeLabel(e))} · all ages · no experience needed</small></div>
-      ${e.reserve ? `<a class="btn btn-purple btn-sm" href="${waLink(reserveText(e))}" target="_blank" rel="noopener">Reserve</a>` : ''}</div>`).join('');
+      ${e.reserve ? reserveLink(e, 'Reserve') : ''}</div>`).join('');
   const none = list.parentElement.querySelector('.up-none');
   if (none) none.hidden = ws.length > 0;
 }

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Leads — Master Artist</title>
+<link rel="icon" href="/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --purple:#3B1C5A; --purple-deep:#2A1240; --gold:#E6B44C; --gold-deep:#C79733;
+  --lavender:#C6B7E2; --lav-pale:#EDE7F6; --cream:#F6F1E8; --surface:#FFFDF9;
+  --ink:#2A1740; --muted:#6E6180; --line:rgba(59,28,90,.14); --ok:#2E7D5B; --warn:#B4562B;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--cream);color:var(--ink);font-size:15px;line-height:1.5}
+h1,h2,h3{font-family:'Fraunces',Georgia,serif;font-weight:500;letter-spacing:-.02em;margin:0}
+button,input,textarea,select{font-family:inherit;font-size:inherit;color:inherit}
+a{color:var(--purple)}
+button{cursor:pointer}
+
+.auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--purple)}
+.card{width:100%;max-width:440px;background:var(--cream);border:1px solid var(--gold);padding:28px 22px}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.brand img{width:36px;height:36px}
+.brand span{font-family:'Fraunces',Georgia,serif;font-size:20px;color:var(--purple)}
+.card h1{font-size:28px;color:var(--purple);margin-bottom:6px}
+.sub{color:var(--muted);margin:0 0 18px;font-size:14px}
+.tabs{display:flex;gap:8px;margin-bottom:16px}
+.tabs button{flex:1;background:#fff;border:1px solid var(--line);padding:10px;border-radius:10px}
+.tabs button.on{background:var(--purple);color:var(--cream);border-color:var(--purple)}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);background:#fff;border-radius:10px;padding:12px 14px}
+.field textarea{min-height:88px;resize:vertical}
+.field input:focus,.field select:focus,.field textarea:focus{outline:0;border-color:var(--gold)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;border:0;border-radius:10px;padding:13px 16px;background:var(--gold);color:var(--purple-deep);font-weight:700}
+.btn:disabled{opacity:.55}
+.btn.ghost{background:#fff;border:1px solid var(--line);color:var(--ink);font-weight:600}
+.btn.tiny{width:auto;padding:8px 12px;font-size:13px}
+.linkish{background:none;border:0;color:var(--muted);text-decoration:underline;padding:10px 0;width:auto}
+.msg{padding:10px 12px;border-radius:10px;margin-bottom:12px;font-size:14px}
+.msg.err{background:#fde8e4;color:#8a2a1a}
+.msg.ok{background:var(--lav-pale);color:var(--purple)}
+.note{margin-top:16px;color:var(--muted);font-size:12.5px}
+
+.app{display:none;min-height:100vh}
+.app.on{display:block}
+.top{position:sticky;top:0;z-index:5;background:var(--purple);color:var(--cream);padding:14px 16px 12px;display:flex;align-items:center;gap:10px}
+.top img{width:28px;height:28px}
+.top h1{font-size:22px;flex:1}
+.top button{background:transparent;color:var(--gold);border:0;font-weight:600}
+.main{padding:16px 16px 96px;max-width:1100px;margin:0 auto}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.filters input,.filters select{flex:1;min-width:140px;border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 12px}
+.list{display:grid;gap:10px}
+.lead,.person,.workshop{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:left;width:100%}
+.lead{display:block}
+.rowline{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.rowline b{font-size:16px}
+.muted{color:var(--muted);font-size:13px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.chip{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:99px;background:var(--lav-pale);color:var(--purple)}
+.chip.warn{background:#fde8e4;color:#8a2a1a}
+.chip.ok{background:#e7f6ee;color:var(--ok)}
+.board{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x mandatory}
+.col{flex:0 0 82%;scroll-snap-align:start;background:rgba(255,255,255,.45);border:1px solid var(--line);border-radius:14px;padding:10px;min-height:180px}
+.col h2{font-size:16px;margin-bottom:8px}
+.col .lead{margin-bottom:8px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.panel h2{font-size:22px;margin-bottom:8px}
+.split{display:grid;gap:12px}
+.statgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.stat{background:var(--lav-pale);border-radius:12px;padding:10px}
+.stat b{display:block;font-size:20px}
+.bar{height:8px;background:#efe8f6;border-radius:99px;overflow:hidden;margin-top:8px}
+.bar span{display:block;height:100%;background:var(--purple)}
+.nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:#fff;border-top:1px solid var(--line);z-index:6}
+.nav a{flex:1;text-align:center;text-decoration:none;color:var(--muted);font-size:11px;font-weight:700;padding:10px 4px 12px}
+.nav a.on{color:var(--purple)}
+.empty{padding:28px 12px;text-align:center;color:var(--muted)}
+.timeline{display:grid;gap:8px}
+.timeline article{border-left:2px solid var(--gold);padding:2px 0 2px 10px}
+@media(min-width:800px){
+  .main{padding:24px 28px 40px}
+  .col{flex-basis:240px}
+  .split{grid-template-columns:1.1fr .9fr}
+  .statgrid{grid-template-columns:repeat(4,1fr)}
+  .nav{top:0;bottom:auto;left:0;right:auto;width:180px;flex-direction:column;border-top:0;border-right:1px solid var(--line);height:100vh;padding-top:76px}
+  .nav a{text-align:left;font-size:14px;padding:12px 16px}
+  .app.on{padding-left:180px}
+  .top{left:180px}
+}
+</style>
+</head>
+<body>
+<div class="auth" id="auth">
+  <div class="card">
+    <div class="brand"><img src="/logo.svg" alt=""><span>Master Artist</span></div>
+    <h1>Studio leads</h1>
+    <p class="sub">Staff only. Use the email on your invitation.</p>
+    <div id="authMsg"></div>
+    <div class="tabs">
+      <button type="button" id="tabLink" class="on">Email link</button>
+      <button type="button" id="tabPassword">Password</button>
+    </div>
+    <form id="linkForm">
+      <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="username" required></div>
+      <button class="btn" type="submit">Email me a sign-in link</button>
+    </form>
+    <form id="codeForm" hidden>
+      <p class="sub">Enter the six-digit code if the email included one. The link in the same email signs you in on this browser.</p>
+      <div class="field"><label for="code">Code</label><input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></div>
+      <button class="btn" type="submit">Sign in with code</button>
+      <button class="linkish" type="button" id="codeBack">Use a different email</button>
+    </form>
+    <form id="passwordForm" hidden>
+      <div class="field"><label for="pwEmail">Email</label><input id="pwEmail" type="email" autocomplete="username" required></div>
+      <div class="field"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required></div>
+      <button class="btn" type="submit">Sign in</button>
+    </form>
+    <p class="note">This page is not linked from the public site. Accounts are created by invitation, then activated in the content admin.</p>
+  </div>
+</div>
+
+<div class="app" id="app">
+  <header class="top">
+    <img src="/logo.svg" alt="">
+    <h1 id="title">Leads</h1>
+    <button type="button" id="signOut">Sign out</button>
+  </header>
+  <nav class="nav">
+    <a href="#inbox" data-route="inbox">Inbox</a>
+    <a href="#board" data-route="board">Pipeline</a>
+    <a href="#add" data-route="add">Add</a>
+    <a href="#people" data-route="people">People</a>
+    <a href="#workshops" data-route="workshops">Workshops</a>
+  </nav>
+  <main class="main" id="view"></main>
+</div>
+<script type="module" src="/admin/crm.js"></script>
+</body>
+</html>

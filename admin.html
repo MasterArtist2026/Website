@@ -447,7 +447,8 @@ async function render(){
     `<button class="snav${s.id===current?' on':''}${s.ready?'':' soon'}"
       ${s.ready?`onclick="goTo('${s.id}')"`:''}>
        <span>${esc(s.label)}</span>${s.ready?'':'<span class="n">soon</span>'}
-     </button>`).join('');
+     </button>`).join('')
+    + '<a class="snav" href="/admin/">Leads &amp; bookings</a>';
 
   const hidden = SECTIONS.length - visible.length;
   $('sideFoot').innerHTML = hidden > 0

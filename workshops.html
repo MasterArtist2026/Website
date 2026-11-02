@@ -3,37 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script>
-/* Drop generate_lead hits unless the trial form has just saved a row.
-   GA4 create-event rule 16134847184 copies every page_view whose
-   page_location contains Masterartist.co into generate_lead. */
-(function(){
-  function leadUrl(url){ return /(?:^|[?&#])en=generate_lead(?:&|$)/.test(String(url||'')); }
-  function blocked(url){ return leadUrl(url) && !(window.__allowGenerateLead > 0); }
-  if (navigator.sendBeacon) {
-    var beacon = navigator.sendBeacon.bind(navigator);
-    navigator.sendBeacon = function(url, data){ if (blocked(url)) return true; return beacon(url, data); };
-  }
-  if (window.fetch) {
-    var origFetch = window.fetch.bind(window);
-    window.fetch = function(input, init){
-      var url = typeof input === 'string' ? input : (input && input.url) || '';
-      if (blocked(url)) return Promise.resolve(new Response('', {status:204}));
-      return origFetch(input, init);
-    };
-  }
-  var desc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
-  if (desc && desc.set) {
-    Object.defineProperty(HTMLImageElement.prototype, 'src', {
-      configurable: true, enumerable: desc.enumerable, get: desc.get,
-      set: function(value){ if (!blocked(value)) desc.set.call(this, value); }
-    });
-  }
-  var xo = XMLHttpRequest.prototype.open, xs = XMLHttpRequest.prototype.send;
-  XMLHttpRequest.prototype.open = function(method, url){ this.__leadUrl = url; return xo.apply(this, arguments); };
-  XMLHttpRequest.prototype.send = function(body){ if (blocked(this.__leadUrl)) return; return xs.apply(this, arguments); };
-})();
-</script>
+<script src="/lead-gate.js"></script>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-2X9E7MWMWM"></script>
 <script>
@@ -289,12 +259,12 @@ src="https://www.facebook.com/tr?id=1104757255303373&ev=PageView&noscript=1"
 <section id="upcoming" class="alt">
   <div class="wrap">
     <div class="sec-head"><span class="eyebrow">What's On</span><h2>Upcoming <em>workshops</em></h2>
-      <p>Every Sunday, 3–5pm. Drop-in sessions for all ages — places are limited, so reserve on WhatsApp.</p></div>
+      <p>Every Sunday, 3–5pm. Drop-in sessions for all ages — places are limited, so reserve with the form below.</p></div>
     <div class="up-list"><div class="up" data-until="2026-10-04"><div class="when">Sun 4 Oct, 3–5pm</div><div class="what"><b>Textured canvas painting</b><small>Painting workshop · all ages · no experience needed</small></div>
-      <a class="btn btn-purple btn-sm" data-wa data-wa-text="Hi Master Artist! I'd like to reserve a spot at the Sun 4 Oct, 3–5pm workshop: Textured canvas painting.">Reserve</a></div><div class="up" data-until="2026-10-11"><div class="when">Sun 11 Oct, 3–5pm</div><div class="what"><b>Plant-based cooking class</b><small>Cooking workshop · all ages · no experience needed</small></div>
-      <a class="btn btn-purple btn-sm" data-wa data-wa-text="Hi Master Artist! I'd like to reserve a spot at the Sun 11 Oct, 3–5pm workshop: Plant-based cooking class.">Reserve</a></div><div class="up" data-until="2026-10-18"><div class="when">Sun 18 Oct, 3–5pm</div><div class="what"><b>Mountain textured art</b><small>Painting workshop · all ages · no experience needed</small></div>
-      <a class="btn btn-purple btn-sm" data-wa data-wa-text="Hi Master Artist! I'd like to reserve a spot at the Sun 18 Oct, 3–5pm workshop: Mountain textured art.">Reserve</a></div><div class="up" data-until="2026-10-25"><div class="when">Sun 25 Oct, 3–5pm</div><div class="what"><b>Autumn Textured art Workshop</b><small>Painting workshop · all ages · no experience needed</small></div>
-      <a class="btn btn-purple btn-sm" data-wa data-wa-text="Hi Master Artist! I'd like to reserve a spot at the Sun 25 Oct, 3–5pm workshop: Autumn Textured art Workshop.">Reserve</a></div></div>
+      <a class="btn btn-purple btn-sm" href="#workshop-form" data-workshop="Textured canvas painting">Reserve</a></div><div class="up" data-until="2026-10-11"><div class="when">Sun 11 Oct, 3–5pm</div><div class="what"><b>Plant-based cooking class</b><small>Cooking workshop · all ages · no experience needed</small></div>
+      <a class="btn btn-purple btn-sm" href="#workshop-form" data-workshop="Plant-based cooking class">Reserve</a></div><div class="up" data-until="2026-10-18"><div class="when">Sun 18 Oct, 3–5pm</div><div class="what"><b>Mountain textured art</b><small>Painting workshop · all ages · no experience needed</small></div>
+      <a class="btn btn-purple btn-sm" href="#workshop-form" data-workshop="Mountain textured art">Reserve</a></div><div class="up" data-until="2026-10-25"><div class="when">Sun 25 Oct, 3–5pm</div><div class="what"><b>Autumn Textured art Workshop</b><small>Painting workshop · all ages · no experience needed</small></div>
+      <a class="btn btn-purple btn-sm" href="#workshop-form" data-workshop="Autumn Textured art Workshop">Reserve</a></div></div>
     <p class="sched-empty up-none" hidden>New workshop dates are coming soon. <a data-wa data-wa-text="Hi Master Artist! When is the next workshop?" class="btn btn-ghost-dark btn-sm">Ask on WhatsApp</a></p>
   </div>
 </section>
@@ -316,7 +286,7 @@ src="https://www.facebook.com/tr?id=1104757255303373&ev=PageView&noscript=1"
       <aside class="facts">
       <img loading="lazy" class="cover" src="/focaccia-workshop-1.jpg" alt="Bakers of all ages at a Master Artist focaccia workshop" data-lightbox-group="baking">
       <dl><div><dt>Ages</dt><dd>All ages</dd></div><div><dt>Experience</dt><dd>None needed</dd></div><div><dt>Format</dt><dd>Drop-in session</dd></div><div><dt>When</dt><dd>Sundays, 3–5pm</dd></div></dl>
-      <a class="btn btn-gold" data-wa data-wa-text="Hi Master Artist! I&#x27;d like to join a workshop.">Reserve a spot</a>
+      <a class="btn btn-gold" href="#workshop-form" data-workshop="Baking workshop">Reserve a spot</a>
     </aside>
     </div>
     <div class="class-block" id="painting">
@@ -333,7 +303,7 @@ src="https://www.facebook.com/tr?id=1104757255303373&ev=PageView&noscript=1"
       <aside class="facts">
       <img loading="lazy" class="cover" src="/painting-2.jpg" alt="A teacher guiding a student through a watercolour painting" data-lightbox-group="painting">
       <dl><div><dt>Ages</dt><dd>All ages</dd></div><div><dt>Experience</dt><dd>None needed</dd></div><div><dt>Format</dt><dd>Drop-in session</dd></div><div><dt>When</dt><dd>Sundays, 3–5pm</dd></div></dl>
-      <a class="btn btn-gold" data-wa data-wa-text="Hi Master Artist! I&#x27;d like to join a workshop.">Reserve a spot</a>
+      <a class="btn btn-gold" href="#workshop-form" data-workshop="Painting workshop">Reserve a spot</a>
     </aside>
     </div>
     <div class="class-block" id="craft">
@@ -350,7 +320,7 @@ src="https://www.facebook.com/tr?id=1104757255303373&ev=PageView&noscript=1"
       <aside class="facts">
       <img loading="lazy" class="cover" src="/craft-mirror.jpg" alt="A hand-decorated mirror made at a craft session" data-lightbox-group="craft">
       <dl><div><dt>Ages</dt><dd>All ages</dd></div><div><dt>Experience</dt><dd>None needed</dd></div><div><dt>Format</dt><dd>Drop-in session</dd></div><div><dt>When</dt><dd>Sundays, 3–5pm</dd></div></dl>
-      <a class="btn btn-gold" data-wa data-wa-text="Hi Master Artist! I&#x27;d like to join a workshop.">Reserve a spot</a>
+      <a class="btn btn-gold" href="#workshop-form" data-workshop="Craft workshop">Reserve a spot</a>
     </aside>
     </div>
   </div>
@@ -380,15 +350,33 @@ src="https://www.facebook.com/tr?id=1104757255303373&ev=PageView&noscript=1"
   </div>
 </section>
 
-<section class="cta-band" id="trial">
+<section class="cta-band" id="workshop-form">
   <div class="wrap">
-    <div class="cta-card">
+    <div class="cta-card with-form">
       <div>
         <span class="eyebrow">Come Try One</span>
         <h2>Join a <em>workshop</em></h2>
-        <p>Message us on WhatsApp for the current workshop schedule and to reserve a spot.</p>
+        <p>Tell us which session you want. We save your details, then open WhatsApp so you can send them in one tap.</p>
       </div>
-      <div class="actions"><a class="btn btn-purple" data-wa data-wa-text="Hi Master Artist! I'd like to reserve a spot at an upcoming workshop.">Message us on WhatsApp</a></div>
+      <form class="workshop-form trial-form" data-lead-source="workshop_form" novalidate>
+        <div class="full"><label for="ws-name">Your name</label><input id="ws-name" name="name" autocomplete="name" required></div>
+        <div><label for="ws-phone">Phone / WhatsApp</label><input id="ws-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required maxlength="40"></div>
+        <div><label for="ws-email">Email <span style="font-weight:400;color:var(--muted)">(optional)</span></label><input id="ws-email" name="email" type="email" autocomplete="email" maxlength="320"></div>
+        <div class="full"><label for="ws-which">Workshop</label><select id="ws-which" name="workshop">
+          <option>Textured canvas painting</option>
+          <option>Mountain textured art</option>
+          <option>Autumn Textured art Workshop</option>
+          <option>Baking workshop</option>
+          <option>Painting workshop</option>
+          <option>Craft workshop</option>
+          <option>Plant-based cooking class</option>
+          <option>Not sure yet</option>
+        </select></div>
+        <div class="full"><label for="ws-msg">Anything we should know? <span style="font-weight:400;color:var(--muted)">(optional)</span></label><textarea id="ws-msg" name="message" placeholder="How many people, and which date if you have one in mind"></textarea></div>
+        <div class="full"><button class="btn btn-purple" type="submit">Reserve and open WhatsApp</button></div>
+        <p class="full ok">We've saved your reservation. WhatsApp should have opened — just press send. If it didn't, <a data-wa style="font-weight:600;text-decoration:underline">tap here</a>.</p>
+        <p class="full fine">We only count this once the reservation is saved. Studio closed Saturdays.</p>
+      </form>
     </div>
   </div>
 </section>
@@ -444,6 +432,6 @@ src="https://www.facebook.com/tr?id=1104757255303373&ev=PageView&noscript=1"
   <span class="lightbox-count"></span>
 </div>
 
-<script type="module" src="/site.js?v=c3a91e72"></script>
+<script type="module" src="/site.js?v=crm-leads-1"></script>
 </body>
 </html>
