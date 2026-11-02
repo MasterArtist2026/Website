@@ -33,8 +33,9 @@ create table if not exists public.workshop_bookings (
   amount          int not null default 0,
   dine            boolean not null default false,
   allergies       text,
-  child_name      text,
+  child_name      text,                    -- children's first names, comma-separated (all of them are in children)
   child_age       text,
+  children        jsonb not null default '[]',   -- [{name, age, allergies}] for kids' workshops
   collector       text,
   photo_consent   text,
   consents        text[] not null default '{}',
@@ -60,7 +61,7 @@ create table if not exists public.workshop_bookings (
     and char_length(btrim(name)) between 3 and 121
     and char_length(email) <= 320 and email ~* '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$'
     and (allergies is null or char_length(allergies) <= 1000)
-    and (child_name is null or char_length(child_name) <= 120)
+    and (child_name is null or char_length(child_name) <= 400)
     and (child_age is null or char_length(child_age) <= 40)
     and (collector is null or char_length(collector) <= 120)
     and (source is null or char_length(source) <= 200)
@@ -75,7 +76,8 @@ create table if not exists public.workshop_bookings (
   constraint wb_phone_format check (phone ~ '^[0-9+(). -]{8,40}$'),
   constraint wb_qty check (qty between 1 and 20 and people between 1 and 40 and amount between 0 and 100000),
   constraint wb_ticket check (ticket in ('single', 'pair')),
-  constraint wb_photo check (photo_consent is null or photo_consent in ('yes', 'no')),
+  constraint wb_photo check (photo_consent is null or photo_consent in ('yes', 'no', 'yes without name', 'yes with first name')),
+  constraint wb_children check (jsonb_typeof(children) = 'array' and jsonb_array_length(children) <= 12 and char_length(children::text) <= 4000),
   constraint wb_status check (status in ('requested', 'confirmed', 'paid', 'cancelled', 'refunded'))
 );
 

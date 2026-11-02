@@ -296,13 +296,18 @@ def ConsentFields(kind):
   <div><span class="small">Photos of the session for our social media:</span>
     <div class="radio-row"><label><input type="radio" name="photo" value="yes" required> Yes</label><label><input type="radio" name="photo" value="no"> No</label></div></div>
   <p class="small muted">How we use your details: {pdpa}.</p></fieldset>'''
-    child = f'''<fieldset class="consent"><legend>About your child</legend>
-  <label class="check"><input type="checkbox" name="parent" required> I am the parent or guardian and give consent for my child to take part.</label>
-  <div class="row" style="display:grid;gap:12px;grid-template-columns:1fr 1fr"><div><label for="cn">Child's name</label><input id="cn" type="text" name="child_name" required></div>
-  <div><label for="ca">Age</label><input id="ca" type="text" name="child_age" inputmode="numeric" required></div></div>
-  <div><label for="al">Allergies or needs</label><textarea id="al" name="allergies" rows="2" placeholder="None"></textarea></div>
+    # One .kid block per seat; ma.js keeps the number of blocks equal to the seats chosen
+    child = f'''<fieldset class="consent"><legend>About your children</legend>
+  <div class="kids" data-kids data-max="12">
+    <fieldset class="kid"><legend>Child <span data-n>1</span></legend>
+      <div class="row"><div><label for="kn1">Child's name</label><input id="kn1" type="text" name="kid_name" maxlength="60" required></div>
+        <div><label for="ka1">Age</label><input id="ka1" type="text" name="kid_age" inputmode="numeric" maxlength="20" required></div></div>
+      <div><label for="kl1">Allergies or needs</label><input id="kl1" type="text" name="kid_allergies" maxlength="300" placeholder="None"></div>
+    </fieldset>
+  </div>
+  <label class="check"><input type="checkbox" name="parent" required> I am the parent or guardian and give consent for my children to take part.</label>
   <div><label for="co">Adult collecting</label><input id="co" type="text" name="collector" required></div>
-  <div><span class="small">Photos of your child:</span>
+  <div><span class="small">Photos of your children:</span>
     <div class="radio-row"><label><input type="radio" name="photo" value="yes without name" required> Yes, without name</label><label><input type="radio" name="photo" value="yes with first name"> Yes, first name</label><label><input type="radio" name="photo" value="no"> No</label></div></div>
   <p class="small muted">How we use your details: {pdpa}.</p></fieldset>'''
     if kind == 'child':
@@ -342,10 +347,13 @@ def BookingEmbed(s):
     dine = WS['addons']['dine']
     pair_opt = (f'<div><label for="tk">Ticket</label><select id="tk" name="ticket"><option value="single">Single · {rm(s["price"])}</option>'
                 f'<option value="pair">Pair · {rm(s["pair_price"])}</option></select></div>') if s.get('pair_price') else '<input type="hidden" name="ticket" value="single">'
-    dine_opt = (f'<div><label for="dn">Dine at Savor {"after" if s.get("dine_timing") == "after" else "before"}</label><select id="dn" name="dine">'
-                f'<option value="no">No thanks</option><option value="yes">Yes · from {rm(dine["price_from"])} each, ordered online</option></select>'
-                + (f'<p class="note"><a href="{e(dine["order_url"])}" target="_blank" rel="noopener">Choose your meal from Savor\'s menu</a> and pay online.</p>' if dine.get('order_url') else '')
-                + '</div>') if s.get('dine') else ''
+    # Savor meals are ordered and paid on Savor's own menu link; clicking it marks the booking as dining (ma.js)
+    when_dine = 'after' if s.get('dine_timing') == 'after' else 'before'
+    order = (f'<input type="hidden" name="dine" value="no"><a class="btn ghost block dine-link" href="{e(dine["order_url"])}" target="_blank" rel="noopener">Order your meal from Savor\'s menu</a>'
+             if dine.get('order_url') else  # TODO: Savor's menu link (addons.dine.order_url); until then we send it on WhatsApp
+             '<label class="check"><input type="checkbox" name="dine" value="yes"> Yes, send me Savor\'s menu link</label>')
+    dine_opt = (f'<div class="dine-box"><b>Eat at Savor {when_dine}?</b>'
+                f'<p class="note">Meals from {rm(dine["price_from"])} a person, ordered and paid on Savor\'s menu.</p>{order}</div>') if s.get('dine') else ''
     unit = 'Pairs' if s.get('cap_unit') == 'pairs' else 'Families' if s.get('bundle') else 'Seats'
     msg_unit = {'Pairs': 'pair(s)', 'Families': 'Family Sunday ticket(s)'}.get(unit, 'seat(s)')
     when = f"{day_date(s['date'])} at {fmt_time(s['time'])}"
@@ -359,7 +367,7 @@ def BookingEmbed(s):
     <div><label for="qty">{unit}</label><input id="qty" name="qty" type="number" min="1" max="{s['seats_left'] or 1}" value="1"></div>
     {pair_opt}
   </div>
-  {f'<div class="row">{dine_opt}</div>' if dine_opt else ''}
+  {dine_opt}
   <div class="row">
     <div><label for="fn">First name</label><input id="fn" name="first_name" type="text" autocomplete="given-name" maxlength="60" required></div>
     <div><label for="ln">Last name</label><input id="ln" name="last_name" type="text" autocomplete="family-name" maxlength="60" required></div>
@@ -1157,6 +1165,9 @@ def build_programme(p):
 
 def build_trial():
     opts = ''.join(f'<option value="{p["id"]}">{e(p["name"])}</option>' for p in PROGS) + '<option value="not-sure">Not sure yet</option>'
+    # An adult booking for themselves picks from the classes adults can join (not the kids' and teen programmes)
+    adult_opts = ''.join(f'<option value="{p["id"]}">{e(p["name"])}</option>' for p in PROGS
+                         if not p['id'].startswith(('kids-', 'teen-'))) + '<option value="not-sure">Not sure yet</option>'
     days = ''.join(f'<option>{d}</option>' for d in ['Any day', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Sunday'])
     body = hero_band(e(SITE['labels']['academy']), f'Book a <em>{rm(TRIAL["price"])} trial class</em>',
                      f"One class in the programme you choose, with the teacher who will teach you every week. If you continue, the {rm(TRIAL['price'])} is {e(TRIAL['note'])}.",
@@ -1164,11 +1175,23 @@ def build_trial():
     body += f'''<section class="sec v-academy"><div class="wrap listing book">
   <div class="aside"><form class="booking form trial-form v-academy" novalidate>
     <h2 class="h3">Your trial</h2>
-    <div><label for="tp">Programme</label><select id="tp" name="programme" required>{opts}</select></div>
-    <div class="row"><div><label for="tn">Your name</label><input id="tn" name="name" type="text" autocomplete="name" required maxlength="120"></div>
-      <div><label for="ta">Student's age</label><input id="ta" name="age" type="text" inputmode="numeric" maxlength="20"></div></div>
+    <div><span class="small">Who is the trial for?</span>
+      <div class="radio-row"><label><input type="radio" name="for" value="child" checked> My child or children</label><label><input type="radio" name="for" value="self"> Me</label><label><input type="radio" name="for" value="both"> Me and my children</label></div></div>
+    <div class="row"><div><label for="tfn">Your first name</label><input id="tfn" name="first_name" type="text" autocomplete="given-name" required maxlength="60"></div>
+      <div><label for="tln">Last name</label><input id="tln" name="last_name" type="text" autocomplete="family-name" required maxlength="60"></div></div>
     <div class="row"><div><label for="tph">WhatsApp number</label><div class="phone-in">{CountryCodeSelect()}<input id="tph" name="phone" type="tel" autocomplete="tel-national" inputmode="tel" placeholder="12-345 6789" required maxlength="40"></div></div>
-      <div><label for="tem">Email <span class="muted">(optional)</span></label><input id="tem" name="email" type="email" autocomplete="email" maxlength="320"></div></div>
+      <div><label for="tem">Email</label><input id="tem" name="email" type="email" autocomplete="email" required maxlength="320"></div></div>
+    <div class="self-only" hidden><label for="tp0">Your class</label><select id="tp0" name="self_programme">{adult_opts}</select></div>
+    <div class="kids" data-kids data-max="6">
+      <fieldset class="kid"><legend>Child <span data-n>1</span></legend>
+        <div class="row"><div><label for="kn1">Child's name</label><input id="kn1" name="kid_name" type="text" maxlength="60" required></div>
+          <div><label for="ka1">Age</label><input id="ka1" name="kid_age" type="text" inputmode="numeric" maxlength="20" required></div></div>
+        <div><label for="kp1">Class</label><select id="kp1" name="kid_programme" required>{opts}</select></div>
+        <button type="button" class="kid-remove" hidden>Remove this child</button>
+      </fieldset>
+    </div>
+    <button type="button" class="btn ghost sm add-kid">+ Add another child</button>
+    <p class="trial-total small"><b data-trial-total>1 trial · {rm(TRIAL['price'])}</b></p>
     <div><label for="td">Preferred day</label><select id="td" name="day">{days}</select></div>
     <div><label for="tm">Anything we should know? <span class="muted">(optional)</span></label><textarea id="tm" name="message" rows="2" maxlength="1000"></textarea></div>
     <p class="small muted">How we use your details: <a href="/privacy/">PDPA notice</a>.</p>

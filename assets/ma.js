@@ -96,6 +96,57 @@
     return phone.length >= 9 && phone.length <= 16 && /^\+?[0-9(). -]+$/.test(typed) ? phone : '';
   }
 
+  /* ---------- repeating child blocks: .kids holds one .kid fieldset per child (trial form, kids' workshops) ---------- */
+  function kidBlocks(form, onChange) {
+    var box = form.querySelector('[data-kids]');
+    if (!box) return null;
+    var first = box.querySelector('.kid'), max = Number(box.getAttribute('data-max') || 6), made = 1;
+    function renumber() {
+      [].forEach.call(box.querySelectorAll('.kid'), function (k, i) {
+        k.querySelector('[data-n]').textContent = i + 1;
+        var rm = k.querySelector('.kid-remove'); if (rm) rm.hidden = i === 0;
+      });
+      var add = form.querySelector('.add-kid'); if (add) add.hidden = count() >= max;
+      if (onChange) onChange();
+    }
+    function count() { return box.querySelectorAll('.kid').length; }
+    function add(focus) {
+      if (count() >= max) return;
+      made += 1;
+      var k = first.cloneNode(true);
+      [].forEach.call(k.querySelectorAll('input, select, textarea'), function (el) {
+        if (el.tagName === 'SELECT') el.selectedIndex = first.querySelector('[name=' + el.name + ']').selectedIndex; else el.value = '';
+        var lab = k.querySelector('label[for="' + el.id + '"]'), id = el.id.replace(/\d+$/, '') + made;
+        if (lab) lab.setAttribute('for', id);
+        el.id = id;
+      });
+      box.appendChild(k);
+      renumber();
+      if (focus) k.querySelector('input').focus();
+    }
+    box.addEventListener('click', function (ev) {
+      var rm = ev.target.closest('.kid-remove');
+      if (rm) { rm.closest('.kid').remove(); renumber(); }
+    });
+    var addBtn = form.querySelector('.add-kid');
+    if (addBtn) addBtn.addEventListener('click', function () { add(true); });
+    renumber();
+    return {
+      count: count,
+      setCount: function (n) { n = Math.max(1, Math.min(max, n)); while (count() < n) add(false); while (count() > n) box.lastElementChild.remove(); renumber(); },
+      show: function (on) { box.hidden = !on; if (addBtn) addBtn.hidden = !on || count() >= max;
+        [].forEach.call(box.querySelectorAll('input, select'), function (el) { el.disabled = !on; }); },
+      list: function () {
+        return [].map.call(box.querySelectorAll('.kid'), function (k) {
+          var v = function (n) { var el = k.querySelector('[name=' + n + ']'); return el ? String(el.value || '').trim() : ''; };
+          var sel = k.querySelector('select[name=kid_programme]');
+          return { name: v('kid_name'), age: v('kid_age'), allergies: v('kid_allergies'), programme: v('kid_programme'),
+                   programmeLabel: sel ? sel.options[sel.selectedIndex].text : '' };
+        });
+      }
+    };
+  }
+
   /* ---------- booking embed (WhatsApp fallback until a payment tool is chosen) ---------- */
   /* formats that run twice in a day: one slot visible at a time, chosen by #tHHMM */
   document.documentElement.classList.add('js');
@@ -136,8 +187,14 @@
       if (out) out.textContent = 'RM' + sum.toLocaleString('en-MY');
       return { qty: qty, isPair: isPair, people: people, sum: sum, f: f };
     }
-    form.addEventListener('input', total);
-    total();
+    // Savor's menu opens in a new tab; clicking it marks this booking as dining
+    var dineLink = form.querySelector('.dine-link');
+    if (dineLink) dineLink.addEventListener('click', function () { form.querySelector('[name=dine]').value = 'yes'; });
+    // Kids' workshops: one child block per seat
+    var kids = kidBlocks(form);
+    function syncKids() { if (kids) kids.setCount(Math.max(1, Number(new FormData(form).get('qty') || 1))); }
+    form.addEventListener('input', function (ev) { total(); if (ev.target.name === 'qty') syncKids(); });
+    total(); syncKids();
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       if (!form.reportValidity()) return;
@@ -153,7 +210,11 @@
         (t.isPair ? t.qty + ' pair ticket(s)' : t.qty + ' ' + (d.unit || 'seat(s)')) + ' — RM' + t.sum + '.' + (f.get('dine') === 'yes' ? ' Plus a meal at Savor for ' + t.people + (d.dineUrl ? ' (I\'ll order from the menu link).' : ': please send me Savor\'s menu link.') : '')
       ];
       lines.push('Name: ' + get('first_name') + ' ' + get('last_name'), 'WhatsApp: ' + phone, 'Email: ' + get('email'));
-      var LABELS = { child_name: "Child's name", child_age: "Child's age", allergies: 'Allergies or needs', collector: 'Adult collecting' };
+      var children = kids ? kids.list() : [];
+      children.forEach(function (k, i) {
+        lines.push('Child ' + (i + 1) + ': ' + k.name + ', age ' + k.age + (k.allergies && !/^none$/i.test(k.allergies) ? ' (allergies/needs: ' + k.allergies + ')' : ''));
+      });
+      var LABELS = { allergies: 'Allergies or needs', collector: 'Adult collecting' };
       Object.keys(LABELS).forEach(function (k) { if (f.get(k)) lines.push(LABELS[k] + ': ' + f.get(k)); });
       if (f.get('photo')) lines.push('Photo consent: ' + f.get('photo'));
       var CONSENTS = { parent: 'Parent/guardian consent: given', kitchen: 'Kitchen and allergen notice: confirmed', terms: 'Participation and booking terms: agreed' };
@@ -171,7 +232,13 @@
         cap: d.cap ? Number(d.cap) : null, first_name: get('first_name'), last_name: get('last_name'),
         name: get('first_name') + ' ' + get('last_name'), phone: phone, email: get('email').toLowerCase(),
         qty: t.qty, ticket: t.isPair ? 'pair' : 'single', people: t.people, amount: t.sum, dine: f.get('dine') === 'yes',
-        allergies: blank(get('allergies')), child_name: blank(get('child_name')), child_age: blank(get('child_age')),
+        // Children's allergies as "Child 1 (age 7): nuts", so the emailed report never carries a child's name
+        allergies: blank(get('allergies') || children.map(function (k, i) {
+          return k.allergies && !/^none$/i.test(k.allergies) ? 'Child ' + (i + 1) + ' (age ' + k.age + '): ' + k.allergies : '';
+        }).filter(Boolean).join('; ')),
+        child_name: blank(children.map(function (k) { return k.name; }).join(', ')),
+        child_age: blank(children.map(function (k) { return k.age; }).join(', ')),
+        children: children.map(function (k) { return { name: k.name, age: k.age, allergies: k.allergies || null }; }),
         collector: blank(get('collector')), photo_consent: blank(get('photo')), consents: consents, source: blank(source),
         utm_source: blank(utm.utm_source), utm_medium: blank(utm.utm_medium), utm_campaign: blank(utm.utm_campaign),
         utm_content: blank(utm.utm_content), gclid: blank(utm.gclid), fbclid: blank(utm.fbclid), landing_page: location.pathname
@@ -252,48 +319,78 @@
       .catch(function () {});
   }
 
-  /* ---------- trial form: save to trial_leads, then trial_requested, then WhatsApp ---------- */
+  /* ---------- trial form: one parent or adult, one or more students; one trial_leads row per student, then WhatsApp ---------- */
   document.querySelectorAll('form.trial-form').forEach(function (form) {
-    var params = new URLSearchParams(location.search), sel = form.querySelector('[name=programme]');
-    if (sel && params.get('programme') && [].some.call(sel.options, function (o) { return o.value === params.get('programme'); })) sel.value = params.get('programme');
-    var errEl = form.querySelector('.err');
+    var params = new URLSearchParams(location.search), pick = params.get('programme');
+    var errEl = form.querySelector('.err'), selfBox = form.querySelector('.self-only'), selfSel = form.querySelector('[name=self_programme]');
+    var totalEl = form.querySelector('[data-trial-total]');
+    function who() { var r = form.querySelector('[name=for]:checked'); return r ? r.value : 'child'; }
+    function students() { return (who() === 'child' ? 0 : 1) + (who() === 'self' ? 0 : kids.count()); }
+    function update() {
+      if (!kids) return;
+      var n = students();
+      if (totalEl) totalEl.textContent = n + ' trial' + (n > 1 ? 's' : '') + ' · RM' + (n * TRIAL);
+    }
+    var kids = kidBlocks(form, update);
+    function mode() {
+      selfBox.hidden = who() === 'child'; selfSel.disabled = who() === 'child';
+      kids.show(who() !== 'self');
+      update();
+    }
+    // ?programme= from a class page: preselect it for the child (or for the adult, if it is an adult class)
+    if (pick) [form.querySelector('[name=kid_programme]'), selfSel].forEach(function (s) {
+      if (s && [].some.call(s.options, function (o) { return o.value === pick; })) s.value = pick;
+    });
+    [].forEach.call(form.querySelectorAll('[name=for]'), function (r) { r.addEventListener('change', mode); });
+    mode();
     function fail(msg) { errEl.innerHTML = msg; errEl.hidden = false; }
     form.addEventListener('submit', function (ev) {
       ev.preventDefault();
       if (form.dataset.sending === '1') return;
       var f = new FormData(form), get = function (k) { return String(f.get(k) || '').trim(); };
-      var name = get('name'), phone = intlPhone(f), email = get('email');
-      if (!name) return fail('Please add your name.');
+      var first = get('first_name'), last = get('last_name'), name = (first + ' ' + last).trim(), phone = intlPhone(f), email = get('email');
+      if (!first || !last) return fail('Please add your first and last name.');
       if (!phone) return fail('Please add a phone number we can WhatsApp.');
-      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail('Please check the email address, or leave it blank.');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail('Please add your email address.');
+      var list = who() === 'self' ? [] : kids.list();
+      if (list.some(function (k) { return !k.name || !k.age; })) return fail("Please add each child's name and age, or remove the empty one.");
       errEl.hidden = true;
-      var progLabel = sel.options[sel.selectedIndex].text, note = [];
-      if (get('day') && get('day') !== 'Any day') note.push('Preferred day: ' + get('day'));
-      if (get('message')) note.push(get('message'));
-      var blank = function (v) { return v ? v : null; };
-      var row = {
-        parent_name: name, phone: phone, email: blank(email), child_age: blank(get('age')), programme_slug: sel.value,
-        message: blank(note.join('\n\n')), utm_source: blank(utm.utm_source), utm_medium: blank(utm.utm_medium),
-        utm_campaign: blank(utm.utm_campaign), utm_content: blank(utm.utm_content), gclid: blank(utm.gclid), fbclid: blank(utm.fbclid),
-        landing_page: location.pathname, referrer: blank(document.referrer)
-      };
-      var lines = ["Hi, I'd like to book the RM" + TRIAL + " trial for " + progLabel + '.', 'Name: ' + name, 'Phone: ' + phone,
-        "Student's age: " + (get('age') || '-'), 'Preferred day: ' + (get('day') || '-')];
+      var selfLabel = selfSel.options[selfSel.selectedIndex].text;
+      var studentsList = (who() === 'child' ? [] : [{ self: true, programme: selfSel.value, programmeLabel: selfLabel }]).concat(list);
+      var n = studentsList.length, blank = function (v) { return v ? v : null; }, extra = [];
+      if (get('day') && get('day') !== 'Any day') extra.push('Preferred day: ' + get('day'));
+      if (get('message')) extra.push(get('message'));
+      var forText = { child: 'Child trial (parent booking)', self: 'Adult trial (for themselves)', both: 'Parent and child trials' }[who()];
+      var rows = studentsList.map(function (st, i) {
+        var line = st.self ? 'For: ' + name + ' (adult, booking for themselves)' : 'For: ' + st.name + ', age ' + st.age + ' (child of ' + name + ')';
+        if (n > 1) line += ' · ' + (i + 1) + ' of ' + n + ' in this request';
+        return {
+          parent_name: name, phone: phone, email: email, child_age: st.self ? null : st.age, programme_slug: st.programme,
+          message: [forText, line].concat(extra).join('\n'), utm_source: blank(utm.utm_source), utm_medium: blank(utm.utm_medium),
+          utm_campaign: blank(utm.utm_campaign), utm_content: blank(utm.utm_content), gclid: blank(utm.gclid), fbclid: blank(utm.fbclid),
+          landing_page: location.pathname, referrer: blank(document.referrer)
+        };
+      });
+      var lines = ["Hi, I'd like to book " + (n > 1 ? n + ' RM' + TRIAL + ' trials' : 'the RM' + TRIAL + ' trial') + '.', 'Name: ' + name, 'WhatsApp: ' + phone, 'Email: ' + email];
+      studentsList.forEach(function (st, i) {
+        lines.push((n > 1 ? (i + 1) + '. ' : '') + (st.self ? 'Me' : st.name + ', age ' + st.age) + ' — ' + st.programmeLabel);
+      });
+      if (get('day')) lines.push('Preferred day: ' + get('day'));
       if (get('message')) lines.push('', get('message'));
       lines.push('Source: ' + source + '.');
       var waLink = waUrl(lines.join('\n'));
       var btn = form.querySelector('[type=submit]'), label = btn.textContent;
       form.dataset.sending = '1'; btn.disabled = true; btn.textContent = 'Sending…';
       fetch(SB_URL + '/rest/v1/trial_leads', {
-        method: 'POST', body: JSON.stringify(row),
+        method: 'POST', body: JSON.stringify(rows),
         headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON, 'Content-Type': 'application/json', Prefer: 'return=minimal' }
       }).then(function (res) {
         form.dataset.sending = ''; btn.disabled = false; btn.textContent = label;
         if (res.status !== 201 && res.status !== 204) throw new Error('HTTP ' + res.status);
         allowLeadHit();
-        track('trial_requested', { voice: 'academy', programme: sel.value, lead_saved: 'yes', value: TRIAL, currency: 'MYR' });
+        track('trial_requested', { voice: 'academy', programme: studentsList[0].programme, students: n, lead_saved: 'yes', value: TRIAL * n, currency: 'MYR' });
         if (document.documentElement.getAttribute('data-direct-tags') === '1') {
-          try { window.gtag && gtag('event', 'generate_lead', { programme: sel.value, value: TRIAL, currency: 'MYR', transport_type: 'beacon' }); } catch (e) {}
+          try { window.gtag && gtag('event', 'generate_lead', { programme: studentsList[0].programme, value: TRIAL * n, currency: 'MYR', transport_type: 'beacon' }); } catch (e) {}
           adsConversion('trial_form');
         }
         window.open(waLink, '_blank', 'noopener');

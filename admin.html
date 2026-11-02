@@ -1094,7 +1094,7 @@ function bookingTable(rows, w){
   const opt = (list, v) => list.map(x => `<option ${x===v?'selected':''}>${x}</option>`).join('');
   return `<div class="bk-wrap"><table class="bk"><tr><th>Name</th><th>Contact</th><th>Tickets</th><th>Savor</th><th>Allergies / needs</th><th>Photos</th><th>Amount</th><th>Status</th><th>Booked</th></tr>
     ${rows.map(b => `<tr class="${BK_LIVE(b.status)?'':'gone'}">
-      <td><b>${esc(b.name)}</b>${b.child_name ? `<br><small>Child: ${esc(b.child_name)}${b.child_age ? ', ' + esc(b.child_age) : ''}</small>` : ''}${b.collector ? `<br><small>Collecting: ${esc(b.collector)}</small>` : ''}</td>
+      <td><b>${esc(b.name)}</b>${(b.children || []).length ? `<br><small>${b.children.length > 1 ? 'Children' : 'Child'}: ${b.children.map(k => esc(k.name) + (k.age ? ' (' + esc(k.age) + ')' : '')).join(', ')}</small>` : ''}${b.collector ? `<br><small>Collecting: ${esc(b.collector)}</small>` : ''}</td>
       <td><a href="https://wa.me/${waNum(b.phone)}" target="_blank" rel="noopener">${esc(b.phone)}</a>${b.email ? `<br><small>${esc(b.email)}</small>` : ''}</td>
       <td>${b.ticket==='pair' ? `${b.qty} pair (${b.people})` : b.people}</td>
       <td>${b.dine ? 'Yes' : ''}</td><td>${esc(b.allergies || '')}</td>
@@ -1109,12 +1109,12 @@ function trialTable(tl, w){
   const rows = tl.data || [];
   if (!rows.length) return `<div class="empty">No trial requests yet.</div>`;
   const opt = v => TL_STATUS.map(x => `<option ${x===v?'selected':''}>${x}</option>`).join('');
-  return `<div class="card"><div class="card-b"><div class="bk-wrap"><table class="bk"><tr><th>Received</th><th>Name</th><th>Contact</th><th>Class</th><th>Age</th><th>Message</th><th>From</th><th>Status</th></tr>
+  return `<div class="card"><div class="card-b"><div class="bk-wrap"><table class="bk"><tr><th>Received</th><th>Booked by</th><th>Contact</th><th>Class</th><th>Child's age</th><th>Who it's for / message</th><th>From</th><th>Status</th></tr>
     ${rows.map(r => `<tr class="${r.status==='closed'?'gone':''}">
       <td><small>${esc(new Date(r.created_at).toLocaleString('en-MY', { day:'numeric', month:'short', hour:'numeric', minute:'2-digit' }))}</small></td>
       <td><b>${esc(r.parent_name)}</b></td>
       <td><a href="https://wa.me/${waNum(r.phone)}" target="_blank" rel="noopener">${esc(r.phone)}</a>${r.email ? `<br><small>${esc(r.email)}</small>` : ''}</td>
-      <td>${esc(r.programme_slug || '')}</td><td>${esc(r.child_age || '')}</td><td><small>${esc(r.message || '')}</small></td><td>${esc(r.ref_code)}</td>
+      <td>${esc(r.programme_slug || '')}</td><td>${esc(r.child_age || '')}</td><td><small>${esc(r.message || '').replace(/\n/g, '<br>')}</small></td><td>${esc(r.ref_code)}</td>
       <td>${w ? `<select onchange="tlStatus(${r.id}, this.value)">${opt(r.status)}</select>` : esc(r.status)}</td></tr>`).join('')}
   </table></div></div></div>`;
 }

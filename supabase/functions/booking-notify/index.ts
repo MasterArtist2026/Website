@@ -49,7 +49,7 @@ function report(b: Booking, all: Booking[]) {
   const subject = `New booking: ${b.name}, ${b.session_name}, ${b.session_when} (${counts})`;
 
   const rows = live.map((x, i) => `<tr${x.id === b.id ? ' style="background:#FBF1DC"' : ""}>
-    <td>${i + 1}</td><td>${esc(x.name)}${x.child_age ? `<br><small>child, age ${esc(x.child_age)}</small>` : ""}</td>
+    <td>${i + 1}</td><td>${esc(x.name)}${x.child_age ? `<br><small>${x.child_age.includes(",") ? "children, ages" : "child, age"} ${esc(x.child_age)}</small>` : ""}</td>
     <td><a href="https://wa.me/${waNum(x.phone)}">${esc(x.phone)}</a>${x.email ? `<br><small>${esc(x.email)}</small>` : ""}</td>
     <td>${ticketText(x)}</td><td>${x.dine ? "Yes" : ""}</td><td>${esc(x.allergies || "")}</td>
     <td>${x.photo_consent === "no" ? "<b>No</b>" : esc(x.photo_consent || "")}</td><td>RM${x.amount} ${esc(x.status)}</td></tr>`).join("");
