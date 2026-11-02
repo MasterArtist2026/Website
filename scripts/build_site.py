@@ -552,7 +552,7 @@ def build_styleguide():
 
 <section class="sg-section"><h2>Buttons</h2><div class="sg-pair">
   <div class="v-academy"><div class="sg-label">Academy</div><a class="btn" href="#">Book a {rm(CL['trial']['price'])} trial</a> <a class="btn ghost" href="#">More</a></div>
-  <div class="v-studio"><div class="sg-label">Studio Sessions</div><a class="btn" href="#">Book a seat</a> <a class="btn ghost" href="#">See this week</a></div></div>
+  <div class="v-studio"><div class="sg-label">Studio Sessions</div><a class="btn" href="#">Book a seat</a> <a class="btn ghost" href="#">See all dates</a></div></div>
   <p style="margin-top:16px">{WhatsAppButton(wa_studio(sample), 'studio', 'WhatsAppButton (studio)', fmt=sample['format'], session=sample['id'])}
   {WhatsAppButton(wa_trial(voice_p), 'academy', 'WhatsAppButton (academy trial)', programme=voice_p['id'], trial=True)}</p></section>
 
@@ -593,7 +593,7 @@ WORKSHOP_FORMATS = [f for f in WS['formats'] if f.get('type') != 'course' and f.
 POL = WS['policies']
 TRIAL = CL['trial']
 PROGS = [p for p in CL['programmes'] if p.get('status') != 'paused']
-EMPTY_WEEK = '<div class="empty">This week&rsquo;s sessions will be up shortly.</div>'
+EMPTY_WEEK = '<div class="empty">New workshop dates will be up shortly.</div>'
 DAY_FULL = {'Mon': 'Monday', 'Tue': 'Tuesday', 'Wed': 'Wednesday', 'Thu': 'Thursday', 'Fri': 'Friday', 'Sat': 'Saturday', 'Sun': 'Sunday'}
 
 
@@ -729,11 +729,6 @@ def crumbs(*items):
     return '<nav class="crumbs" aria-label="Breadcrumb">' + ' / '.join(parts) + '</nav>'
 
 
-def week_sessions():
-    end = (dt.date.fromisoformat(START) + dt.timedelta(days=6)).isoformat()
-    return [s for s in PUB if s['date'] <= end]
-
-
 def coming_sunday():
     sundays = sorted({s['date'] for s in PUB if s['day'] == 'Sun'})
     return sundays[0] if sundays else None
@@ -781,7 +776,7 @@ def build_home():
         'Workshops and classes, <em>taught by working artists</em>',
         'Themed workshops in the room with the view, painting, candles, crochet and baking, and weekly classes for kids, teens and adults.',
         f'<span>Workshops from <b>{rm(min_ws)}</b></span><span>Classes from <b>{rm(min_cl)}</b>/month</span><span><b>{rm(TRIAL["price"])}</b> trial class</span>',
-        f'<a class="btn" href="/workshops/">See this week\'s workshops</a><a class="btn ghost" href="/trial/">Book a {rm(TRIAL["price"])} trial</a>',
+        f'<a class="btn" href="/workshops/">See all workshops</a><a class="btn ghost" href="/trial/">Book a {rm(TRIAL["price"])} trial</a>',
         '<img src="/hero-1.jpg" alt="A painting class at Master Artist" width="1200" height="1000" fetchpriority="high">')
     od = WS.get('launch', {}).get('open_day')
     open_day = ''
@@ -795,16 +790,15 @@ def build_home():
   <div class="sec-head"><span class="eyebrow">Three ways in</span><h2>What are you <em>looking for?</em></h2></div>
   <div class="doors">
     <a class="door v-studio" href="/workshops/">{photo('bake-lab')}<span class="label">{e(SITE['labels']['studio'])}</span><h3>Workshops</h3>
-      <p>A weeknight or a Sunday: paint a canvas, pour a candle, crochet a bag. A new theme every week, from {rm(min_ws)}, and you take it home.</p><span class="more">This week's workshops</span></a>
+      <p>A weeknight or a Sunday: paint a canvas, pour a candle, crochet a bag. A new theme every week, from {rm(min_ws)}, and you take it home.</p><span class="more">Upcoming workshops</span></a>
     <a class="door v-academy" href="/classes/">{photo('kids-art-older')}<span class="label">{e(SITE['labels']['academy'])}</span><h3>Weekly classes</h3>
       <p>Art, voice, photo and video, and baking, in small groups with the same teacher every week. From {rm(min_cl)} a month; start with a {rm(TRIAL['price'])} trial.</p><span class="more">Classes and the trial</span></a>
     <a class="door v-studio" href="/groups/"><img src="/golden-shores-workshop-1.jpg" alt="A group workshop at Master Artist" loading="lazy" width="800" height="600"><span class="label">Groups</span><h3>Birthdays, team days and groups</h3>
       <p>Art, clay and baking birthday parties, and team days with rooms running side by side. Team packages from {rm(groups_from)}.</p><span class="more">Groups and birthdays</span></a>
   </div></div></section>'''
-    week = week_sessions()
-    strip = WeekStrip(week) if week else EMPTY_WEEK
+    strip = WeekStrip(PUB) if PUB else EMPTY_WEEK
     this_week = f'''<section class="sec alt v-studio"><div class="wrap">
-  <div class="sec-row"><div class="sec-head"><span class="eyebrow">Studio Sessions</span><h2>This <em>week</em></h2><p>Pick a session and book a seat. Prices include {e(POL['included'])}, and you take your work home.</p></div>
+  <div class="sec-row"><div class="sec-head"><span class="eyebrow">Studio Sessions</span><h2>Coming <em>up</em></h2><p>Pick a session and book a seat. Prices include {e(POL['included'])}, and you take your work home.</p></div>
     <div class="hero-cta">{f'<a class="btn" href="/this-sunday/">This Sunday</a>' if sunday else ''}<a class="btn ghost" href="/workshops/">All workshops</a></div></div>
   {strip}
 </div></section>'''
@@ -840,15 +834,14 @@ def studio_hero_note():
 
 
 def build_workshops_index():
-    week = week_sessions()
     sunday = coming_sunday()
     body = hero_band('Master Artist Studio Sessions', 'Workshops in <em>the room with the view</em>',
                      'Painting, candle making, crochet and baking, with a new theme every week. Two hours, taught properly, with something to take home.',
                      (f'<a class="btn" href="/this-sunday/">This Sunday</a>' if sunday else '') + '<a class="btn ghost" href="#formats">All workshops</a>',
                      crumbs(('/', 'Home'), (None, 'Workshops')), studio_hero_note(), img=('golden-shores-workshop-1.jpg', 'Adults painting at a Sunday workshop'))
     body += f'''<section class="sec v-studio"><div class="wrap">
-  <div class="sec-head"><span class="eyebrow">Next seven days</span><h2>This <em>week</em></h2></div>
-  {WeekStrip(week) if week else EMPTY_WEEK}
+  <div class="sec-head"><span class="eyebrow">Every date</span><h2>Coming <em>up</em></h2></div>
+  {WeekStrip(PUB) if PUB else EMPTY_WEEK}
 </div></section>
 <section class="sec alt v-studio" id="formats"><div class="wrap">
   <div class="sec-head"><span class="eyebrow">Choose a workshop</span><h2>Every <em>workshop</em></h2><p>Pick one to see its next dates, then book a seat.</p></div>
@@ -858,7 +851,7 @@ def build_workshops_index():
   <div class="hero-cta"><a class="btn" href="/groups/">Group packages</a></div></div></div></section>
 <section class="sec tight v-studio"><div class="wrap" style="max-width:820px"><div class="sec-head"><h2>Good to <em>know</em></h2></div>{Accordion(policy_items())}</div></section>'''
     page('/workshops/', 'Painting, candle and crochet workshops in KL · Master Artist Studio Sessions',
-         'Themed painting, candle making, crochet and baking workshops in Desa Sri Hartamas, KL. See this week, pick a date and book a seat.',
+         'Themed painting, candle making, crochet and baking workshops in Desa Sri Hartamas, KL. See every date, pick one and book a seat.',
          body, voice='studio', active='/workshops/', data_attrs=' data-page="workshops"', wa={'msg': "Hi, I'd like to book a workshop. What's on this week? Source: {source}.", 'fmt': 'workshops'})
 
 
@@ -1278,7 +1271,7 @@ def build_prices():
   <div class="sec-head"><span class="eyebrow">{e(SITE['labels']['studio'])}</span><h2>One-off <em>workshops</em></h2><p>Per seat, with pair prices where two of you come together.</p></div>
   {strip(('golden-shores-workshop-5.jpg', 'A guest with her finished canvas'), ('focaccia-workshop-2.jpg', 'A full baking workshop in the L1 kitchen'), ('golden-shores-workshop-1.jpg', 'Adults painting at a workshop'))}
   {PriceTable('studio')}{more_table}
-  <p style="margin-top:24px"><a class="btn" href="/workshops/">See this week's workshops</a></p>
+  <p style="margin-top:24px"><a class="btn" href="/workshops/">See all workshops</a></p>
 </div></section>'''
     page('/prices/', 'Prices · art, voice and baking classes and workshops · Master Artist KL',
          'Monthly class fees, workshop prices, holiday camps and team day packages at Master Artist in Desa Sri Hartamas, KL.',

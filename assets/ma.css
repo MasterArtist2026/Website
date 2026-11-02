@@ -187,8 +187,14 @@ section.sec.tight { padding-top: 0; }
 .badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 
 /* ---------- week strip ---------- */
-.week-strip { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(250px, 280px); gap: 16px; overflow-x: auto; padding-bottom: var(--s3); scroll-snap-type: x mandatory; }
-.week-strip > * { scroll-snap-align: start; }
+.week-strip { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+@media (max-width: 600px) {
+  .week-strip { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .week-strip .card .body { padding: 12px; }
+  .week-strip .card h3 { font-size: 16px; }
+  .week-strip .card .price { font-size: 18px; }
+  .week-strip .card .meta, .week-strip .card .sub { font-size: 12.5px; }
+}
 .empty { background: var(--surface); border: 1px dashed rgba(59, 28, 90, .25); border-radius: var(--radius-card); padding: 22px 24px; color: var(--muted); }
 
 /* ---------- facts block ---------- */
