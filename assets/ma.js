@@ -134,8 +134,11 @@
       e.preventDefault();
       if (!form.reportValidity()) return;
       var t = total(), f = t.f, get = function (k) { return String(f.get(k) || '').trim(); };
-      var phone = get('phone'), digits = phone.replace(/\D/g, '');
-      if (digits.length < 8 || digits.length > 15 || !/^[0-9+(). -]+$/.test(phone)) {
+      // International form, +<country code><number>: a number typed with its own + code wins over the list;
+      // otherwise the local number loses its leading 0 (012… → +6012…)
+      var typed = get('phone'), local = typed.replace(/\D/g, '');
+      var phone = typed.charAt(0) === '+' ? '+' + local : '+' + (get('cc') || '60') + local.replace(/^0+/, ''), digits = phone.slice(1);
+      if (digits.length < 8 || digits.length > 15 || !/^\+?[0-9(). -]+$/.test(typed)) {
         var ph = form.querySelector('[name=phone]'); ph.setCustomValidity('Please add a phone number we can WhatsApp.'); ph.reportValidity();
         ph.addEventListener('input', function () { ph.setCustomValidity(''); }, { once: true });
         return;
@@ -144,7 +147,7 @@
         'Hi, I\'d like to book ' + d.name + ' on ' + d.when + '.',
         (t.isPair ? t.qty + ' pair ticket(s)' : t.qty + ' ' + (d.unit || 'seat(s)')) + ' — RM' + t.sum + '.' + (f.get('dine') === 'yes' ? ' Plus a meal at Savor for ' + t.people + (d.dineUrl ? ' (I\'ll order from the menu link).' : ': please send me Savor\'s menu link.') : '')
       ];
-      lines.push('Name: ' + get('first_name') + ' ' + get('last_name'), 'Email: ' + get('email'));
+      lines.push('Name: ' + get('first_name') + ' ' + get('last_name'), 'WhatsApp: ' + phone, 'Email: ' + get('email'));
       var LABELS = { child_name: "Child's name", child_age: "Child's age", allergies: 'Allergies or needs', collector: 'Adult collecting' };
       Object.keys(LABELS).forEach(function (k) { if (f.get(k)) lines.push(LABELS[k] + ': ' + f.get(k)); });
       if (f.get('photo')) lines.push('Photo consent: ' + f.get('photo'));

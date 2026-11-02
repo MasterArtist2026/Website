@@ -325,6 +325,18 @@ def consent_kind(s):
     return 'adult'
 
 
+# WhatsApp country codes for the booking form: Malaysia first, then the region and the usual visitors.
+# A number typed with its own + code wins over the list (ma.js).
+COUNTRY_CODES = [('MY', '60'), ('SG', '65'), ('ID', '62'), ('TH', '66'), ('PH', '63'), ('VN', '84'), ('BN', '673'),
+                 ('CN', '86'), ('HK', '852'), ('TW', '886'), ('JP', '81'), ('KR', '82'), ('IN', '91'), ('AE', '971'),
+                 ('AU', '61'), ('NZ', '64'), ('GB', '44'), ('US', '1')]
+
+
+def CountryCodeSelect():
+    opts = ''.join(f'<option value="{c}"{" selected" if k == "MY" else ""}>{k} +{c}</option>' for k, c in COUNTRY_CODES)
+    return f'<select name="cc" aria-label="Country code" autocomplete="tel-country-code">{opts}</select>'
+
+
 def BookingEmbed(s):
     """WhatsApp booking until a payment tool is chosen (spec §3 fallback: booking: whatsapp)."""
     dine = WS['addons']['dine']
@@ -353,7 +365,7 @@ def BookingEmbed(s):
     <div><label for="ln">Last name</label><input id="ln" name="last_name" type="text" autocomplete="family-name" maxlength="60" required></div>
   </div>
   <div class="row">
-    <div><label for="ph">WhatsApp number</label><input id="ph" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="012-345 6789" required></div>
+    <div><label for="ph">WhatsApp number</label><div class="phone-in">{CountryCodeSelect()}<input id="ph" name="phone" type="tel" autocomplete="tel-national" inputmode="tel" placeholder="12-345 6789" required></div></div>
     <div><label for="em">Email</label><input id="em" name="email" type="email" autocomplete="email" maxlength="320" required></div>
   </div>
   {ConsentFields(consent_kind(s))}
