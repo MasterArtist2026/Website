@@ -1167,7 +1167,7 @@ def build_trial():
     <div><label for="tp">Programme</label><select id="tp" name="programme" required>{opts}</select></div>
     <div class="row"><div><label for="tn">Your name</label><input id="tn" name="name" type="text" autocomplete="name" required maxlength="120"></div>
       <div><label for="ta">Student's age</label><input id="ta" name="age" type="text" inputmode="numeric" maxlength="20"></div></div>
-    <div class="row"><div><label for="tph">Phone / WhatsApp</label><input id="tph" name="phone" type="tel" autocomplete="tel" required maxlength="40"></div>
+    <div class="row"><div><label for="tph">WhatsApp number</label><div class="phone-in">{CountryCodeSelect()}<input id="tph" name="phone" type="tel" autocomplete="tel-national" inputmode="tel" placeholder="12-345 6789" required maxlength="40"></div></div>
       <div><label for="tem">Email <span class="muted">(optional)</span></label><input id="tem" name="email" type="email" autocomplete="email" maxlength="320"></div></div>
     <div><label for="td">Preferred day</label><select id="td" name="day">{days}</select></div>
     <div><label for="tm">Anything we should know? <span class="muted">(optional)</span></label><textarea id="tm" name="message" rows="2" maxlength="1000"></textarea></div>

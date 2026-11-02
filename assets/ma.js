@@ -88,6 +88,14 @@
   var b = document.body;
   if (b.getAttribute('data-page') === 'format') track('view_format', { voice: 'studio', format: b.getAttribute('data-format') });
 
+  /* WhatsApp numbers in international form, +<country code><number>, or '' if it can't be one. A number typed
+     with its own + code wins over the country list; otherwise the local number loses its leading 0 (012… → +6012…). */
+  function intlPhone(f) {
+    var typed = String(f.get('phone') || '').trim(), local = typed.replace(/\D/g, '');
+    var phone = typed.charAt(0) === '+' ? '+' + local : '+' + (String(f.get('cc') || '60')) + local.replace(/^0+/, '');
+    return phone.length >= 9 && phone.length <= 16 && /^\+?[0-9(). -]+$/.test(typed) ? phone : '';
+  }
+
   /* ---------- booking embed (WhatsApp fallback until a payment tool is chosen) ---------- */
   /* formats that run twice in a day: one slot visible at a time, chosen by #tHHMM */
   document.documentElement.classList.add('js');
@@ -134,11 +142,8 @@
       e.preventDefault();
       if (!form.reportValidity()) return;
       var t = total(), f = t.f, get = function (k) { return String(f.get(k) || '').trim(); };
-      // International form, +<country code><number>: a number typed with its own + code wins over the list;
-      // otherwise the local number loses its leading 0 (012… → +6012…)
-      var typed = get('phone'), local = typed.replace(/\D/g, '');
-      var phone = typed.charAt(0) === '+' ? '+' + local : '+' + (get('cc') || '60') + local.replace(/^0+/, ''), digits = phone.slice(1);
-      if (digits.length < 8 || digits.length > 15 || !/^\+?[0-9(). -]+$/.test(typed)) {
+      var phone = intlPhone(f);
+      if (!phone) {
         var ph = form.querySelector('[name=phone]'); ph.setCustomValidity('Please add a phone number we can WhatsApp.'); ph.reportValidity();
         ph.addEventListener('input', function () { ph.setCustomValidity(''); }, { once: true });
         return;
@@ -257,9 +262,9 @@
       ev.preventDefault();
       if (form.dataset.sending === '1') return;
       var f = new FormData(form), get = function (k) { return String(f.get(k) || '').trim(); };
-      var name = get('name'), phone = get('phone'), email = get('email'), digits = phone.replace(/\D/g, '');
+      var name = get('name'), phone = intlPhone(f), email = get('email');
       if (!name) return fail('Please add your name.');
-      if (digits.length < 8 || digits.length > 15 || !/^[0-9+(). -]+$/.test(phone)) return fail('Please add a phone number we can WhatsApp.');
+      if (!phone) return fail('Please add a phone number we can WhatsApp.');
       if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail('Please check the email address, or leave it blank.');
       errEl.hidden = true;
       var progLabel = sel.options[sel.selectedIndex].text, note = [];
