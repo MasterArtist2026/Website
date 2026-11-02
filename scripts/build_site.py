@@ -58,7 +58,7 @@ PHOTOS = {
     # TODO: a drawing and two Unsplash-licence stock photos until real photos from these workshops exist
     'glow-canvas': ('art-glow-canvas.svg', 'Illustration of a glow-in-the-dark canvas of glowing jellyfish in a dark lagoon'),
     'candle-making': ('candle-making-stock.jpg', 'Lit candles in white ceramic holders on a table dressed for Christmas'),
-    'crochet-bag': ('crochet-bag-stock.jpg', 'Close-up of jumbo chunky yarn stitches in pastel colours'),
+    'crochet-bag': ('art-crochet-bag.svg', 'Illustration of a chunky crochet tote bag with yarn and a hook'),
 }
 STAND_INS = {'glow-canvas', 'candle-making', 'crochet-bag'}   # not our photos: kept out of Event schema images
 
