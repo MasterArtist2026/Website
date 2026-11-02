@@ -56,7 +56,7 @@ PHOTOS = {
     'adult-art': ('painting-2.jpg', 'An adult art session'),
     'voice': ('vocal-singing.jpg', 'Sabrina Hew singing'),
     # TODO: drawings until real photos from these workshops exist
-    'glow-canvas': ('art-glow-canvas.svg', 'Illustration of a glow-in-the-dark canvas: neon flowers under a glowing moon'),
+    'glow-canvas': ('art-glow-canvas.svg', 'Illustration of a glow-in-the-dark canvas of glowing jellyfish in a dark lagoon'),
     'candle-making': ('art-candle-making.svg', 'Illustration of three hand-poured candles in jars with pine and berries'),
     'crochet-bag': ('art-crochet-bag.svg', 'Illustration of a chunky crochet tote bag with yarn and a hook'),
 }

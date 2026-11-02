@@ -4,17 +4,26 @@
       <stop offset="0" stop-color="#3B1C5A"/>
       <stop offset="1" stop-color="#160A24"/>
     </radialGradient>
-    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#0E1638"/>
-      <stop offset="1" stop-color="#241046"/>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0B2A4A"/>
+      <stop offset=".6" stop-color="#0C1A3A"/>
+      <stop offset="1" stop-color="#1A0E36"/>
     </linearGradient>
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+    <radialGradient id="bell" cx="50%" cy="35%" r="65%">
+      <stop offset="0" stop-color="#FFE3FA"/>
+      <stop offset=".5" stop-color="#FF7FDE"/>
+      <stop offset="1" stop-color="#B04CE0"/>
+    </radialGradient>
+    <radialGradient id="bell2" cx="50%" cy="35%" r="65%">
+      <stop offset="0" stop-color="#E2FFFF"/>
+      <stop offset=".5" stop-color="#62E6FF"/>
+      <stop offset="1" stop-color="#3C7BE0"/>
+    </radialGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
       <feGaussianBlur stdDeviation="7" result="b"/>
       <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
-    <filter id="soft" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="3"/>
-    </filter>
+    <clipPath id="canvas"><rect x="264" y="124" width="272" height="332" rx="3"/></clipPath>
   </defs>
   <rect width="800" height="600" fill="url(#room)"/>
   <!-- easel -->
@@ -26,51 +35,73 @@
   <rect x="236" y="468" width="328" height="20" rx="6" fill="#8C6239"/>
   <!-- canvas -->
   <rect x="250" y="110" width="300" height="360" rx="6" fill="#F6F1E8"/>
-  <rect x="264" y="124" width="272" height="332" rx="3" fill="url(#sky)"/>
-  <!-- glowing moon -->
-  <circle cx="460" cy="190" r="34" fill="#E8FFB0" filter="url(#glow)"/>
-  <circle cx="474" cy="182" r="30" fill="url(#sky)"/>
-  <!-- stars -->
-  <g fill="#B9FFF4" filter="url(#glow)">
-    <circle cx="300" cy="160" r="4"/><circle cx="352" cy="200" r="3"/><circle cx="398" cy="150" r="4.5"/>
-    <circle cx="510" cy="250" r="3"/><circle cx="318" cy="246" r="3.5"/><circle cx="420" cy="232" r="2.5"/>
-  </g>
-  <!-- neon flowers -->
-  <g filter="url(#glow)" fill="none" stroke-width="6" stroke-linecap="round">
-    <path d="M330 440 C 330 380, 320 350, 334 316" stroke="#7CFFB2"/>
-    <path d="M400 440 C 404 390, 396 360, 402 330" stroke="#7CFFB2"/>
-    <path d="M470 440 C 470 396, 480 370, 468 344" stroke="#7CFFB2"/>
-    <path d="M400 400 C 420 390, 432 380, 440 366" stroke="#7CFFB2"/>
-  </g>
-  <g filter="url(#glow)">
-    <g fill="#FF6FD8">
-      <circle cx="334" cy="300" r="16"/><circle cx="318" cy="316" r="14"/><circle cx="350" cy="316" r="14"/><circle cx="334" cy="330" r="12"/>
+  <rect x="264" y="124" width="272" height="332" rx="3" fill="url(#sea)"/>
+  <g clip-path="url(#canvas)">
+    <!-- light rays from the surface -->
+    <g fill="#62E6FF" opacity=".08">
+      <path d="M300 124 L 340 124 L 300 456 L 250 456 Z"/>
+      <path d="M400 124 L 430 124 L 440 456 L 390 456 Z"/>
+      <path d="M480 124 L 510 124 L 560 456 L 520 456 Z"/>
     </g>
-    <circle cx="334" cy="315" r="8" fill="#FFF36B"/>
-    <g fill="#62E6FF">
-      <circle cx="402" cy="312" r="17"/><circle cx="385" cy="328" r="14"/><circle cx="419" cy="328" r="14"/>
+    <!-- big pink jellyfish -->
+    <g filter="url(#glow)">
+      <path d="M330 250 C 330 190, 450 190, 450 250 C 440 244, 430 256, 418 250 C 406 244, 398 258, 390 250 C 380 244, 370 258, 360 250 C 350 244, 340 256, 330 250 Z" fill="url(#bell)"/>
+      <g fill="none" stroke="#FF9BE6" stroke-width="4" stroke-linecap="round">
+        <path d="M345 252 C 335 290, 360 320, 345 360 C 336 384, 350 400, 344 420"/>
+        <path d="M368 254 C 380 296, 356 326, 372 366 C 380 388, 366 404, 372 430"/>
+        <path d="M392 254 C 382 300, 410 330, 394 376 C 388 396, 400 414, 394 440"/>
+        <path d="M416 254 C 428 292, 404 324, 420 360 C 428 380, 414 398, 422 420"/>
+        <path d="M438 252 C 448 286, 430 312, 444 344"/>
+      </g>
+      <g fill="none" stroke="#FFE3FA" stroke-width="7" stroke-linecap="round" opacity=".8">
+        <path d="M376 256 C 372 290, 396 300, 386 330"/>
+        <path d="M404 256 C 410 288, 392 300, 402 326"/>
+      </g>
     </g>
-    <circle cx="402" cy="324" r="8" fill="#FFF36B"/>
-    <g fill="#FFB347">
-      <circle cx="468" cy="328" r="15"/><circle cx="453" cy="342" r="13"/><circle cx="483" cy="342" r="13"/>
+    <!-- small blue jellyfish -->
+    <g filter="url(#glow)" transform="translate(470 150) scale(.55)">
+      <path d="M0 60 C 0 0, 120 0, 120 60 C 110 54, 100 66, 88 60 C 76 54, 68 68, 60 60 C 50 54, 40 68, 30 60 C 20 54, 10 66, 0 60 Z" fill="url(#bell2)"/>
+      <g fill="none" stroke="#9CF3FF" stroke-width="6" stroke-linecap="round">
+        <path d="M20 64 C 10 100, 34 130, 20 170"/>
+        <path d="M48 66 C 60 108, 36 140, 52 186"/>
+        <path d="M74 66 C 64 108, 90 140, 74 186"/>
+        <path d="M100 64 C 110 100, 86 130, 100 168"/>
+      </g>
     </g>
-    <circle cx="468" cy="340" r="7" fill="#FFF36B"/>
+    <!-- tiny jellyfish -->
+    <g filter="url(#glow)" transform="translate(290 160) scale(.35)">
+      <path d="M0 60 C 0 0, 120 0, 120 60 C 100 52, 20 52, 0 60 Z" fill="url(#bell2)"/>
+      <g fill="none" stroke="#9CF3FF" stroke-width="7" stroke-linecap="round">
+        <path d="M30 60 C 20 100, 44 130, 30 170"/><path d="M60 60 V 180"/><path d="M90 60 C 100 100, 76 130, 90 170"/>
+      </g>
+    </g>
+    <!-- bubbles and plankton -->
+    <g fill="#B9FFF4" filter="url(#glow)">
+      <circle cx="300" cy="300" r="3"/><circle cx="500" cy="320" r="4"/><circle cx="470" cy="390" r="2.5"/>
+      <circle cx="318" cy="420" r="3"/><circle cx="510" cy="260" r="2.5"/><circle cx="430" cy="170" r="2"/>
+    </g>
+    <!-- glowing seabed -->
+    <g filter="url(#glow)" fill="none" stroke="#7CFFB2" stroke-width="5" stroke-linecap="round">
+      <path d="M280 456 C 284 430, 274 414, 284 396"/>
+      <path d="M296 456 C 300 436, 296 424, 302 410"/>
+      <path d="M520 456 C 516 432, 526 416, 516 398"/>
+    </g>
   </g>
-  <!-- palette and brushes in front -->
+  <!-- palette -->
   <g transform="translate(560 470) rotate(-12)">
     <path d="M0 40 C 0 0, 70 -20, 120 10 C 160 34, 140 80, 100 74 C 80 70, 84 92, 60 96 C 20 100, 0 70, 0 40 Z" fill="#E9D9B8"/>
     <circle cx="96" cy="60" r="12" fill="#3B1C5A"/>
     <g filter="url(#glow)">
       <circle cx="30" cy="40" r="11" fill="#FF6FD8"/><circle cx="58" cy="20" r="11" fill="#7CFFB2"/>
-      <circle cx="92" cy="20" r="10" fill="#62E6FF"/><circle cx="40" cy="74" r="10" fill="#FFF36B"/>
+      <circle cx="92" cy="20" r="10" fill="#62E6FF"/><circle cx="40" cy="74" r="10" fill="#B9FFF4"/>
     </g>
   </g>
+  <!-- brush -->
   <g transform="translate(120 520) rotate(-35)">
     <rect x="0" y="-5" width="150" height="10" rx="5" fill="#C79733"/>
     <rect x="150" y="-6" width="26" height="12" fill="#B8B8C4"/>
-    <path d="M176 -6 L 206 0 L 176 6 Z" fill="#7CFFB2" filter="url(#soft)"/>
+    <path d="M176 -6 L 206 0 L 176 6 Z" fill="#FF7FDE"/>
   </g>
-  <!-- sparkles in the room -->
   <g fill="#E6B44C" opacity=".85">
     <path d="M110 120 l6 16 16 6 -16 6 -6 16 -6 -16 -16 -6 16 -6 z"/>
     <path d="M680 150 l4 11 11 4 -11 4 -4 11 -4 -11 -11 -4 11 -4 z"/>
