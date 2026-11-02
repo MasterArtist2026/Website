@@ -219,9 +219,12 @@ def seats_html(s):
     unit = s.get('cap_unit') or 'seats'
     if s['seats_left'] <= 0:
         return '<span class="seats out">Sold out</span>'
-    cls = ' nearly' if s['seats_left'] < 6 else ''
-    word = 'Nearly full · ' if cls else ''
-    return f'<span class="seats{cls}">{word}{s["seats_left"]} of {s["cap"]} {unit} left</span>'
+    # Seat counts only once a session is at least half full: "20 of 20 left" reads as empty
+    if s.get('cap') and s['seats_left'] > s['cap'] / 2:
+        return ''
+    if s['seats_left'] < 6:
+        return f'<span class="seats nearly">Nearly full · only {s["seats_left"]} {unit} left</span>'
+    return f'<span class="seats">Filling up · {s["seats_left"]} {unit} left</span>'
 
 
 def SessionCard(s, link=True):
@@ -334,10 +337,12 @@ def BookingEmbed(s):
     unit = 'Pairs' if s.get('cap_unit') == 'pairs' else 'Families' if s.get('bundle') else 'Seats'
     msg_unit = {'Pairs': 'pair(s)', 'Families': 'Family Sunday ticket(s)'}.get(unit, 'seat(s)')
     when = f"{day_date(s['date'])} at {fmt_time(s['time'])}"
-    return f'''<form class="booking v-studio" data-session="{e(s['id'])}" data-format="{e(s['format'])}" data-name="{e(s['name'])}" data-when="{e(when)}"
+    full_name = f"{s['theme']} ({s['name']})" if s.get('theme') else s['name']
+    return f'''<form class="booking v-studio" data-session="{e(s['id'])}" data-format="{e(s['format'])}" data-name="{e(full_name)}" data-when="{e(when)}"
   data-price="{s['price'] or 0}" data-pair="{s.get('pair_price') or 0}" data-booking="whatsapp" data-unit="{msg_unit}" data-dine-url="{e(dine.get('order_url') or '')}"
   data-date="{s['date']}" data-cap="{s.get('cap') or ''}">
-  <h2 class="h3">Book this session</h2>
+  <h2 class="h3">Book {e(s.get('theme') or s['name'])}</h2>
+  <p class="book-for">{e(s['name']) + ' · ' if s.get('theme') else ''}{e(when)}</p>
   <div class="row">
     <div><label for="qty">{unit}</label><input id="qty" name="qty" type="number" min="1" max="{s['seats_left'] or 1}" value="1"></div>
     {pair_opt}

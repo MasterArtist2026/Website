@@ -439,3 +439,5 @@ details.acc > div p:last-child { margin: 0; }
 /* ---------- photo strip above price tables ---------- */
 .photo-row.strip { margin-bottom: 24px; }
 .photo-row.strip > * { aspect-ratio: 4/3; }
+
+.booking .book-for { margin: -6px 0 var(--s3); color: var(--muted); font-size: 14px; font-weight: 600; }
