@@ -239,7 +239,7 @@ section.sec.tight { padding-top: 0; }
 .booking { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius-card); padding: 22px; box-shadow: var(--shadow); }
 .booking h3 { margin-bottom: var(--s4); }
 .booking .row { display: grid; gap: var(--s3); grid-template-columns: 1fr 1fr; margin-bottom: var(--s3); }
-.booking label, .consent label, .form label { font-size: 14px; font-weight: 600; display: block; margin-bottom: 4px; color: var(--ink); }
+.booking label, .consent label, .form label, .booking .field-label { font-size: 14px; font-weight: 600; display: block; margin-bottom: 4px; color: var(--ink); }
 .booking input, .booking select, .booking textarea, .consent input[type=text], .consent textarea, .form input, .form select, .form textarea {
   width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 12px; min-height: 44px;
 }
@@ -451,5 +451,3 @@ details.acc > div p:last-child { margin: 0; }
 .kid-remove { justify-self: start; background: none; border: 0; padding: 0; color: var(--gold-text); text-decoration: underline; font: inherit; font-size: 13.5px; cursor: pointer; }
 .add-kid { justify-self: start; }
 .trial-total { margin: 0; }
-.dine-box { display: grid; gap: 6px; padding: 12px 14px; border-radius: 12px; background: var(--gold-pale); }
-.dine-box .note { margin: 0; }

@@ -347,13 +347,12 @@ def BookingEmbed(s):
     dine = WS['addons']['dine']
     pair_opt = (f'<div><label for="tk">Ticket</label><select id="tk" name="ticket"><option value="single">Single · {rm(s["price"])}</option>'
                 f'<option value="pair">Pair · {rm(s["pair_price"])}</option></select></div>') if s.get('pair_price') else '<input type="hidden" name="ticket" value="single">'
-    # Savor meals are ordered and paid on Savor's own menu link; clicking it marks the booking as dining (ma.js)
+    # Savor meals are ordered and paid on Savor's own menu: the field is a link to it, and clicking it
+    # marks the booking as dining (ma.js). TODO: addons.dine.order_url is still empty
     when_dine = 'after' if s.get('dine_timing') == 'after' else 'before'
-    order = (f'<input type="hidden" name="dine" value="no"><a class="btn ghost block dine-link" href="{e(dine["order_url"])}" target="_blank" rel="noopener">Order your meal from Savor\'s menu</a>'
-             if dine.get('order_url') else  # TODO: Savor's menu link (addons.dine.order_url); until then we send it on WhatsApp
-             '<label class="check"><input type="checkbox" name="dine" value="yes"> Yes, send me Savor\'s menu link</label>')
-    dine_opt = (f'<div class="dine-box"><b>Eat at Savor {when_dine}?</b>'
-                f'<p class="note">Meals from {rm(dine["price_from"])} a person, ordered and paid on Savor\'s menu.</p>{order}</div>') if s.get('dine') else ''
+    dine_opt = (f'<div><span class="field-label">Dine at Savor {when_dine}</span><input type="hidden" name="dine" value="no">'
+                f'<a class="btn ghost block dine-link" href="{e(dine.get("order_url") or "")}" target="_blank" rel="noopener">Order from Savor\'s menu · from {rm(dine["price_from"])}</a>'
+                f'<p class="note">Choose your meal and pay on Savor\'s menu.</p></div>') if s.get('dine') else ''
     unit = 'Pairs' if s.get('cap_unit') == 'pairs' else 'Families' if s.get('bundle') else 'Seats'
     msg_unit = {'Pairs': 'pair(s)', 'Families': 'Family Sunday ticket(s)'}.get(unit, 'seat(s)')
     when = f"{day_date(s['date'])} at {fmt_time(s['time'])}"
@@ -367,7 +366,7 @@ def BookingEmbed(s):
     <div><label for="qty">{unit}</label><input id="qty" name="qty" type="number" min="1" max="{s['seats_left'] or 1}" value="1"></div>
     {pair_opt}
   </div>
-  {dine_opt}
+  {f'<div class="row">{dine_opt}</div>' if dine_opt else ''}
   <div class="row">
     <div><label for="fn">First name</label><input id="fn" name="first_name" type="text" autocomplete="given-name" maxlength="60" required></div>
     <div><label for="ln">Last name</label><input id="ln" name="last_name" type="text" autocomplete="family-name" maxlength="60" required></div>
