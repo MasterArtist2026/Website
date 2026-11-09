@@ -1,39 +1,34 @@
-# Bookings: admin portal and Sabrina's report
+# Bookings, online payment and the customer CRM
 
-What it does once switched on:
+Once all this is set up, the website, Stripe and the CRM work together like this:
 
-- Every booking sent from a workshop date page is saved in Supabase (`workshop_bookings`) as **requested**, then WhatsApp opens as before.
-- **admin.html → Bookings** lists every upcoming session with:
-  - seats taken out of the cap
-  - pairs and Savor meals
-  - allergies and photo consent
-  - the amount paid and still to collect
-  - a status for each booking (requested, confirmed, paid, cancelled or refunded)
-  - a CSV download
+- **A booking:** on a dated workshop page, the customer fills in the form and presses **Pay RM… and book**. They pay by card, FPX online banking or e-wallet on Stripe's secure page. The booking is then marked **paid** by itself, and they land on a thank-you page with the RM50 trial-class voucher. Stripe emails them the receipt.
+- **The CRM:** every booking and every trial request creates or updates one customer in **admin.html → Customers**. Each customer has:
+  - name, WhatsApp number and email
+  - children's names and ages
+  - every booking and trial request
+  - total paid, where they first came from, and whether they want news
+  - notes and tags
+- **Sabrina's report:** for every paid booking (or WhatsApp request), Sabrina gets the email with the session's attendee list, plus a WhatsApp alert.
+- **Before Stripe is switched on:** bookings go through WhatsApp as now, and still reach the CRM and the report.
 
-  A second tab lists the trial class requests (`trial_leads`).
-- Each new booking emails Sabrina the full list for that session and sends her a short WhatsApp alert with the seat count. Children's names are never sent in either message.
-- When Stripe goes live, a paid booking will move to **paid** by itself.
-
-Each step is done once, in this order.
+Do these once, in order. Steps 1–3 work without Stripe.
 
 ## 1. Database (Supabase → SQL Editor)
 
 1. Go to **Project Settings → Vault → New secret**. Name it `booking_hook_secret` and give it a long random value. Keep the value; step 3 uses it.
-2. Run `supabase/bookings.sql`. The two checks at the end should show:
-   - `anon` with INSERT only
-   - an `admin` row for the `bookings` section
+2. Run `supabase/migrations/20261016115757_trial_leads.sql`, only if the `trial_leads` table doesn't exist yet.
+3. Run `supabase/bookings.sql`.
+4. Run `supabase/crm.sql`. It also creates customers from any bookings and trial requests already saved.
 
-   To let another role see bookings (for example `marketing`), add a `role_permissions` row with section `bookings`.
+The checks at the end of each file should show that the website (`anon`) can only add rows, and that `admin` has the `bookings` and `customers` permissions. To give another role access, for example `marketing`, add `role_permissions` rows for those sections.
 
-Bookings made before this step aren't saved; they still arrive on WhatsApp.
-
-## 2. Email (Resend)
+## 2. Email for Sabrina's report (Resend)
 
 1. Create a free account at resend.com. Add the domain `masterartist.co` and add the DNS records it shows at the domain host.
 2. Create an API key.
 
-## 3. Edge Function secrets and deploy
+## 3. Edge Functions
 
 Go to Supabase → Edge Functions → Secrets and add:
 
@@ -42,35 +37,52 @@ Go to Supabase → Edge Functions → Secrets and add:
 | `BOOKING_HOOK_SECRET` | the same value as the Vault secret |
 | `RESEND_API_KEY` | from Resend |
 | `REPORT_EMAIL_TO` | Sabrina's email (comma-separate several) |
-| `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID`, `WHATSAPP_TO` | step 4; leave these out until then |
 
-Deploy the function without JWT checks. The database trigger calls it with the shared secret instead:
+Then deploy the three functions:
 
 ```bash
 supabase functions deploy booking-notify --no-verify-jwt --project-ref fudaosneozobacdalncv
 ```
 
-## 4. WhatsApp alerts (WhatsApp Cloud API)
+```bash
+supabase functions deploy create-checkout --project-ref fudaosneozobacdalncv
+```
 
-1. In Meta Business Suite, open WhatsApp Manager and add a sending number. The Cloud API needs a number that isn't already on the WhatsApp Business app, unless you use Meta's "coexistence" option for the studio number.
-2. Create a message template:
-   - name `new_booking`, category Utility, language English
-   - body: `New booking: {{1}} for {{2}}, {{3}}. {{4}}. Full list in the admin portal.`
+```bash
+supabase functions deploy stripe-webhook --no-verify-jwt --project-ref fudaosneozobacdalncv
+```
 
-   Wait for Meta to approve it.
-3. Create a System User with a permanent token that has `whatsapp_business_messaging`.
-4. Add the Edge Function secrets:
-   - `WHATSAPP_TOKEN`: the permanent token
+## 4. Stripe (online payment)
+
+1. Create Master Artist's own Stripe account at stripe.com. Use the business details and a Master Artist bank account, kept separate from Savor's. Stripe asks for identity and company documents, which can take a few days.
+2. In **Settings → Payment methods**, turn on Cards, FPX and GrabPay. In **Settings → Customer emails**, turn on "Successful payments" so customers get receipts.
+3. Start in **test mode**. Under Developers → API keys, copy the secret key (`sk_test_…`) into the Edge Function secret `STRIPE_SECRET_KEY`.
+4. Under Developers → Webhooks, add an endpoint:
+   - URL: `https://fudaosneozobacdalncv.supabase.co/functions/v1/stripe-webhook`
+   - events: `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`
+
+   Copy its signing secret (`whsec_…`) into `STRIPE_WEBHOOK_SECRET`.
+5. Ask Claude to set `payments.stripe` to `true` in `data/site.json` and publish. The booking button becomes **Pay RM… and book**.
+6. Test it with Stripe's test card `4242 4242 4242 4242`, any future date and any CVC. Check:
+   - the booking shows as **paid** in Bookings
+   - the customer appears in Customers
+   - the report email arrives
+7. When the test works, switch Stripe to live mode. Repeat steps 3–4 with the live key and a live webhook, then make one real RM booking and refund it.
+
+Seats are held for 35 minutes while someone is on the payment page. If they leave without paying, the booking becomes **expired** and the seats free up. Refunds made in Stripe set the booking to **refunded**.
+
+## 5. WhatsApp alerts for Sabrina (optional, after the rest)
+
+1. In WhatsApp Manager (Meta Business Suite), add a sending number. The Cloud API needs a number that isn't on the WhatsApp Business app, unless you use Meta's "coexistence" option.
+2. Create a Utility template named `new_booking`, language English, with this body:
+   `New booking: {{1}} for {{2}}, {{3}}. {{4}}. Full list in the admin portal.`
+3. Add the secrets:
+   - `WHATSAPP_TOKEN`: a System User permanent token with `whatsapp_business_messaging`
    - `WHATSAPP_PHONE_ID`: the sending number's Phone number ID
    - `WHATSAPP_TO`: Sabrina's number, for example `60123456789`
 
-Until this is set up, only the email goes out. The function reports "whatsapp not configured" and carries on.
+## Privacy
 
-## 5. Test
-
-Book a seat on any dated workshop page with your own name and number. Check:
-
-- The booking shows in admin.html → Bookings within a few seconds.
-- The email has arrived, and the WhatsApp alert too once step 4 is done.
-
-Then set the test booking to **cancelled**.
+- Customers only receive marketing if they ticked **Send me news**. The Customers section has a **Want news** filter for that list.
+- Card and bank details stay with Stripe and never reach the website or the CRM.
+- Children's names are kept in the CRM and the admin portal only. They never appear in emails, on the site or in ads.

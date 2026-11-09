@@ -66,5 +66,9 @@
     }
   },
   "terms_updated": "2026-11-01",
-  "privacy_updated": "2026-11-01"
+  "privacy_updated": "2026-11-01",
+  "payments": {
+    "stripe": false,
+    "note": "Set stripe to true once STRIPE_SECRET_KEY and the webhook are set in Supabase (docs/bookings-setup.md); until then bookings go through WhatsApp."
+  }
 }

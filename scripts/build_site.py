@@ -342,6 +342,11 @@ def CountryCodeSelect():
     return f'<select name="cc" aria-label="Country code" autocomplete="tel-country-code">{opts}</select>'
 
 
+NEWS_OPTIN = ('<label class="check news"><input type="checkbox" name="news" value="yes"> Send me news of new workshops and classes. '
+              'Unsubscribe any time.</label>')
+PAY = bool(SITE.get('payments', {}).get('stripe'))   # online payment through Stripe; WhatsApp booking until it is switched on
+
+
 def BookingEmbed(s):
     """WhatsApp booking until a payment tool is chosen (spec §3 fallback: booking: whatsapp)."""
     dine = WS['addons']['dine']
@@ -380,9 +385,14 @@ def BookingEmbed(s):
     <div><label for="em">Email</label><input id="em" name="email" type="email" autocomplete="email" maxlength="320" required></div>
   </div>
   {ConsentFields(consent_kind(s))}
+  {NEWS_OPTIN}
   <div class="total"><span>Total</span><b data-total>{rm(s['price'])}</b></div>
-  <button class="btn wa block" type="submit">{WA_ICON}<span>Book on WhatsApp</span></button>
-  <p class="note">We confirm your seat and send payment details on WhatsApp. Prepaid; see the policies below.</p>
+  <p class="err" role="alert" hidden></p>
+  {f'<button class="btn block" type="submit">Pay <span data-total>{rm(s["price"])}</span> and book</button>'
+   f'<p class="note">Secure payment by card, FPX online banking or e-wallet. Your seat is booked as soon as you pay; see the policies below.</p>'
+   if PAY else
+   f'<button class="btn wa block" type="submit">{WA_ICON}<span>Book on WhatsApp</span></button>'
+   f'<p class="note">We confirm your seat and send payment details on WhatsApp. Prepaid; see the policies below.</p>'}
   <div class="done" role="status"><b>Thanks, we have your request.</b> Send the WhatsApp message to confirm your seat. Everyone who comes gets a {rm(WS['policies']['trial_voucher']['value'])} voucher for a trial class at Master Artist Academy.</div>
 </form>'''
 
@@ -561,7 +571,7 @@ def page(path, title, desc, body, voice='both', active='', data_attrs='', extra_
     canonical = SITE['url'] + path
     robots = f'<meta name="robots" content="{noindex if isinstance(noindex, str) else "noindex"}">' if noindex else ''
     doc = f'''<!DOCTYPE html>
-<html lang="en-MY" data-wa="{SITE['whatsapp']}" data-direct-tags="{1 if SITE['tracking'].get('direct_tags', True) else 0}" data-capi="{1 if SITE['tracking'].get('capi') else 0}" data-ads-trial="{SITE['tracking']['ads_labels']['trial_form']}" data-ads-whatsapp="{SITE['tracking']['ads_labels']['whatsapp']}" data-trial-price="{CL['trial']['price']}">
+<html lang="en-MY" data-wa="{SITE['whatsapp']}" data-direct-tags="{1 if SITE['tracking'].get('direct_tags', True) else 0}" data-capi="{1 if SITE['tracking'].get('capi') else 0}" data-ads-trial="{SITE['tracking']['ads_labels']['trial_form']}" data-ads-whatsapp="{SITE['tracking']['ads_labels']['whatsapp']}" data-trial-price="{CL['trial']['price']}" data-pay="{1 if PAY else 0}">
 <head>
 {head(title, desc, canonical, extra_head + robots)}
 </head>
@@ -1166,6 +1176,28 @@ def build_programme(p):
          body, voice='academy', active='/classes/', extra_head=ld(course_ld), data_attrs=f' data-page="programme" data-programme="{p["id"]}"', wa={'msg': wa_trial(p), 'programme': p['id'], 'trial': True})
 
 
+def build_booking_thanks():
+    """Where Stripe sends a customer after paying. ma.js reads the booking's status and fires booking_paid once."""
+    v = WS['policies']['trial_voucher']['value']
+    body = hero_band(e(SITE['labels']['studio']), 'Thank <em>you</em>', 'Checking your payment…', '', crumbs(('/', 'Home'), (None, 'Booking')))
+    body += f'''<section class="sec v-studio"><div class="wrap" style="max-width:720px">
+  <div class="booking-status" data-booking-status>
+    <div class="facts" data-paid hidden><p class="price-line">You're booked</p>
+      <p><b data-what></b><br><span data-when></span></p>
+      <p>Your receipt is on its way to your email, and we will WhatsApp you before the session. Please arrive ten minutes early.</p></div>
+    <div class="facts" data-wait hidden><p class="price-line">Almost there</p>
+      <p>We are waiting for your bank to confirm the payment. This page updates by itself; your receipt will arrive by email.</p></div>
+    <div class="facts" data-fail hidden><p class="price-line">Payment not completed</p>
+      <p>Your seat is not booked. <a href="/workshops/">Choose a date</a> to try again, or WhatsApp us.</p></div>
+  </div>
+  <div class="cta-card v-academy" style="margin-top:24px"><div><span class="label">{e(SITE['labels']['academy'])}</span>
+    <h2>A {rm(v)} trial class, <em>on us</em></h2><p>Everyone who comes to a workshop gets a {rm(v)} voucher for a trial class: weekly classes taught by working artists, where you'll actually get better.</p></div>
+    <div class="hero-cta"><a class="btn" href="/trial/">See the classes</a></div></div>
+</div></section>'''
+    page('/booking/thanks/', 'Booking confirmed · Master Artist', 'Your Master Artist workshop booking.', body, voice='both',
+         data_attrs=' data-page="booking-thanks"', noindex=True)
+
+
 def build_trial():
     opts = ''.join(f'<option value="{p["id"]}">{e(p["name"])}</option>' for p in PROGS) + '<option value="not-sure">Not sure yet</option>'
     # An adult booking for themselves picks from the classes adults can join (not the kids' and teen programmes)
@@ -1197,6 +1229,7 @@ def build_trial():
     <p class="trial-total small"><b data-trial-total>1 trial · {rm(TRIAL['price'])}</b></p>
     <div><label for="td">Preferred day</label><select id="td" name="day">{days}</select></div>
     <div><label for="tm">Anything we should know? <span class="muted">(optional)</span></label><textarea id="tm" name="message" rows="2" maxlength="1000"></textarea></div>
+    {NEWS_OPTIN}
     <p class="small muted">How we use your details: <a href="/privacy/">PDPA notice</a>.</p>
     <p class="err" role="alert" hidden></p>
     <button class="btn block" type="submit">Send and open WhatsApp</button>
@@ -1236,6 +1269,7 @@ def build_classes():
     for p in PROGS:
         build_programme(p)
     build_trial()
+    build_booking_thanks()
     build_holiday_camps()
 
 
@@ -1600,10 +1634,12 @@ def build_privacy():
         ('Why we collect it', [
             'To confirm bookings, arrange trial classes and run classes and workshops safely, including knowing about allergies.',
             'To manage enrolment, billing and attendance for weekly classes, and to tell you about your classes.',
+            'To keep one customer record per person, with your bookings, trial requests and children\'s first names and ages, so we can look after you when you come back.',
+            'To send you news of new workshops and classes by email or WhatsApp, only if you ticked "Send me news". Reply STOP or message us at any time and we will stop.',
             'To publish photographs of sessions and work, only with the photo choice made when booking.',
             'To measure our advertising, using Google Analytics, Google Ads and the Meta pixel through Google Tag Manager. These record which pages are viewed and which buttons are pressed, not the contents of your messages.']),
         ('Photographs of children', ['We never publish a photograph or video that identifies a child without consent from a parent or guardian, and we never publish a child\'s name. You can withdraw consent at any time by messaging us, and the photo will be taken down.']),
-        ('Who we share data with', ['We do not sell personal data. It is shared only with the service providers that run our website, data storage (Supabase), messaging (WhatsApp) and advertising measurement (Google and Meta), and only as far as needed to run the studio.']),
+        ('Who we share data with', ['We do not sell personal data. It is shared only with the service providers that run our website, data storage (Supabase), online payment (Stripe, which handles your card or bank details; we never see them), email (Resend), messaging (WhatsApp) and advertising measurement (Google and Meta), and only as far as needed to run the studio.']),
         ('How long we keep it', ['We keep enquiries for as long as reasonably useful for following up, and student records for the time a student is with us plus a reasonable period afterwards for accounting. Consent records are kept for as long as the related photo is in use.']),
         ('Your rights', ['Under the PDPA you can ask to see the personal data we hold about you or your child, ask us to correct it, or withdraw consent (including photo consent) at any time. Contact us using the details below.']),
         ('Contact', [contact]),

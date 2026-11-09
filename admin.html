@@ -190,6 +190,11 @@ table.bk th{text-align:left;font-weight:600;padding:6px 8px;border-bottom:2px so
 table.bk td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
 table.bk tr.gone td{opacity:.45;text-decoration:line-through}
 table.bk select{font-size:12.5px;padding:3px 4px}
+table.bk tr.click{cursor:pointer}
+table.bk tr.click:hover td{background:#faf6ee}
+.crm-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.crm-bar input[type=search]{flex:1;min-width:220px;padding:8px 10px;border:1px solid var(--line)}
+.tag{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:999px;background:#EDE7F6;margin:1px 2px 1px 0}
 </style>
 </head>
 <body>
@@ -291,6 +296,7 @@ const SECTIONS = [
   { id:'programmes',   key:'programmes',   label:'Programmes',          ready:true },
   { id:'classes',      key:'classes',      label:'Class Schedule',      ready:true },
   { id:'bookings',     key:'bookings',     label:'Bookings',            ready:true },
+  { id:'customers',    key:'customers',    label:'Customers',           ready:true },
   { id:'events',       key:'events',       label:'Events Calendar',     ready:true },
   { id:'fees',         key:'fees',         label:'Fees & Policies',     ready:true },
   { id:'gallery',      key:'gallery',      label:'Gallery',             ready:true },
@@ -441,6 +447,7 @@ async function boot(){
   const hm = location.hash.match(/^#blog(?:\/([a-z0-9-]+))?$/);
   if (hm && canRead('blog')) { current = 'blog'; blogOpenSlug = hm[1] || null; }
   if (location.hash === '#bookings' && canRead('bookings')) current = 'bookings';
+  if (location.hash === '#customers' && canRead('customers')) current = 'customers';
 
   $('authScreen').style.display='none';
   $('appScreen').classList.add('on');
@@ -1142,6 +1149,134 @@ window.bkCsv = id => {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv' }));
   a.download = `${id}.csv`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+
+/* ---------- Customers: the B2C CRM. Filled by the website (every booking and trial request) ---------- */
+let crmRows = [], crmQuery = '', crmFilter = 'all', crmOpen = null;
+const CRM_FILTERS = { all:'Everyone', news:'Want news', kids:'Parents', repeat:'Booked 2+', trials:'Trial requests' };
+const money = n => 'RM' + Number(n || 0).toLocaleString('en-MY');
+const shortDate = d => d ? new Date(d).toLocaleDateString('en-MY', { day:'numeric', month:'short', year:'numeric' }) : '';
+views.customers = async function(){
+  if (crmOpen) return crmDetail(crmOpen);
+  busy(true,'Loading…');
+  const { data, error } = await sb.from('contacts').select('*').order('last_activity', { ascending:false }).limit(2000);
+  busy(false);
+  if (error) {
+    $('view').innerHTML = `<div class="msg err">${esc(error.message)}</div>
+      <div class="hint">If this says the table doesn't exist, run <b>supabase/bookings.sql</b> and then <b>supabase/crm.sql</b> in the Supabase SQL Editor.</div>`;
+    return;
+  }
+  crmRows = data || [];
+  const q = crmQuery.toLowerCase().trim();
+  const shown = crmRows.filter(c => {
+    if (crmFilter === 'news' && !c.marketing_consent) return false;
+    if (crmFilter === 'kids' && !(c.children || []).length) return false;
+    if (crmFilter === 'repeat' && c.bookings_count < 2) return false;
+    if (crmFilter === 'trials' && !c.trials_count) return false;
+    if (!q) return true;
+    return [c.first_name, c.last_name, c.email, c.phone, (c.tags || []).join(' '), (c.children || []).map(k => k.name).join(' ')]
+      .join(' ').toLowerCase().includes(q);
+  });
+  const paid = crmRows.reduce((n, c) => n + c.total_paid, 0);
+  let html = `<div class="hint"><b>Everyone who has booked a workshop or asked for a trial.</b> The website adds and updates customers by itself:
+    one record per person (matched by email, then WhatsApp number), with their children, bookings and what they have paid.
+    Click a customer to see their history, add notes and tags. Only people who ticked <b>Send me news</b> may be sent marketing.</div>
+    <div class="bk-sum"><span><b>${crmRows.length}</b> customers</span><span>${crmRows.filter(c => c.marketing_consent).length} want news</span>
+      <span>${crmRows.filter(c => c.bookings_count > 1).length} booked more than once</span><span>${money(paid)} paid online and recorded</span></div>
+    <div class="crm-bar"><input type="search" id="crmQ" placeholder="Search name, email, phone, child, tag" value="${esc(crmQuery)}" oninput="crmSearch(this.value)">
+      <button class="btn sm" onclick="crmCsv()">Download (${shown.length})</button></div>
+    <div class="blog-tabs">${Object.entries(CRM_FILTERS).map(([k, v]) => `<button class="${crmFilter===k?'on':''}" onclick="crmTab('${k}')">${v}</button>`).join('')}</div>`;
+  if (!shown.length) html += `<div class="empty">${crmRows.length ? 'No customers match.' : 'No customers yet: they appear here after the first booking or trial request.'}</div>`;
+  else html += `<div class="card"><div class="card-b"><div class="bk-wrap"><table class="bk">
+    <tr><th>Name</th><th>Contact</th><th>Children</th><th>Bookings</th><th>Trials</th><th>Paid</th><th>Last seen</th><th>Source</th></tr>
+    ${shown.slice(0, 500).map(c => `<tr class="click" onclick="crmGo('${c.id}')">
+      <td><b>${esc(c.first_name)} ${esc(c.last_name || '')}</b>${c.marketing_consent ? ' <span class="tag">news</span>' : ''}${(c.tags || []).map(x => `<span class="tag">${esc(x)}</span>`).join('')}</td>
+      <td><small>${esc(c.phone || '')}<br>${esc(c.email || '')}</small></td>
+      <td><small>${(c.children || []).map(k => esc(k.name) + (k.age ? ' (' + esc(k.age) + ')' : '')).join(', ')}</small></td>
+      <td>${c.bookings_count || ''}</td><td>${c.trials_count || ''}</td><td>${c.total_paid ? money(c.total_paid) : ''}</td>
+      <td><small>${shortDate(c.last_activity)}</small></td><td><small>${esc(c.first_source || '')}</small></td></tr>`).join('')}
+  </table></div></div></div>`;
+  $('view').innerHTML = html;
+  const box = $('crmQ'); if (box && document.activeElement !== box && crmQuery) { box.focus(); box.setSelectionRange(crmQuery.length, crmQuery.length); }
+};
+let crmTimer = null;
+window.crmSearch = v => { crmQuery = v; clearTimeout(crmTimer); crmTimer = setTimeout(async () => { await render(); const b = $('crmQ'); if (b) { b.focus(); b.setSelectionRange(v.length, v.length); } }, 250); };
+window.crmTab = async k => { crmFilter = k; await render(); };
+window.crmGo = async id => { crmOpen = id; await render(); window.scrollTo(0,0); };
+window.crmBack = async () => { crmOpen = null; await render(); };
+async function crmDetail(id){
+  busy(true,'Loading…');
+  const [c, bk, tl] = await Promise.all([
+    sb.from('contacts').select('*').eq('id', id).maybeSingle(),
+    sb.from('workshop_bookings').select('*').eq('contact_id', id).order('session_date', { ascending:false }),
+    sb.from('trial_leads').select('*').eq('contact_id', id).order('created_at', { ascending:false })
+  ]);
+  busy(false);
+  if (c.error || !c.data) { $('view').innerHTML = `<div class="msg err">${esc((c.error && c.error.message) || 'Customer not found')}</div>`; return; }
+  const x = c.data, w = canWrite('customers'), dis = w ? '' : 'disabled';
+  const kids = (x.children || []).map(k => `${k.name}${k.age ? ', ' + k.age : ''}`).join('\n');
+  let html = `<p style="margin-bottom:14px"><button class="btn sm" onclick="crmBack()">← All customers</button></p>
+    <div class="card"><div class="card-h"><span class="grip">${esc(x.first_name)} ${esc(x.last_name || '')}</span>
+      ${w ? `<button class="btn sm" onclick="crmSave('${x.id}')">Save</button>` : ''}</div>
+    <div class="card-b">
+      <div class="bk-sum"><span>${x.bookings_count} booking${x.bookings_count===1?'':'s'}</span><span>${x.trials_count} trial request${x.trials_count===1?'':'s'}</span>
+        <span>${money(x.total_paid)} paid</span><span>Customer since ${shortDate(x.first_seen)}</span>${x.first_source ? `<span>First came from ${esc(x.first_source)}</span>` : ''}</div>
+      <div class="row">
+        <div class="f"><label>First name</label><input data-f="${x.id}.first_name" value="${esc(x.first_name)}" ${dis}></div>
+        <div class="f"><label>Last name</label><input data-f="${x.id}.last_name" value="${esc(x.last_name || '')}" ${dis}></div></div>
+      <div class="row">
+        <div class="f"><label>WhatsApp</label><input data-f="${x.id}.phone" value="${esc(x.phone || '')}" ${dis}>
+          ${x.phone ? `<span class="help"><a href="https://wa.me/${waNum(x.phone)}" target="_blank" rel="noopener">Message on WhatsApp</a></span>` : ''}</div>
+        <div class="f"><label>Email</label><input data-f="${x.id}.email" value="${esc(x.email || '')}" ${dis}></div></div>
+      <div class="row">
+        <div class="f"><label>Children (one per line: name, age)</label><textarea id="crmKids" ${dis}>${esc(kids)}</textarea></div>
+        <div class="f"><label>Tags (comma-separated, e.g. VIP, corporate, birthday)</label><input id="crmTags" value="${esc((x.tags || []).join(', '))}" ${dis}>
+          <div class="f check" style="margin-top:10px"><input type="checkbox" data-f="${x.id}.marketing_consent" ${x.marketing_consent?'checked':''} ${dis}><label>Agreed to receive news${x.consent_at ? ' (' + shortDate(x.consent_at) + ')' : ''}</label></div></div></div>
+      <div class="row"><div class="f" style="grid-column:1/-1"><label>Notes</label><textarea data-f="${x.id}.notes" rows="4" placeholder="Anything worth remembering: preferences, follow-ups, how they found us" ${dis}>${esc(x.notes || '')}</textarea></div></div>
+    </div></div>`;
+  const rows = bk.data || [];
+  html += `<div class="card"><div class="card-h"><span class="grip">Workshop bookings</span></div><div class="card-b">${rows.length ? `<div class="bk-wrap"><table class="bk">
+      <tr><th>Date</th><th>Workshop</th><th>Tickets</th><th>Savor</th><th>Amount</th><th>Status</th></tr>
+      ${rows.map(b => `<tr class="${BK_LIVE(b.status) && b.status !== 'expired' && b.status !== 'pending' ? '' : 'gone'}"><td>${esc(b.session_when)}</td><td>${esc(b.session_name)}</td>
+        <td>${b.ticket==='pair' ? `${b.qty} pair (${b.people})` : b.people}</td><td>${b.dine ? 'Yes' : ''}</td><td>RM${b.amount}</td><td>${esc(b.status)}</td></tr>`).join('')}
+    </table></div>` : '<div class="empty" style="margin:0">No workshop bookings.</div>'}</div></div>`;
+  const tr = tl.data || [];
+  html += `<div class="card"><div class="card-h"><span class="grip">Trial class requests</span></div><div class="card-b">${tr.length ? `<div class="bk-wrap"><table class="bk">
+      <tr><th>Received</th><th>Class</th><th>Who it's for</th><th>Status</th></tr>
+      ${tr.map(r => `<tr><td>${shortDate(r.created_at)}</td><td>${esc(r.programme_slug || '')}</td><td><small>${esc(r.message || '').replace(/\n/g, '<br>')}</small></td><td>${esc(r.status)}</td></tr>`).join('')}
+    </table></div>` : '<div class="empty" style="margin:0">No trial requests.</div>'}</div></div>`;
+  $('view').innerHTML = html;
+}
+window.crmSave = async id => {
+  const v = collect(id);
+  v.email = v.email ? v.email.trim().toLowerCase() : null;
+  if (!v.first_name) { toast('Please keep a first name.'); return; }
+  if (v.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email)) { toast('Please check the email address.'); return; }
+  v.tags = ($('crmTags').value || '').split(',').map(s => s.trim()).filter(Boolean).slice(0, 20);
+  v.children = ($('crmKids').value || '').split('\n').map(s => s.trim()).filter(Boolean).slice(0, 12).map(l => {
+    const m = l.split(','); return { name: m[0].trim(), age: (m[1] || '').trim() || null };
+  });
+  const before = crmRows.find(c => c.id === id);
+  if (v.marketing_consent && !(before && before.marketing_consent)) v.consent_at = new Date().toISOString();
+  v.updated_at = new Date().toISOString(); v.updated_by = me.id;
+  busy(true);
+  const { error } = await sb.from('contacts').update(v).eq('id', id);
+  busy(false);
+  if (error) { toast('Could not save: ' + (/contacts_email_key/.test(error.message) ? 'another customer already has that email' : error.message)); return; }
+  toast('Saved'); await render();
+};
+window.crmCsv = () => {
+  const q = crmQuery.toLowerCase().trim();
+  const rows = crmRows.filter(c => (crmFilter !== 'news' || c.marketing_consent) && (crmFilter !== 'kids' || (c.children || []).length)
+    && (crmFilter !== 'repeat' || c.bookings_count > 1) && (crmFilter !== 'trials' || c.trials_count)
+    && (!q || [c.first_name, c.last_name, c.email, c.phone, (c.tags || []).join(' ')].join(' ').toLowerCase().includes(q)));
+  const cols = ['first_name', 'last_name', 'email', 'phone', 'marketing_consent', 'children', 'tags', 'bookings_count', 'trials_count', 'total_paid', 'first_source', 'first_seen', 'last_activity', 'notes'];
+  const cell = v => `"${String(Array.isArray(v) ? v.map(k => typeof k === 'object' ? k.name + (k.age ? ' (' + k.age + ')' : '') : k).join('; ') : v ?? '').replace(/"/g, '""')}"`;
+  const csv = [cols.join(','), ...rows.map(c => cols.map(k => cell(c[k])).join(','))].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv' }));
+  a.download = `master-artist-customers-${todayISO()}.csv`; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 };
 

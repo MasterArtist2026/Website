@@ -96,6 +96,16 @@
     return phone.length >= 9 && phone.length <= 16 && /^\+?[0-9(). -]+$/.test(typed) ? phone : '';
   }
 
+  /* Lead source code the trial_leads table requires (same rules as attribution.mjs refCode) */
+  function refCode() {
+    var src = String(utm.utm_source || '').toLowerCase();
+    var fbSrc = /facebook|instagram|meta|^fb$|^ig$/.test(src), ggSrc = /google/.test(src);
+    if (utm.fbclid && utm.gclid) return ggSrc && !fbSrc ? 'GG' : 'FB';
+    if (utm.fbclid || fbSrc) return 'FB';
+    if (utm.gclid || ggSrc) return 'GG';
+    return 'WEB';
+  }
+
   /* ---------- repeating child blocks: .kids holds one .kid fieldset per child (trial form, kids' workshops) ---------- */
   function kidBlocks(form, onChange) {
     var box = form.querySelector('[data-kids]');
@@ -174,6 +184,9 @@
     });
   });
   if (slots.length > 1) showSlot(location.hash.slice(1));
+  if (/[?&]cancelled=1/.test(location.search)) document.querySelectorAll('form.booking[data-session] .err').forEach(function (el) {
+    el.textContent = 'Payment was not completed, so your seat is not booked yet. You can try again below.'; el.hidden = false;
+  });
 
   document.querySelectorAll('form.booking[data-session]').forEach(function (form) {
     var d = form.dataset;
@@ -183,8 +196,7 @@
       var f = new FormData(form), qty = Math.max(1, Number(f.get('qty') || 1));
       var isPair = f.get('ticket') === 'pair', people = isPair ? qty * 2 : qty;
       var sum = isPair ? pair * qty : price * qty;
-      var out = form.querySelector('[data-total]');
-      if (out) out.textContent = 'RM' + sum.toLocaleString('en-MY');
+      [].forEach.call(form.querySelectorAll('[data-total]'), function (out) { out.textContent = 'RM' + sum.toLocaleString('en-MY'); });
       return { qty: qty, isPair: isPair, people: people, sum: sum, f: f };
     }
     // Savor's menu opens in a new tab; clicking it marks this booking as dining
@@ -220,11 +232,6 @@
       var CONSENTS = { parent: 'Parent/guardian consent: given', kitchen: 'Kitchen and allergen notice: confirmed', terms: 'Participation and booking terms: agreed' };
       Object.keys(CONSENTS).forEach(function (k) { if (f.get(k)) lines.push(CONSENTS[k]); });
       lines.push('Session: ' + d.session + '. Source: ' + source + '.');
-      track('whatsapp_click', { voice: 'studio', format: d.format, session_id: d.session, value: t.sum, currency: 'MYR' });
-      window.open(waUrl(lines.join('\n')), '_blank', 'noopener');
-      form.classList.add('sent');
-      // Save the booking for the admin portal and Sabrina's report. WhatsApp opens first (a popup opened
-      // after a network wait is blocked on phones); keepalive lets the save finish as the page loses focus.
       var blank = function (v) { return v ? v : null; };
       var consents = ['parent', 'kitchen', 'terms'].filter(function (k) { return f.get(k); });
       var row = {
@@ -241,8 +248,38 @@
         children: children.map(function (k) { return { name: k.name, age: k.age, allergies: k.allergies || null }; }),
         collector: blank(get('collector')), photo_consent: blank(get('photo')), consents: consents, source: blank(source),
         utm_source: blank(utm.utm_source), utm_medium: blank(utm.utm_medium), utm_campaign: blank(utm.utm_campaign),
-        utm_content: blank(utm.utm_content), gclid: blank(utm.gclid), fbclid: blank(utm.fbclid), landing_page: location.pathname
+        utm_content: blank(utm.utm_content), gclid: blank(utm.gclid), fbclid: blank(utm.fbclid), landing_page: location.pathname,
+        marketing_consent: f.get('news') === 'yes'
       };
+      var waLink = waUrl(lines.join('\n')), errEl = form.querySelector('.err');
+
+      // Online payment: the create-checkout function prices and saves the booking, then we go to Stripe
+      if (document.documentElement.getAttribute('data-pay') === '1') {
+        var btn = form.querySelector('[type=submit]'), label = btn.innerHTML;
+        if (form.dataset.sending === '1') return;
+        form.dataset.sending = '1'; btn.disabled = true; btn.textContent = 'Opening secure payment…'; errEl.hidden = true;
+        track('booking_checkout', { voice: 'studio', format: d.format, session_id: d.session, value: t.sum, currency: 'MYR' });
+        fetch(SB_URL + '/functions/v1/create-checkout', {
+          method: 'POST', body: JSON.stringify(row),
+          headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON, 'Content-Type': 'application/json' }
+        }).then(function (res) { return res.json().then(function (j) { return { ok: res.ok, j: j }; }); })
+          .then(function (r) {
+            if (!r.ok || !r.j.url) throw new Error(r.j.error || 'error');
+            location.href = r.j.url;
+          }).catch(function (err) {
+            form.dataset.sending = ''; btn.disabled = false; btn.innerHTML = label;
+            var msg = err && err.message && err.message !== 'error' && !/fetch|network/i.test(err.message) ? esc(err.message) : 'We could not open the payment page just now.';
+            errEl.innerHTML = msg + ' <a href="' + esc(waLink) + '" target="_blank" rel="noopener">Book on WhatsApp instead</a>.';
+            errEl.hidden = false;
+          });
+        return;
+      }
+
+      track('whatsapp_click', { voice: 'studio', format: d.format, session_id: d.session, value: t.sum, currency: 'MYR' });
+      window.open(waLink, '_blank', 'noopener');
+      form.classList.add('sent');
+      // Save the booking for the admin portal, the CRM and Sabrina's report. WhatsApp opens first (a popup opened
+      // after a network wait is blocked on phones); keepalive lets the save finish as the page loses focus.
       try {
         fetch(SB_URL + '/rest/v1/workshop_bookings', {
           method: 'POST', body: JSON.stringify(row), keepalive: true,
@@ -251,6 +288,30 @@
       } catch (err) {}
     });
   });
+
+  /* ---------- after Stripe: show the booking's status, fire booking_paid once ---------- */
+  var statusBox = document.querySelector('[data-booking-status]');
+  if (statusBox) {
+    var qp = new URLSearchParams(location.search), bid = qp.get('b') || '', sid = qp.get('s') || '', tries = 0;
+    var lede = document.querySelector('.page-hero p:not(.hero-facts)');
+    var show = function (k) { ['paid', 'wait', 'fail'].forEach(function (x) { statusBox.querySelector('[data-' + x + ']').hidden = x !== k; }); };
+    (function check() {
+      fetch(SB_URL + '/functions/v1/create-checkout?b=' + encodeURIComponent(bid) + '&s=' + encodeURIComponent(sid), {
+        headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON }
+      }).then(function (r) { return r.ok ? r.json() : null; }).then(function (bk) {
+        if (!bk) { show('fail'); if (lede) lede.textContent = ''; return; }
+        if (bk.status === 'paid') {
+          show('paid'); if (lede) lede.textContent = 'See you at the studio.';
+          statusBox.querySelector('[data-what]').textContent = bk.session_name + ' · ' + bk.people + (bk.people > 1 ? ' people' : ' person');
+          statusBox.querySelector('[data-when]').textContent = bk.session_when + ' · RM' + bk.amount + ' paid';
+          var key = 'ma_paid_' + bid;
+          try { if (localStorage.getItem(key)) return; localStorage.setItem(key, '1'); } catch (e) {}
+          track('booking_paid', { voice: 'studio', format: bk.format, session_id: bk.session_id, value: bk.amount, currency: 'MYR', transaction_id: bid });
+        } else if (bk.status === 'pending' && tries++ < 20) { show('wait'); if (lede) lede.textContent = ''; setTimeout(check, 3000); }
+        else { show(bk.status === 'pending' ? 'wait' : 'fail'); if (lede) lede.textContent = ''; }
+      }).catch(function () { show('wait'); if (lede) lede.textContent = ''; });
+    })();
+  }
 
   /* ---------- short WhatsApp forms (groups quote, gift vouchers): answers fill data-msg ---------- */
   document.querySelectorAll('form.wa-form').forEach(function (form) {
@@ -366,6 +427,7 @@
         if (n > 1) line += ' · ' + (i + 1) + ' of ' + n + ' in this request';
         return {
           parent_name: name, phone: phone, email: email, child_age: st.self ? null : st.age, programme_slug: st.programme,
+          ref_code: refCode(), marketing_consent: f.get('news') === 'yes',
           message: [forText, line].concat(extra).join('\n'), utm_source: blank(utm.utm_source), utm_medium: blank(utm.utm_medium),
           utm_campaign: blank(utm.utm_campaign), utm_content: blank(utm.utm_content), gclid: blank(utm.gclid), fbclid: blank(utm.fbclid),
           landing_page: location.pathname, referrer: blank(document.referrer)

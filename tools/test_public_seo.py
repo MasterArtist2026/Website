@@ -42,7 +42,7 @@ def main():
         want = canonical_for(rel)
         if f'<link rel="canonical" href="{want}">' not in text:
             errors.append(f'{rel} missing canonical {want}')
-        if want not in sitemap:
+        if want not in sitemap and 'name="robots" content="noindex' not in text:   # noindex pages (e.g. /booking/thanks/) stay out
             errors.append(f'sitemap missing {want}')
         if rel != 'index.html' and 'http://masterartist.co' in text and not rel.endswith('/index.html'):
             errors.append(f'{rel} has an http canonical or URL')
