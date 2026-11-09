@@ -1154,7 +1154,7 @@ window.bkCsv = id => {
 
 /* ---------- Customers: the B2C CRM. Filled by the website (every booking and trial request) ---------- */
 let crmRows = [], crmQuery = '', crmFilter = 'all', crmOpen = null, crmMode = 'people', crmWhen = 'upcoming', crmPaidOnly = false;
-const CRM_FILTERS = { all:'Everyone', news:'Want news', kids:'Parents', repeat:'Booked 2+', trials:'Trial requests' };
+const CRM_FILTERS = { all:'Everyone', news:'Want news', kids:'Parents', repeat:'Booked 2+', trials:'Trial requests', enrolled:'Enrolled', follow:'Follow-ups due', archived:'Archived' };
 const money = n => 'RM' + Number(n || 0).toLocaleString('en-MY');
 const shortDate = d => d ? new Date(d).toLocaleDateString('en-MY', { day:'numeric', month:'short', year:'numeric' }) : '';
 const crmModes = () => `<div class="blog-tabs" style="margin-bottom:6px">
@@ -1179,8 +1179,12 @@ views.customers = async function(){
     if (crmFilter === 'kids' && !(c.children || []).length) return false;
     if (crmFilter === 'repeat' && c.bookings_count < 2) return false;
     if (crmFilter === 'trials' && !c.trials_count) return false;
+    if (crmFilter === 'enrolled' && c.stage !== 'enrolled') return false;
+    if (crmFilter === 'follow' && !(c.follow_up_date && c.follow_up_date <= todayISO())) return false;
+    if ((crmFilter === 'archived') !== !!c.archived) return false;
     if (!q) return true;
-    return [c.first_name, c.last_name, c.email, c.phone, (c.tags || []).join(' '), (c.children || []).map(k => k.name).join(' ')]
+    return [c.first_name, c.last_name, c.preferred_name, c.email, c.phone, c.company, c.area, (c.tags || []).join(' '),
+      (c.children || []).map(k => [k.name, k.school].join(' ')).join(' ')]
       .join(' ').toLowerCase().includes(q);
   });
   const paid = crmRows.reduce((n, c) => n + c.total_paid, 0);
@@ -1189,16 +1193,17 @@ views.customers = async function(){
     Click a customer to see their history, add notes and tags. Only people who ticked <b>Send me news</b> may be sent marketing.</div>
     <div class="bk-sum"><span><b>${crmRows.length}</b> customers</span><span>${crmRows.filter(c => c.marketing_consent).length} want news</span>
       <span>${crmRows.filter(c => c.bookings_count > 1).length} booked more than once</span><span>${money(paid)} paid online and recorded</span></div>
-    <div class="crm-bar"><input type="search" id="crmQ" placeholder="Search name, email, phone, child, tag" value="${esc(crmQuery)}" oninput="crmSearch(this.value)">
+    <div class="crm-bar"><input type="search" id="crmQ" placeholder="Search name, email, phone, child, school, company, area, tag" value="${esc(crmQuery)}" oninput="crmSearch(this.value)">
       <button class="btn sm" onclick="crmCsv()">Download (${shown.length})</button></div>
     <div class="blog-tabs">${Object.entries(CRM_FILTERS).map(([k, v]) => `<button class="${crmFilter===k?'on':''}" onclick="crmTab('${k}')">${v}</button>`).join('')}</div>`;
   if (!shown.length) html += `<div class="empty">${crmRows.length ? 'No customers match.' : 'No customers yet: they appear here after the first booking or trial request.'}</div>`;
   else html += `<div class="card"><div class="card-b"><div class="bk-wrap"><table class="bk">
-    <tr><th>Name</th><th>Contact</th><th>Children</th><th>Bookings</th><th>Trials</th><th>Paid</th><th>Last seen</th><th>Source</th></tr>
+    <tr><th>Name</th><th>Stage</th><th>Contact</th><th>Children</th><th>Bookings</th><th>Trials</th><th>Paid</th><th>Last seen</th><th>Source</th></tr>
     ${shown.slice(0, 500).map(c => `<tr class="click" onclick="crmGo('${c.id}')">
       <td><b>${esc(c.first_name)} ${esc(c.last_name || '')}</b>${c.marketing_consent ? ' <span class="tag">news</span>' : ''}${(c.tags || []).map(x => `<span class="tag">${esc(x)}</span>`).join('')}</td>
+      <td><small>${esc(c.stage || '')}${c.follow_up_date && c.follow_up_date <= todayISO() ? '<br><b>follow up</b>' : ''}</small></td>
       <td><small>${esc(c.phone || '')}<br>${esc(c.email || '')}</small></td>
-      <td><small>${(c.children || []).map(k => esc(k.name) + (k.age ? ' (' + esc(k.age) + ')' : '')).join(', ')}</small></td>
+      <td><small>${(c.children || []).map(k => esc(k.name) + (kidAge(k) ? ' (' + esc(kidAge(k)) + ')' : '') + (k.school ? ', ' + esc(k.school) : '')).join('<br>')}</small></td>
       <td>${c.bookings_count || ''}</td><td>${c.trials_count || ''}</td><td>${c.total_paid ? money(c.total_paid) : ''}</td>
       <td><small>${shortDate(c.last_activity)}</small></td><td><small>${esc(c.first_source || '')}</small></td></tr>`).join('')}
   </table></div></div></div>`;
@@ -1251,40 +1256,106 @@ async function crmWorkshops(){
 }
 window.crmWhenGo = async w => { crmWhen = w; await render(); };
 window.crmPaidGo = async v => { crmPaidOnly = v; await render(); };
+const CRM_OPT = {
+  contact_type: ['individual', 'parent', 'adult student', 'corporate', 'partner'],
+  stage: ['lead', 'trial requested', 'trial booked', 'trial attended', 'workshop customer', 'enrolled', 'paused', 'former student', 'lost'],
+  language: ['', 'English', 'Mandarin', 'Malay', 'Cantonese', 'Tamil', 'Other'],
+  preferred_channel: ['', 'whatsapp', 'email', 'phone'],
+  skill_level: ['', 'beginner', 'some experience', 'intermediate', 'advanced'],
+  photo_consent: ['', 'yes', 'yes without name', 'no'],
+  trial_outcome: ['', 'enrolled', 'thinking', 'not for them', 'no-show'],
+  how_heard: ['', 'instagram', 'facebook', 'google', 'friend or family', 'walk-in', 'Savor', 'school', 'event', 'other'],
+  interests: ['painting', 'watercolour', 'kids art', 'voice', 'piano', 'photo & video', 'baking', 'candles', 'crochet', 'corporate', 'birthdays'],
+  preferred_days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sun'],
+  preferred_times: ['weekday morning', 'weekday afternoon', 'weekday evening', 'Sunday morning', 'Sunday afternoon']
+};
+const KID_FIELDS = [['name', 'Name'], ['dob', 'Date of birth', 'date'], ['age', 'Age'], ['school', 'School'], ['year', 'School year'],
+  ['programme', 'Class'], ['allergies', 'Allergies / medical'], ['photo', 'Photos']];
+let crmKids = [];
+function kidAge(k){ if (!k.dob) return k.age || ''; const d = new Date(k.dob), n = new Date(); let a = n.getFullYear() - d.getFullYear(); if (n < new Date(n.getFullYear(), d.getMonth(), d.getDate())) a--; return a >= 0 ? String(a) : ''; }
+function kidRows(w){
+  const dis = w ? '' : 'disabled';
+  return crmKids.map((k, i) => `<tr>${KID_FIELDS.map(([f, , type]) => `<td>${
+      f === 'photo' ? `<select onchange="crmKid(${i},'photo',this.value)" ${dis}>${CRM_OPT.photo_consent.map(o => `<option ${o===(k.photo||'')?'selected':''}>${o}</option>`).join('')}</select>`
+      : f === 'age' ? `<input value="${esc(kidAge(k))}" style="width:52px" ${k.dob ? 'disabled title="From the date of birth"' : ''} onchange="crmKid(${i},'age',this.value)" ${dis}>`
+      : `<input ${type ? `type="${type}"` : ''} value="${esc(k[f] || '')}" onchange="crmKid(${i},'${f}',this.value)" ${dis}>`}</td>`).join('')}
+    ${w ? `<td><button class="btn sm" onclick="crmKidDel(${i})">✕</button></td>` : ''}</tr>`).join('');
+}
+window.crmKid = (i, f, v) => { crmKids[i][f] = v.trim() || null; if (f === 'dob') document.getElementById('crmKidBody').innerHTML = kidRows(true); };
+window.crmKidAdd = () => { crmKids.push({ name:'' }); document.getElementById('crmKidBody').innerHTML = kidRows(true); };
+window.crmKidDel = i => { crmKids.splice(i, 1); document.getElementById('crmKidBody').innerHTML = kidRows(true); };
+
 async function crmDetail(id){
   busy(true,'Loading…');
-  const [c, bk, tl] = await Promise.all([
+  const [c, bk, tl, staff, everyone] = await Promise.all([
     sb.from('contacts').select('*').eq('id', id).maybeSingle(),
     sb.from('workshop_bookings').select('*').eq('contact_id', id).order('session_date', { ascending:false }),
-    sb.from('trial_leads').select('*').eq('contact_id', id).order('created_at', { ascending:false })
+    sb.from('trial_leads').select('*').eq('contact_id', id).order('created_at', { ascending:false }),
+    sb.from('profiles').select('id, full_name').eq('active', true),
+    sb.from('contacts').select('id, first_name, last_name').order('first_name').limit(2000)
   ]);
+  const people = everyone.data || [];
   busy(false);
   if (c.error || !c.data) { $('view').innerHTML = `<div class="msg err">${esc((c.error && c.error.message) || 'Customer not found')}</div>`; return; }
   const x = c.data, w = canWrite('customers'), dis = w ? '' : 'disabled';
-  const kids = (x.children || []).map(k => `${k.name}${k.age ? ', ' + k.age : ''}`).join('\n');
+  crmKids = JSON.parse(JSON.stringify(x.children || []));
+  const fid = f => `data-f="${x.id}.${f}"`;
+  const inp = (f, label, type, extra) => `<div class="f"><label>${label}</label><input ${type ? `type="${type}"` : ''} ${fid(f)} value="${esc(type === 'date' ? String(x[f] ?? '').slice(0, 10) : x[f] ?? '')}" ${dis} ${extra || ''}></div>`;
+  const sel = (f, label, opts) => `<div class="f"><label>${label}</label><select ${fid(f)} ${dis}>${(opts || CRM_OPT[f]).map(o => {
+      const v = typeof o === 'object' ? o[0] : o, l = typeof o === 'object' ? o[1] : (o || '—'); return `<option value="${esc(v)}" ${String(x[f] ?? '')===v?'selected':''}>${esc(l)}</option>`; }).join('')}</select></div>`;
+  const chk = (f, label) => `<div class="f check"><input type="checkbox" ${fid(f)} ${x[f]?'checked':''} ${dis}><label>${label}</label></div>`;
+  const multi = (f, label) => `<div class="f" style="grid-column:1/-1"><label>${label}</label><div style="display:flex;flex-wrap:wrap;gap:6px 14px">${CRM_OPT[f].map(o =>
+      `<label style="font-weight:400;display:flex;gap:5px;align-items:center"><input type="checkbox" data-multi="${f}" value="${esc(o)}" ${(x[f] || []).includes(o)?'checked':''} ${dis}>${esc(o)}</label>`).join('')}</div></div>`;
+  const area = (f, label, ph) => `<div class="f" style="grid-column:1/-1"><label>${label}</label><textarea ${fid(f)} rows="3" placeholder="${ph || ''}" ${dis}>${esc(x[f] || '')}</textarea></div>`;
+  const section = (title, body) => `<div class="card"><div class="card-h"><span class="grip">${title}</span>${w ? `<button class="btn sm" onclick="crmSave('${x.id}')">Save</button>` : ''}</div><div class="card-b">${body}</div></div>`;
+  const staffOpts = [['', '—']].concat((staff.data || []).map(s => [s.id, s.full_name]));
+
   let html = `<p style="margin-bottom:14px"><button class="btn sm" onclick="crmBack()">← ${crmMode==='workshops' ? 'All workshops' : 'All customers'}</button></p>
-    <div class="card"><div class="card-h"><span class="grip">${esc(x.first_name)} ${esc(x.last_name || '')}</span>
-      ${w ? `<button class="btn sm" onclick="crmSave('${x.id}')">Save</button>` : ''}</div>
-    <div class="card-b">
-      <div class="bk-sum"><span>${x.bookings_count} booking${x.bookings_count===1?'':'s'}</span><span>${x.trials_count} trial request${x.trials_count===1?'':'s'}</span>
-        <span>${money(x.total_paid)} paid</span><span>Customer since ${shortDate(x.first_seen)}</span>${x.first_source ? `<span>First came from ${esc(x.first_source)}</span>` : ''}</div>
-      <div class="row">
-        <div class="f"><label>First name</label><input data-f="${x.id}.first_name" value="${esc(x.first_name)}" ${dis}></div>
-        <div class="f"><label>Last name</label><input data-f="${x.id}.last_name" value="${esc(x.last_name || '')}" ${dis}></div></div>
-      <div class="row">
-        <div class="f"><label>WhatsApp</label><input data-f="${x.id}.phone" value="${esc(x.phone || '')}" ${dis}>
-          ${x.phone ? `<span class="help"><a href="https://wa.me/${waNum(x.phone)}" target="_blank" rel="noopener">Message on WhatsApp</a></span>` : ''}</div>
-        <div class="f"><label>Email</label><input data-f="${x.id}.email" value="${esc(x.email || '')}" ${dis}></div></div>
-      <div class="row">
-        <div class="f"><label>Children (one per line: name, age)</label><textarea id="crmKids" ${dis}>${esc(kids)}</textarea></div>
-        <div class="f"><label>Tags (comma-separated, e.g. VIP, corporate, birthday)</label><input id="crmTags" value="${esc((x.tags || []).join(', '))}" ${dis}>
-          <div class="f check" style="margin-top:10px"><input type="checkbox" data-f="${x.id}.marketing_consent" ${x.marketing_consent?'checked':''} ${dis}><label>Agreed to receive news${x.consent_at ? ' (' + shortDate(x.consent_at) + ')' : ''}</label></div></div></div>
-      <div class="row"><div class="f" style="grid-column:1/-1"><label>Notes</label><textarea data-f="${x.id}.notes" rows="4" placeholder="Anything worth remembering: preferences, follow-ups, how they found us" ${dis}>${esc(x.notes || '')}</textarea></div></div>
-    </div></div>`;
+    <h2 style="margin:0 0 6px">${esc(x.preferred_name || x.first_name)} ${esc(x.last_name || '')}</h2>
+    <div class="bk-sum"><span>${esc(x.stage)}</span><span>${x.bookings_count} booking${x.bookings_count===1?'':'s'}</span><span>${x.trials_count} trial request${x.trials_count===1?'':'s'}</span>
+      <span>${money(x.total_paid)} paid</span>${x.next_booking_date ? `<span>Next: ${shortDate(x.next_booking_date)}</span>` : ''}${x.last_booking_date ? `<span>Last came: ${shortDate(x.last_booking_date)}</span>` : ''}
+      <span>Customer since ${shortDate(x.first_seen)}</span>${x.first_source ? `<span>First came from ${esc(x.first_source)}</span>` : ''}
+      ${x.follow_up_date ? `<span class="${x.follow_up_date <= todayISO() ? 'full' : ''}">Follow up ${shortDate(x.follow_up_date)}</span>` : ''}${x.do_not_contact ? '<span class="full">Do not contact</span>' : ''}</div>`;
+  html += section('Who they are', `
+      <div class="row">${inp('first_name', 'First name')}${inp('last_name', 'Last name')}${inp('preferred_name', 'Preferred name')}</div>
+      <div class="row">${sel('contact_type', 'Type')}${inp('birthday', 'Birthday', 'date')}${sel('language', 'Language')}</div>
+      <div class="row">${inp('company', 'Company (corporate bookings)')}${inp('job_title', 'Job title')}</div>`);
+  html += section('How to reach them', `
+      <div class="row">${inp('phone', 'WhatsApp')}${inp('phone_2', 'Other phone')}${inp('email', 'Email', 'email')}</div>
+      <div class="row">${sel('preferred_channel', 'Prefers')}${inp('instagram', 'Instagram')}</div>
+      ${x.phone ? `<p class="help" style="margin:-4px 0 12px"><a href="https://wa.me/${waNum(x.phone)}" target="_blank" rel="noopener">Message on WhatsApp</a></p>` : ''}
+      <div class="row">${inp('address', 'Address')}${inp('area', 'Area (e.g. Mont Kiara)')}${inp('city', 'City')}${inp('postcode', 'Postcode')}</div>
+      <div class="row">${inp('emergency_name', 'Emergency contact')}${inp('emergency_phone', 'Emergency phone')}${inp('emergency_relation', 'Relationship')}</div>`);
+  html += section('Children', `<div class="bk-wrap"><table class="bk"><tr>${KID_FIELDS.map(([, l]) => `<th>${l}</th>`).join('')}${w ? '<th></th>' : ''}</tr>
+      <tbody id="crmKidBody">${kidRows(w)}</tbody></table></div>
+      ${w ? `<p style="margin-top:10px"><button class="btn sm" onclick="crmKidAdd()">+ Add a child</button></p>` : ''}
+      <p class="help">Children's names and schools stay in the admin portal: never on the website, in emails or in ads.</p>`);
+  html += section('What they like', `
+      ${multi('interests', 'Interests')}
+      <div class="row">${sel('skill_level', 'Level')}${sel('photo_consent', 'Usual photo choice')}${inp('dietary', 'Dietary needs (Savor, Bake Lab)')}</div>
+      ${multi('preferred_days', 'Days that suit them')}${multi('preferred_times', 'Times that suit them')}`);
+  html += section('Where they are with us', `
+      <div class="row">${sel('stage', 'Stage')}${inp('enrolled_since', 'Enrolled since', 'date')}${inp('monthly_fee', 'Monthly fee (RM)', 'number')}</div>
+      <div class="row"><div class="f" style="grid-column:1/-1"><label>Enrolled classes (comma-separated)</label><input id="crmProgs" value="${esc((x.enrolled_programmes || []).join(', '))}" ${dis}></div></div>
+      <div class="row">${inp('trial_date', 'Trial date', 'date')}${sel('trial_outcome', 'Trial outcome')}</div>
+      <div class="row">${inp('voucher_code', 'RM50 voucher code')}${chk('voucher_redeemed', 'Voucher used')}</div>`);
+  html += section('How they found us', `
+      <div class="row">${sel('how_heard', 'How they heard')}${sel('referred_by', 'Referred by', [['', '—']].concat(people.filter(r => r.id !== x.id).map(r => [r.id, `${r.first_name} ${r.last_name || ''}`.trim()])))}</div>
+      <p class="help">First came from: ${esc(x.first_source || '—')} · most recent: ${esc(x.last_source || '—')}</p>`);
+  html += section('Permissions', `
+      <div class="row">${chk('marketing_consent', 'Agreed to news' + (x.consent_at ? ' (' + shortDate(x.consent_at) + ')' : ''))}${chk('email_consent', 'News by email')}${chk('whatsapp_consent', 'News by WhatsApp')}</div>
+      <div class="row">${chk('do_not_contact', 'Do not contact at all')}${inp('unsubscribed_at', 'Unsubscribed on', 'date')}${inp('data_deletion_requested', 'Asked to delete their data on', 'date')}</div>`);
+  html += section('Feedback', `<div class="row">${inp('rating', 'How likely to recommend us (0–10)', 'number', 'min="0" max="10"')}${chk('google_review', 'Left a Google review')}${chk('testimonial_ok', 'Happy to be quoted')}</div>`);
+  html += section('Follow-up and notes', `
+      <div class="row">${sel('owner', 'Looked after by', staffOpts)}${inp('follow_up_date', 'Follow up on', 'date')}${inp('follow_up_note', 'Follow-up about')}</div>
+      <div class="row"><div class="f" style="grid-column:1/-1"><label>Tags (comma-separated, e.g. VIP, birthday, teacher-referral)</label><input id="crmTags" value="${esc((x.tags || []).join(', '))}" ${dis}></div></div>
+      ${area('notes', 'Notes', 'Anything worth remembering: preferences, conversations, how they found us')}
+      <div class="row">${chk('archived', 'Archived (hidden from the list)')}</div>`);
+
   const rows = bk.data || [];
   html += `<div class="card"><div class="card-h"><span class="grip">Workshop bookings</span></div><div class="card-b">${rows.length ? `<div class="bk-wrap"><table class="bk">
       <tr><th>Date</th><th>Workshop</th><th>Tickets</th><th>Savor</th><th>Amount</th><th>Status</th></tr>
-      ${rows.map(b => `<tr class="${BK_LIVE(b.status) && b.status !== 'expired' && b.status !== 'pending' ? '' : 'gone'}"><td>${esc(b.session_when)}</td><td>${esc(b.session_name)}</td>
+      ${rows.map(b => `<tr class="${['requested', 'confirmed', 'paid'].includes(b.status) ? '' : 'gone'}"><td>${esc(b.session_when)}</td><td>${esc(b.session_name)}</td>
         <td>${b.ticket==='pair' ? `${b.qty} pair (${b.people})` : b.people}</td><td>${b.dine ? 'Yes' : ''}</td><td>RM${b.amount}</td><td>${esc(b.status)}</td></tr>`).join('')}
     </table></div>` : '<div class="empty" style="margin:0">No workshop bookings.</div>'}</div></div>`;
   const tr = tl.data || [];
@@ -1299,10 +1370,17 @@ window.crmSave = async id => {
   v.email = v.email ? v.email.trim().toLowerCase() : null;
   if (!v.first_name) { toast('Please keep a first name.'); return; }
   if (v.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email)) { toast('Please check the email address.'); return; }
-  v.tags = ($('crmTags').value || '').split(',').map(s => s.trim()).filter(Boolean).slice(0, 20);
-  v.children = ($('crmKids').value || '').split('\n').map(s => s.trim()).filter(Boolean).slice(0, 12).map(l => {
-    const m = l.split(','); return { name: m[0].trim(), age: (m[1] || '').trim() || null };
+  if (v.rating !== null && v.rating !== undefined && (v.rating < 0 || v.rating > 10)) { toast('The rating is 0 to 10.'); return; }
+  ['interests', 'preferred_days', 'preferred_times'].forEach(f => {
+    v[f] = [...document.querySelectorAll(`[data-multi="${f}"]:checked`)].map(el => el.value);
   });
+  v.tags = ($('crmTags').value || '').split(',').map(s => s.trim()).filter(Boolean).slice(0, 20);
+  v.enrolled_programmes = ($('crmProgs').value || '').split(',').map(s => s.trim()).filter(Boolean).slice(0, 10);
+  v.children = crmKids.filter(k => k.name && k.name.trim()).slice(0, 12).map(k => {
+    const o = {}; KID_FIELDS.forEach(([f]) => { if (k[f]) o[f] = String(k[f]).trim(); }); if (k.dob) o.age = kidAge(k); return o;
+  });
+  ['contact_type', 'stage'].forEach(f => { if (!v[f]) delete v[f]; });
+  if (v.unsubscribed_at) v.unsubscribed_at = new Date(v.unsubscribed_at + 'T00:00:00').toISOString();
   const before = crmRows.find(c => c.id === id);
   if (v.marketing_consent && !(before && before.marketing_consent)) v.consent_at = new Date().toISOString();
   v.updated_at = new Date().toISOString(); v.updated_by = me.id;
@@ -1317,8 +1395,10 @@ window.crmCsv = () => {
   const rows = crmRows.filter(c => (crmFilter !== 'news' || c.marketing_consent) && (crmFilter !== 'kids' || (c.children || []).length)
     && (crmFilter !== 'repeat' || c.bookings_count > 1) && (crmFilter !== 'trials' || c.trials_count)
     && (!q || [c.first_name, c.last_name, c.email, c.phone, (c.tags || []).join(' ')].join(' ').toLowerCase().includes(q)));
-  const cols = ['first_name', 'last_name', 'email', 'phone', 'marketing_consent', 'children', 'tags', 'bookings_count', 'trials_count', 'total_paid', 'first_source', 'first_seen', 'last_activity', 'notes'];
-  const cell = v => `"${String(Array.isArray(v) ? v.map(k => typeof k === 'object' ? k.name + (k.age ? ' (' + k.age + ')' : '') : k).join('; ') : v ?? '').replace(/"/g, '""')}"`;
+  const cols = ['first_name', 'last_name', 'preferred_name', 'email', 'phone', 'stage', 'contact_type', 'marketing_consent', 'email_consent', 'whatsapp_consent',
+    'do_not_contact', 'children', 'interests', 'tags', 'area', 'company', 'birthday', 'enrolled_programmes', 'bookings_count', 'trials_count', 'total_paid',
+    'last_booking_date', 'next_booking_date', 'how_heard', 'first_source', 'last_source', 'first_seen', 'last_activity', 'follow_up_date', 'notes'];
+  const cell = v => `"${String(Array.isArray(v) ? v.map(k => typeof k === 'object' ? [k.name, kidAge(k) && 'age ' + kidAge(k), k.school].filter(Boolean).join(', ') : k).join('; ') : v ?? '').replace(/"/g, '""')}"`;
   const csv = [cols.join(','), ...rows.map(c => cols.map(k => cell(c[k])).join(','))].join('\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv' }));

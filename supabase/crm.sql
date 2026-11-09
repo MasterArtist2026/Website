@@ -38,6 +38,84 @@ create table if not exists public.contacts (
   constraint contacts_lens check (char_length(first_name) <= 60 and coalesce(char_length(last_name), 0) <= 60
     and coalesce(char_length(notes), 0) <= 5000 and char_length(children::text) <= 4000)
 );
+-- ---------- fuller customer profile (all optional; staff fill these in admin.html → Customers) ----------
+alter table public.contacts
+  -- who they are
+  add column if not exists preferred_name     text,
+  add column if not exists birthday           date,                -- for birthday offers; the year may be left as 1900 if unknown
+  add column if not exists language           text,                -- English, Mandarin, Malay, Cantonese, Other
+  add column if not exists contact_type       text not null default 'individual',  -- individual, parent, adult student, corporate, partner
+  add column if not exists company            text,
+  add column if not exists job_title          text,
+  -- how to reach them
+  add column if not exists phone_2            text,
+  add column if not exists preferred_channel  text,                -- whatsapp, email, phone
+  add column if not exists instagram          text,
+  add column if not exists address            text,
+  add column if not exists area               text,                -- neighbourhood, e.g. Mont Kiara, Bangsar, Sri Hartamas
+  add column if not exists city               text,
+  add column if not exists postcode           text,
+  add column if not exists emergency_name     text,
+  add column if not exists emergency_phone    text,
+  add column if not exists emergency_relation text,
+  -- what they like
+  add column if not exists interests          text[] not null default '{}',  -- painting, watercolour, kids art, voice, piano, photo & video, baking, candles, crochet, corporate, birthdays
+  add column if not exists skill_level        text,                -- beginner, some experience, intermediate, advanced
+  add column if not exists preferred_days     text[] not null default '{}',
+  add column if not exists preferred_times    text[] not null default '{}',  -- weekday mornings, weekday evenings, Sunday morning, Sunday afternoon
+  add column if not exists dietary            text,                -- for Savor meals and Bake Lab
+  add column if not exists photo_consent      text,                -- their usual choice: yes, no, yes without name
+  -- where they are with us
+  add column if not exists stage              text not null default 'lead',
+  add column if not exists enrolled_programmes text[] not null default '{}',
+  add column if not exists enrolled_since     date,
+  add column if not exists monthly_fee        int,                 -- RM, while enrolled
+  add column if not exists trial_date         date,
+  add column if not exists trial_outcome      text,                -- enrolled, thinking, not for them, no-show
+  add column if not exists voucher_code       text,                -- the RM50 trial voucher from a workshop
+  add column if not exists voucher_redeemed   boolean not null default false,
+  add column if not exists last_booking_date  date,
+  add column if not exists next_booking_date  date,
+  -- how they found us
+  add column if not exists how_heard          text,                -- instagram, facebook, google, friend, walk-in, Savor, school, event, other
+  add column if not exists referred_by        uuid references public.contacts(id) on delete set null,
+  add column if not exists last_source        text,
+  add column if not exists first_campaign     text,
+  -- permissions
+  add column if not exists email_consent      boolean not null default false,
+  add column if not exists whatsapp_consent   boolean not null default false,
+  add column if not exists unsubscribed_at    timestamptz,
+  add column if not exists do_not_contact     boolean not null default false,
+  add column if not exists data_deletion_requested date,
+  -- feedback
+  add column if not exists rating             int,                 -- 0–10: how likely to recommend us
+  add column if not exists google_review      boolean not null default false,
+  add column if not exists testimonial_ok     boolean not null default false,
+  -- follow-up
+  add column if not exists owner              uuid,                -- the staff member looking after them (profiles.id)
+  add column if not exists follow_up_date     date,
+  add column if not exists follow_up_note     text,
+  add column if not exists archived           boolean not null default false;
+
+alter table public.contacts drop constraint if exists contacts_choices;
+alter table public.contacts add constraint contacts_choices check (
+  contact_type in ('individual', 'parent', 'adult student', 'corporate', 'partner')
+  and stage in ('lead', 'trial requested', 'trial booked', 'trial attended', 'workshop customer', 'enrolled', 'paused', 'former student', 'lost')
+  and (rating is null or rating between 0 and 10)
+  and (monthly_fee is null or monthly_fee between 0 and 100000)
+  and (preferred_channel is null or preferred_channel in ('whatsapp', 'email', 'phone'))
+);
+alter table public.contacts drop constraint if exists contacts_more_lens;
+alter table public.contacts add constraint contacts_more_lens check (
+  char_length(coalesce(preferred_name,'') || coalesce(company,'') || coalesce(job_title,'') || coalesce(instagram,'')
+    || coalesce(area,'') || coalesce(city,'') || coalesce(postcode,'') || coalesce(emergency_name,'') || coalesce(emergency_relation,'')
+    || coalesce(language,'') || coalesce(skill_level,'') || coalesce(trial_outcome,'') || coalesce(voucher_code,'') || coalesce(how_heard,'')) <= 1500
+  and coalesce(char_length(address), 0) <= 500 and coalesce(char_length(dietary), 0) <= 500
+  and coalesce(char_length(follow_up_note), 0) <= 1000 and coalesce(char_length(last_source), 0) <= 200
+);
+create index if not exists contacts_stage_idx on public.contacts (stage);
+create index if not exists contacts_follow_up_idx on public.contacts (follow_up_date) where follow_up_date is not null;
+
 create unique index if not exists contacts_email_key on public.contacts (email) where email is not null;
 create index if not exists contacts_phone_idx on public.contacts (phone);
 create index if not exists contacts_last_activity_idx on public.contacts (last_activity desc);
@@ -65,9 +143,11 @@ begin
     select id into cid from public.contacts where phone = btrim(p_phone) and (email is null or em is null) order by created_at limit 1;
   end if;
   if cid is null then
-    insert into public.contacts (first_name, last_name, email, phone, first_source, marketing_consent, consent_at, children)
-    values (coalesce(nullif(btrim(p_first), ''), '?'), nullif(btrim(p_last), ''), em, nullif(btrim(p_phone), ''), p_source,
-            coalesce(p_consent, false), case when p_consent then now() end, coalesce(p_children, '[]'))
+    insert into public.contacts (first_name, last_name, email, phone, first_source, last_source, marketing_consent, email_consent,
+                                 whatsapp_consent, consent_at, children)
+    values (coalesce(nullif(btrim(p_first), ''), '?'), nullif(btrim(p_last), ''), em, nullif(btrim(p_phone), ''), p_source, p_source,
+            coalesce(p_consent, false), coalesce(p_consent, false), coalesce(p_consent, false), case when p_consent then now() end,
+            coalesce(p_children, '[]'))
     returning id into cid;
   else
     update public.contacts set
@@ -77,6 +157,9 @@ begin
       phone = coalesce(nullif(btrim(p_phone), ''), phone),
       children = case when jsonb_array_length(coalesce(p_children, '[]')) > 0 then p_children else children end,
       marketing_consent = marketing_consent or coalesce(p_consent, false),
+      email_consent = email_consent or coalesce(p_consent, false),
+      whatsapp_consent = whatsapp_consent or coalesce(p_consent, false),
+      last_source = coalesce(p_source, last_source),
       consent_at = case when not marketing_consent and p_consent then now() else consent_at end,
       last_activity = now()
     where id = cid;
@@ -90,7 +173,18 @@ returns void language sql security definer set search_path = public as $$
   update public.contacts c set
     bookings_count = (select count(*) from public.workshop_bookings b where b.contact_id = p_id and b.status in ('requested', 'confirmed', 'paid')),
     total_paid     = coalesce((select sum(amount) from public.workshop_bookings b where b.contact_id = p_id and b.status = 'paid'), 0),
-    trials_count   = (select count(*) from public.trial_leads t where t.contact_id = p_id)
+    trials_count   = (select count(*) from public.trial_leads t where t.contact_id = p_id),
+    last_booking_date = (select max(session_date) from public.workshop_bookings b where b.contact_id = p_id
+                         and b.status in ('requested', 'confirmed', 'paid') and b.session_date <= current_date),
+    next_booking_date = (select min(session_date) from public.workshop_bookings b where b.contact_id = p_id
+                         and b.status in ('requested', 'confirmed', 'paid') and b.session_date > current_date),
+    -- the stage only moves forward by itself; staff set enrolled, paused, former student and lost
+    stage = case
+      when c.stage in ('lead', 'trial requested') and exists (select 1 from public.workshop_bookings b where b.contact_id = p_id and b.status = 'paid')
+        then 'workshop customer'
+      when c.stage = 'lead' and exists (select 1 from public.trial_leads t where t.contact_id = p_id) then 'trial requested'
+      else c.stage end,
+    contact_type = case when c.contact_type = 'individual' and jsonb_array_length(c.children) > 0 then 'parent' else c.contact_type end
   where c.id = p_id;
 $$;
 
@@ -99,8 +193,8 @@ returns trigger language plpgsql security definer set search_path = public as $$
 begin
   if new.contact_id is null then
     new.contact_id := private.upsert_contact(new.first_name, new.last_name, new.email, new.phone, new.source,
-      new.marketing_consent, (select coalesce(jsonb_agg(jsonb_build_object('name', k->>'name', 'age', k->>'age')), '[]')
-                              from jsonb_array_elements(new.children) k));
+      new.marketing_consent, (select coalesce(jsonb_agg(jsonb_strip_nulls(jsonb_build_object('name', k->>'name', 'age', k->>'age',
+                              'school', k->>'school', 'allergies', k->>'allergies'))), '[]') from jsonb_array_elements(new.children) k));
   end if;
   return new;
 end;
@@ -115,8 +209,9 @@ returns trigger language plpgsql security definer set search_path = public as $$
 declare kid jsonb := '[]';
 begin
   if new.message ~ 'For: [^,\n]+, age [^ \n]+ \(child of' then
-    kid := jsonb_build_array(jsonb_build_object(
-      'name', substring(new.message from 'For: ([^,\n]+), age'), 'age', substring(new.message from ', age ([^ \n]+) \(child of')));
+    kid := jsonb_build_array(jsonb_strip_nulls(jsonb_build_object(
+      'name', substring(new.message from 'For: ([^,\n]+), age'), 'age', substring(new.message from ', age ([^ \n]+) \(child of'),
+      'school', substring(new.message from '\nSchool: ([^\n]+)'))));
   end if;
   if new.contact_id is null then
     new.contact_id := private.upsert_contact(split_part(btrim(new.parent_name), ' ', 1),
@@ -202,7 +297,12 @@ create policy tl_customers_read on public.trial_leads for select to authenticate
 
 revoke all on public.contacts from anon, authenticated;
 grant select, insert on public.contacts to authenticated;
-grant update (first_name, last_name, email, phone, children, tags, notes, marketing_consent, consent_at, updated_at, updated_by)
+grant update (first_name, last_name, email, phone, children, tags, notes, marketing_consent, consent_at, updated_at, updated_by,
+  preferred_name, birthday, language, contact_type, company, job_title, phone_2, preferred_channel, instagram, address, area, city,
+  postcode, emergency_name, emergency_phone, emergency_relation, interests, skill_level, preferred_days, preferred_times, dietary,
+  photo_consent, stage, enrolled_programmes, enrolled_since, monthly_fee, trial_date, trial_outcome, voucher_code, voucher_redeemed,
+  how_heard, referred_by, email_consent, whatsapp_consent, unsubscribed_at, do_not_contact, data_deletion_requested, rating,
+  google_review, testimonial_ok, owner, follow_up_date, follow_up_note, archived)
   on public.contacts to authenticated;
 -- the website's insert-only grants: the new consent column (trial_leads grants insert column by column)
 grant insert on public.workshop_bookings to anon, authenticated;

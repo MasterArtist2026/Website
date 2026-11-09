@@ -302,7 +302,8 @@ def ConsentFields(kind):
     <fieldset class="kid"><legend>Child <span data-n>1</span></legend>
       <div class="row"><div><label for="kn1">Child's name</label><input id="kn1" type="text" name="kid_name" maxlength="60" required></div>
         <div><label for="ka1">Age</label><input id="ka1" type="text" name="kid_age" inputmode="numeric" maxlength="20" required></div></div>
-      <div><label for="kl1">Allergies or needs</label><input id="kl1" type="text" name="kid_allergies" maxlength="300" placeholder="None"></div>
+      <div class="row"><div><label for="kl1">Allergies or needs</label><input id="kl1" type="text" name="kid_allergies" maxlength="300" placeholder="None"></div>
+        <div><label for="ks1">School <span class="muted">(optional)</span></label><input id="ks1" type="text" name="kid_school" maxlength="80"></div></div>
     </fieldset>
   </div>
   <label class="check"><input type="checkbox" name="parent" required> I am the parent or guardian and give consent for my children to take part.</label>
@@ -1221,7 +1222,8 @@ def build_trial():
       <fieldset class="kid"><legend>Child <span data-n>1</span></legend>
         <div class="row"><div><label for="kn1">Child's name</label><input id="kn1" name="kid_name" type="text" maxlength="60" required></div>
           <div><label for="ka1">Age</label><input id="ka1" name="kid_age" type="text" inputmode="numeric" maxlength="20" required></div></div>
-        <div><label for="kp1">Class</label><select id="kp1" name="kid_programme" required>{opts}</select></div>
+        <div class="row"><div><label for="kp1">Class</label><select id="kp1" name="kid_programme" required>{opts}</select></div>
+          <div><label for="ks1">School <span class="muted">(optional)</span></label><input id="ks1" name="kid_school" type="text" maxlength="80"></div></div>
         <button type="button" class="kid-remove" hidden>Remove this child</button>
       </fieldset>
     </div>

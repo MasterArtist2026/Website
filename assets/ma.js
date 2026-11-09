@@ -150,7 +150,7 @@
         return [].map.call(box.querySelectorAll('.kid'), function (k) {
           var v = function (n) { var el = k.querySelector('[name=' + n + ']'); return el ? String(el.value || '').trim() : ''; };
           var sel = k.querySelector('select[name=kid_programme]');
-          return { name: v('kid_name'), age: v('kid_age'), allergies: v('kid_allergies'), programme: v('kid_programme'),
+          return { name: v('kid_name'), age: v('kid_age'), allergies: v('kid_allergies'), school: v('kid_school'), programme: v('kid_programme'),
                    programmeLabel: sel ? sel.options[sel.selectedIndex].text : '' };
         });
       }
@@ -245,7 +245,7 @@
         }).filter(Boolean).join('; ')),
         child_name: blank(children.map(function (k) { return k.name; }).join(', ')),
         child_age: blank(children.map(function (k) { return k.age; }).join(', ')),
-        children: children.map(function (k) { return { name: k.name, age: k.age, allergies: k.allergies || null }; }),
+        children: children.map(function (k) { return { name: k.name, age: k.age, allergies: k.allergies || null, school: k.school || null }; }),
         collector: blank(get('collector')), photo_consent: blank(get('photo')), consents: consents, source: blank(source),
         utm_source: blank(utm.utm_source), utm_medium: blank(utm.utm_medium), utm_campaign: blank(utm.utm_campaign),
         utm_content: blank(utm.utm_content), gclid: blank(utm.gclid), fbclid: blank(utm.fbclid), landing_page: location.pathname,
@@ -425,6 +425,7 @@
       var rows = studentsList.map(function (st, i) {
         var line = st.self ? 'For: ' + name + ' (adult, booking for themselves)' : 'For: ' + st.name + ', age ' + st.age + ' (child of ' + name + ')';
         if (n > 1) line += ' · ' + (i + 1) + ' of ' + n + ' in this request';
+        if (st.school) line += '\nSchool: ' + st.school;
         return {
           parent_name: name, phone: phone, email: email, child_age: st.self ? null : st.age, programme_slug: st.programme,
           ref_code: refCode(), marketing_consent: f.get('news') === 'yes',

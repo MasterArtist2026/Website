@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
   }
   const theme = s.theme ? `${s.theme} (${s.name})` : s.name;
   const children = Array.isArray(b.children) ? (b.children as Record<string, unknown>[]).slice(0, 12).map((k) => ({
-    name: str(k.name, 60), age: str(k.age, 20), allergies: opt(k.allergies, 300) })) : [];
+    name: str(k.name, 60), age: str(k.age, 20), allergies: opt(k.allergies, 300), school: opt(k.school, 80) })) : [];
   const consents = Array.isArray(b.consents) ? (b.consents as unknown[]).map((c) => str(c, 20)).filter((c) => ["parent", "kitchen", "terms"].includes(c)) : [];
 
   const { data: row, error } = await sb.from("workshop_bookings").insert({
