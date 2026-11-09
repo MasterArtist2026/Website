@@ -8,7 +8,7 @@
 // Secrets (Supabase → Edge Functions → Secrets):
 //   STRIPE_SECRET_KEY   sk_test_… while testing, sk_live_… to take real payments
 // Optional:
-//   SITE_URL            defaults to https://masterartist.co (where data/workshops.json is read)
+//   SITE_URL            defaults to https://masterartist.co (where assets/sessions.json is read)
 // SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by Supabase.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
   try { b = await req.json(); } catch { return out({ error: "bad json" }, 400); }
 
   // The session as published on the site
-  const data = await fetch(`${SITE}/data/workshops.json`, { cache: "no-store" }).then((r) => r.json()).catch(() => null);
+  const data = await fetch(`${SITE}/assets/sessions.json?t=${Date.now()}`, { cache: "no-store" }).then((r) => r.json()).catch(() => null);
   const s: Session | undefined = data?.sessions?.find((x: Session) => x.id === b.session_id);
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
   if (!s || !s.public || s.type === "course" || s.date < today) return out({ error: "This session is no longer on sale." }, 404);

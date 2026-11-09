@@ -1041,7 +1041,7 @@ views.bookings = async function(){
   const [bk, tl, ws] = await Promise.all([
     sb.from('workshop_bookings').select('*').order('session_date').order('created_at'),
     sb.from('trial_leads').select('id,created_at,parent_name,phone,email,child_age,programme_slug,message,ref_code,status').order('created_at', { ascending:false }).limit(200),
-    fetch('/data/workshops.json', { cache:'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null)
+    fetch('/assets/sessions.json', { cache:'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null)
   ]);
   busy(false);
   if (bk.error) {

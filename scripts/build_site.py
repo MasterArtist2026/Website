@@ -1177,6 +1177,14 @@ def build_programme(p):
          body, voice='academy', active='/classes/', extra_head=ld(course_ld), data_attrs=f' data-page="programme" data-programme="{p["id"]}"', wa={'msg': wa_trial(p), 'programme': p['id'], 'trial': True})
 
 
+def build_sessions_feed():
+    """/assets/sessions.json: the public sessions only, for the create-checkout function (prices and caps are
+    read server-side from here) and the admin Bookings list. data/ itself stays off the public site."""
+    keep = ('id', 'format', 'date', 'day', 'time', 'end', 'name', 'theme', 'cap', 'cap_unit', 'price', 'pair_price', 'price_unit', 'public', 'type')
+    feed = {'generated': dt.date.today().isoformat(), 'sessions': [{k: s[k] for k in keep if k in s} for s in PUB]}
+    (ROOT / 'assets' / 'sessions.json').write_text(json.dumps(feed, ensure_ascii=False, separators=(',', ':')))
+
+
 def build_booking_thanks():
     """Where Stripe sends a customer after paying. ma.js reads the booking's status and fires booking_paid once."""
     v = WS['policies']['trial_voucher']['value']
@@ -1272,6 +1280,7 @@ def build_classes():
         build_programme(p)
     build_trial()
     build_booking_thanks()
+    build_sessions_feed()
     build_holiday_camps()
 
 
