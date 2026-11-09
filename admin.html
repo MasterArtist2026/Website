@@ -1101,7 +1101,7 @@ function bookingTable(rows, w){
   const opt = (list, v) => list.map(x => `<option ${x===v?'selected':''}>${x}</option>`).join('');
   return `<div class="bk-wrap"><table class="bk"><tr><th>Name</th><th>Contact</th><th>Tickets</th><th>Savor</th><th>Allergies / needs</th><th>Photos</th><th>Amount</th><th>Status</th><th>Booked</th></tr>
     ${rows.map(b => `<tr class="${BK_LIVE(b.status)?'':'gone'}">
-      <td><b>${esc(b.name)}</b>${(b.children || []).length ? `<br><small>${b.children.length > 1 ? 'Children' : 'Child'}: ${b.children.map(k => esc(k.name) + (k.age ? ' (' + esc(k.age) + ')' : '')).join(', ')}</small>` : ''}${b.collector ? `<br><small>Collecting: ${esc(b.collector)}</small>` : ''}</td>
+      <td><b>${b.contact_id && canRead('customers') ? `<a href="#customers" onclick="event.preventDefault();crmFromBooking('${b.contact_id}')">${esc(b.name)}</a>` : esc(b.name)}</b>${(b.children || []).length ? `<br><small>${b.children.length > 1 ? 'Children' : 'Child'}: ${b.children.map(k => esc(k.name) + (k.age ? ' (' + esc(k.age) + ')' : '')).join(', ')}</small>` : ''}${b.collector ? `<br><small>Collecting: ${esc(b.collector)}</small>` : ''}</td>
       <td><a href="https://wa.me/${waNum(b.phone)}" target="_blank" rel="noopener">${esc(b.phone)}</a>${b.email ? `<br><small>${esc(b.email)}</small>` : ''}</td>
       <td>${b.ticket==='pair' ? `${b.qty} pair (${b.people})` : b.people}</td>
       <td>${b.dine ? 'Yes' : ''}</td><td>${esc(b.allergies || '')}</td>
@@ -1153,12 +1153,17 @@ window.bkCsv = id => {
 };
 
 /* ---------- Customers: the B2C CRM. Filled by the website (every booking and trial request) ---------- */
-let crmRows = [], crmQuery = '', crmFilter = 'all', crmOpen = null;
+let crmRows = [], crmQuery = '', crmFilter = 'all', crmOpen = null, crmMode = 'people', crmWhen = 'upcoming', crmPaidOnly = false;
 const CRM_FILTERS = { all:'Everyone', news:'Want news', kids:'Parents', repeat:'Booked 2+', trials:'Trial requests' };
 const money = n => 'RM' + Number(n || 0).toLocaleString('en-MY');
 const shortDate = d => d ? new Date(d).toLocaleDateString('en-MY', { day:'numeric', month:'short', year:'numeric' }) : '';
+const crmModes = () => `<div class="blog-tabs" style="margin-bottom:6px">
+    <button class="${crmMode==='people'?'on':''}" onclick="crmModeGo('people')">People</button>
+    <button class="${crmMode==='workshops'?'on':''}" onclick="crmModeGo('workshops')">By workshop</button></div>`;
+window.crmModeGo = async m => { crmMode = m; crmOpen = null; await render(); };
 views.customers = async function(){
   if (crmOpen) return crmDetail(crmOpen);
+  if (crmMode === 'workshops') return crmWorkshops();
   busy(true,'Loading…');
   const { data, error } = await sb.from('contacts').select('*').order('last_activity', { ascending:false }).limit(2000);
   busy(false);
@@ -1179,7 +1184,7 @@ views.customers = async function(){
       .join(' ').toLowerCase().includes(q);
   });
   const paid = crmRows.reduce((n, c) => n + c.total_paid, 0);
-  let html = `<div class="hint"><b>Everyone who has booked a workshop or asked for a trial.</b> The website adds and updates customers by itself:
+  let html = crmModes() + `<div class="hint"><b>Everyone who has booked a workshop or asked for a trial.</b> The website adds and updates customers by itself:
     one record per person (matched by email, then WhatsApp number), with their children, bookings and what they have paid.
     Click a customer to see their history, add notes and tags. Only people who ticked <b>Send me news</b> may be sent marketing.</div>
     <div class="bk-sum"><span><b>${crmRows.length}</b> customers</span><span>${crmRows.filter(c => c.marketing_consent).length} want news</span>
@@ -1205,6 +1210,47 @@ window.crmSearch = v => { crmQuery = v; clearTimeout(crmTimer); crmTimer = setTi
 window.crmTab = async k => { crmFilter = k; await render(); };
 window.crmGo = async id => { crmOpen = id; await render(); window.scrollTo(0,0); };
 window.crmBack = async () => { crmOpen = null; await render(); };
+window.crmFromBooking = async id => { crmOpen = id; current = 'customers'; await render(); window.scrollTo(0,0); };
+// Each workshop with the customers who signed up for it and whether they have paid
+async function crmWorkshops(){
+  busy(true,'Loading…');
+  const { data, error } = await sb.from('workshop_bookings')
+    .select('id, contact_id, session_id, session_name, session_when, session_date, cap, name, phone, email, ticket, qty, people, amount, dine, status, paid_at, created_at')
+    .order('session_date').order('created_at');
+  busy(false);
+  if (error) { $('view').innerHTML = crmModes() + `<div class="msg err">${esc(error.message)}</div>`; return; }
+  const today = todayISO(), groups = {};
+  (data || []).forEach(b => { (groups[b.session_id] = groups[b.session_id] || { id:b.session_id, name:b.session_name, when:b.session_when, date:b.session_date, cap:b.cap, rows:[] }).rows.push(b); });
+  let list = Object.values(groups).filter(g => crmWhen === 'upcoming' ? g.date >= today : g.date < today);
+  if (crmWhen === 'past') list.reverse();
+  const SHOWN = s => crmPaidOnly ? s === 'paid' : ['paid', 'confirmed', 'requested', 'pending'].includes(s);
+  const label = { paid:'Paid', confirmed:'Confirmed, not paid', requested:'Requested, not paid', pending:'At payment page' };
+  let html = crmModes() + `<div class="hint"><b>Every workshop and the customers booked on it.</b> Paid bookings come straight from Stripe;
+      WhatsApp bookings show as not paid until you mark them paid in Bookings. Click a name to open the customer.</div>
+    <div class="crm-bar"><div class="blog-tabs" style="margin:0">
+      <button class="${crmWhen==='upcoming'?'on':''}" onclick="crmWhenGo('upcoming')">Upcoming</button>
+      <button class="${crmWhen==='past'?'on':''}" onclick="crmWhenGo('past')">Past</button></div>
+      <label style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox" ${crmPaidOnly?'checked':''} onchange="crmPaidGo(this.checked)"> Paid only</label></div>`;
+  if (!list.length) html += `<div class="empty">No ${crmWhen} workshops with bookings yet.</div>`;
+  list.forEach(g => {
+    const rows = g.rows.filter(b => SHOWN(b.status)), paid = g.rows.filter(b => b.status === 'paid');
+    const paidPeople = paid.reduce((n, b) => n + b.people, 0), paidRM = paid.reduce((n, b) => n + b.amount, 0);
+    const unpaid = g.rows.filter(b => ['confirmed', 'requested'].includes(b.status)).reduce((n, b) => n + b.people, 0);
+    html += `<div class="card"><div class="card-h"><span class="grip">${esc(g.when)} · ${esc(g.name)}</span></div><div class="card-b">
+      <div class="bk-sum"><span><b>${paidPeople}</b>${g.cap ? ' of ' + g.cap : ''} paid seats</span><span>${paid.length} paid booking${paid.length===1?'':'s'}</span>
+        <span>${money(paidRM)} received</span>${unpaid ? `<span class="full">${unpaid} seat${unpaid===1?'':'s'} not paid yet</span>` : ''}</div>
+      ${rows.length ? `<div class="bk-wrap"><table class="bk"><tr><th>Customer</th><th>Contact</th><th>Tickets</th><th>Savor</th><th>Amount</th><th>Payment</th></tr>
+        ${rows.map(b => `<tr${b.contact_id ? ` class="click" onclick="crmGo('${b.contact_id}')"` : ''}>
+          <td><b>${esc(b.name)}</b></td><td><small>${esc(b.phone)}<br>${esc(b.email || '')}</small></td>
+          <td>${b.ticket==='pair' ? `${b.qty} pair (${b.people})` : b.people}</td><td>${b.dine ? 'Yes' : ''}</td><td>RM${b.amount}</td>
+          <td>${b.status === 'paid' ? `<span class="pill live">Paid</span><br><small>${shortDate(b.paid_at)}</small>` : `<small>${label[b.status] || esc(b.status)}</small>`}</td></tr>`).join('')}
+      </table></div>` : `<div class="empty" style="margin:0">${crmPaidOnly ? 'No paid bookings yet.' : 'No bookings.'}</div>`}
+    </div></div>`;
+  });
+  $('view').innerHTML = html;
+}
+window.crmWhenGo = async w => { crmWhen = w; await render(); };
+window.crmPaidGo = async v => { crmPaidOnly = v; await render(); };
 async function crmDetail(id){
   busy(true,'Loading…');
   const [c, bk, tl] = await Promise.all([
@@ -1216,7 +1262,7 @@ async function crmDetail(id){
   if (c.error || !c.data) { $('view').innerHTML = `<div class="msg err">${esc((c.error && c.error.message) || 'Customer not found')}</div>`; return; }
   const x = c.data, w = canWrite('customers'), dis = w ? '' : 'disabled';
   const kids = (x.children || []).map(k => `${k.name}${k.age ? ', ' + k.age : ''}`).join('\n');
-  let html = `<p style="margin-bottom:14px"><button class="btn sm" onclick="crmBack()">← All customers</button></p>
+  let html = `<p style="margin-bottom:14px"><button class="btn sm" onclick="crmBack()">← ${crmMode==='workshops' ? 'All workshops' : 'All customers'}</button></p>
     <div class="card"><div class="card-h"><span class="grip">${esc(x.first_name)} ${esc(x.last_name || '')}</span>
       ${w ? `<button class="btn sm" onclick="crmSave('${x.id}')">Save</button>` : ''}</div>
     <div class="card-b">
