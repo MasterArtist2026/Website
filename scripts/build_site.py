@@ -350,9 +350,13 @@ def BookingEmbed(s):
     # Savor meals are ordered and paid on Savor's own menu: the field is a link to it, and clicking it
     # marks the booking as dining (ma.js). TODO: addons.dine.order_url is still empty
     when_dine = 'after' if s.get('dine_timing') == 'after' else 'before'
-    dine_opt = (f'<div><span class="field-label">Dine at Savor {when_dine}</span><input type="hidden" name="dine" value="no">'
-                f'<a class="btn ghost block dine-link" href="{e(dine.get("order_url") or "")}" target="_blank" rel="noopener">Order from Savor\'s menu · from {rm(dine["price_from"])}</a>'
-                f'<p class="note">Choose your meal and pay on Savor\'s menu.</p></div>') if s.get('dine') else ''
+    if dine.get('order_url'):
+        order = (f'<input type="hidden" name="dine" value="no"><a class="btn ghost block dine-link" href="{e(dine["order_url"])}" target="_blank" rel="noopener">'
+                 f'Order from Savor\'s menu · from {rm(dine["price_from"])}</a><p class="note">Choose your meal and pay on Savor\'s menu.</p>')
+    else:  # no link yet: ask, and we send Savor's menu on WhatsApp
+        order = (f'<label class="check"><input type="checkbox" name="dine" value="yes"> Yes, send me Savor\'s menu (from {rm(dine["price_from"])})</label>'
+                 f'<p class="note">We\'ll WhatsApp you the menu to choose your meal.</p>')
+    dine_opt = f'<div><span class="field-label">Dine at Savor {when_dine}</span>{order}</div>' if s.get('dine') else ''
     unit = 'Pairs' if s.get('cap_unit') == 'pairs' else 'Families' if s.get('bundle') else 'Seats'
     msg_unit = {'Pairs': 'pair(s)', 'Families': 'Family Sunday ticket(s)'}.get(unit, 'seat(s)')
     when = f"{day_date(s['date'])} at {fmt_time(s['time'])}"
