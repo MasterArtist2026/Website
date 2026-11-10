@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-09T13:42:19",
+ "generated": "2026-11-10T08:07:05",
  "currency": "MYR",
  "formats": [
   {
@@ -454,40 +454,10 @@
   "note": "Spec 03-PROMPTS step 7: RM100, RM200 and any-workshop. Validity period TODO."
  },
  "window": {
-  "from": "2026-11-09",
+  "from": "2026-11-10",
   "days": 42
  },
  "sessions": [
-  {
-   "id": "baking-course-6wk-2026-11-09-1500",
-   "format": "baking-course-6wk",
-   "name": "Plant-based Baking Course (6 weeks)",
-   "variant": null,
-   "discipline": "baking",
-   "date": "2026-11-09",
-   "day": "Mon",
-   "time": "15:00",
-   "end": "17:30",
-   "label": "Mon 9 Nov · 3pm",
-   "room": "L1 kitchen (Savor)",
-   "price": 450,
-   "pair_price": null,
-   "price_set": "launch",
-   "price_unit": null,
-   "cap": 20,
-   "cap_unit": null,
-   "booked": 0,
-   "seats_left": 20,
-   "dine": false,
-   "dine_timing": "after",
-   "theme": null,
-   "public_holiday": null,
-   "surcharge_waived": false,
-   "type": "course",
-   "public": true,
-   "note": "Cohort start (runs when 6 are enrolled)",
-   "next_session": null
-  },
   {
    "id": "watercolour-botanicals-2026-11-10-1900",
    "format": "watercolour-botanicals",

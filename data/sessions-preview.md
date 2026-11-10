@@ -1,10 +1,7 @@
 # Sessions preview
 
-Generated 2026-11-09 — public sessions to 2026-12-21.
+Generated 2026-11-10 — public sessions to 2026-12-22.
 
-
-## Monday 9 November 2026
-- **15:00–17:30** Plant-based Baking Course (6 weeks) · L1 kitchen (Savor) · RM450 · 20 of 20 seats left
 
 ## Tuesday 10 November 2026
 - **19:00–21:00** Watercolour · Sweet Layers: Watercolour Cake · L2 front room · RM80 · pair RM144 · Dine add-on (before) · 20 of 20 seats left
