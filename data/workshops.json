@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-10T08:07:05",
+ "generated": "2026-11-11T05:45:29",
  "currency": "MYR",
  "formats": [
   {
@@ -454,39 +454,10 @@
   "note": "Spec 03-PROMPTS step 7: RM100, RM200 and any-workshop. Validity period TODO."
  },
  "window": {
-  "from": "2026-11-10",
+  "from": "2026-11-11",
   "days": 42
  },
  "sessions": [
-  {
-   "id": "watercolour-botanicals-2026-11-10-1900",
-   "format": "watercolour-botanicals",
-   "name": "Watercolour",
-   "variant": null,
-   "discipline": "art",
-   "date": "2026-11-10",
-   "day": "Tue",
-   "time": "19:00",
-   "end": "21:00",
-   "label": "Tue 10 Nov · 7pm",
-   "room": "L2 front room",
-   "price": 80,
-   "pair_price": 144,
-   "price_set": "launch",
-   "price_unit": null,
-   "cap": 20,
-   "cap_unit": null,
-   "booked": 0,
-   "seats_left": 20,
-   "dine": true,
-   "dine_timing": "before",
-   "theme": "Sweet Layers: Watercolour Cake",
-   "public_holiday": null,
-   "surcharge_waived": false,
-   "type": "workshop",
-   "public": true,
-   "next_session": "watercolour-botanicals-2026-11-18-1900"
-  },
   {
    "id": "textured-canvas-2026-11-11-1900",
    "format": "textured-canvas",
