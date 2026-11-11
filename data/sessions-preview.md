@@ -1,10 +1,7 @@
 # Sessions preview
 
-Generated 2026-11-11 — public sessions to 2026-12-23.
+Generated 2026-11-12 — public sessions to 2026-12-24.
 
-
-## Wednesday 11 November 2026
-- **19:00–21:00** Textured & Impasto Canvas · Bloom in Texture: Impasto Florals · L2 front room · RM89 · pair RM160 · Dine add-on (before) · 20 of 20 seats left
 
 ## Thursday 12 November 2026
 - **19:00–21:00** Glow-in-the-Dark Canvas · Galaxy Night Glow · L2 front room · RM89 · pair RM160 · Dine add-on (before) · 20 of 20 seats left
