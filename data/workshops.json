@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-12T06:36:42",
+ "generated": "2026-11-13T06:11:47",
  "currency": "MYR",
  "formats": [
   {
@@ -454,39 +454,10 @@
   "note": "Spec 03-PROMPTS step 7: RM100, RM200 and any-workshop. Validity period TODO."
  },
  "window": {
-  "from": "2026-11-12",
+  "from": "2026-11-13",
   "days": 42
  },
  "sessions": [
-  {
-   "id": "glow-canvas-2026-11-12-1900",
-   "format": "glow-canvas",
-   "name": "Glow-in-the-Dark Canvas",
-   "variant": null,
-   "discipline": "art",
-   "date": "2026-11-12",
-   "day": "Thu",
-   "time": "19:00",
-   "end": "21:00",
-   "label": "Thu 12 Nov · 7pm",
-   "room": "L2 front room",
-   "price": 89,
-   "pair_price": 160,
-   "price_set": "launch",
-   "price_unit": null,
-   "cap": 20,
-   "cap_unit": null,
-   "booked": 0,
-   "seats_left": 20,
-   "dine": true,
-   "dine_timing": "before",
-   "theme": "Galaxy Night Glow",
-   "public_holiday": null,
-   "surcharge_waived": false,
-   "type": "workshop",
-   "public": true,
-   "next_session": "glow-canvas-2026-11-19-1900"
-  },
   {
    "id": "candle-making-2026-11-15-1000",
    "format": "candle-making",
